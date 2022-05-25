@@ -34,8 +34,8 @@ def add_image(imga, origa, imgb, origb, spacb, maska=1, maskb=2):
 
 def array2itk(image_array, origin, spacing): 
   itkimage = sitk.GetImageFromArray(image_array, isVector=False)
-  origin = origin[::-1]
-  spacing = spacing[::-1]
+  # origin = origin[::-1]
+  # spacing = spacing[::-1]
   itkimage.SetSpacing(spacing)
   itkimage.SetOrigin(origin)
   return itkimage
