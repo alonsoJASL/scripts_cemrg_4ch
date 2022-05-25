@@ -1,37 +1,28 @@
-# how to call from Seg3D bin directory:
-
-"""
-exec(open('/home/quickSeg.py').read())
-"""
-
-#import sys
-
-#from joblib import delayed, Parallel
-#import itertools
-#import math
-#import multiprocessing
-#import nrrd
-#import numpy
 import os
 import subprocess
 import time
-# import numpy as np
 import json
 import string
 
-group = 10
+from img import add_masks
+from img import save_itk
+import SimpleITK as sitk
 
+import numpy as np
+import nrrd
+import pylab
 
 segPath = "/data/Dropbox/henry/segmentations/"
 scriptsPath = "/data/Dropbox/henry/segmentations/seg_scripts/"
 
+seg_corrected_nrrd = segPath+'/seg_corrected.nrrd'
+
 def mask_plane_creator(points,plane_name,slicer_radius = None, slicer_height = None):
 	
-	#Create non-cartesian planes in order to remove some nasty stuff.
-	    
-	imgMin = get(stateid = 'group_' + str(group) + '::origin')
-	imgSpa = get(stateid = 'group_' + str(group) + '::spacing')
-	imgSiz = get(stateid = 'group_' + str(group) + '::dimensions')
+	seg_corrected_array, header1 = nrrd.read(seg_corrected_nrrd)
+	imgMin = header1['axis mins']
+	imgSpa = header1['spacings']
+	imgSiz = header1['sizes']
 	imgDim = str(len(imgSiz))
 	tmpPara = subprocess.check_output(['python',scriptsPath+'/postSlicer_optimised.py',\
 		str(points[0]),str(points[1]),str(points[2]),\
@@ -41,6 +32,7 @@ def mask_plane_creator(points,plane_name,slicer_radius = None, slicer_height = N
 		str(imgSpa[0]),str(imgSpa[1]),str(imgSpa[2]),\
 		str(imgMin[0]),str(imgMin[1]),str(imgMin[2]),\
 		plane_name,segPath,str(slicer_height),str(slicer_radius)])
+
 
 path2points = '/data/Dropbox/henry/segmentations/'
 file = open(path2points+'/points.json')
@@ -60,7 +52,7 @@ slicer_radius = 10
 slicer_height = 120
 mask_plane_creator(slicer_points,'SVC',slicer_radius=slicer_radius,slicer_height=slicer_height)
 
-# # IVC
+# IVC
 IVC_1 = data['IVC_1']
 IVC_2 = data['IVC_2']
 IVC_3 = data['IVC_3']
@@ -88,9 +80,3 @@ mask_plane_creator(slicer_points,'IVC',slicer_radius=slicer_radius,slicer_height
 # slicer_radius = 30
 # slicer_height = 4
 # mask_plane_creator(slicer_points,'PArt_slicer',slicer_radius=slicer_radius,slicer_height=slicer_height)
-
-
-#-------------------------
-"""
-exec(open('/data/Dropbox/henry/segmentations/seg_scripts/create_cylinders.py').read())
-"""
