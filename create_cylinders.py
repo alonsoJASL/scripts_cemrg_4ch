@@ -61,22 +61,18 @@ slicer_radius = 10
 slicer_height = 30
 mask_plane_creator(slicer_points,'IVC',slicer_radius=slicer_radius,slicer_height=slicer_height)
 
+aorta_1 = data['aorta_1']
+aorta_2 = data['aorta_2']
+aorta_3 = data['aorta_3']
+slicer_points = [aorta_1[0],aorta_1[1],aorta_1[2],aorta_2[0],aorta_2[1],aorta_2[2],aorta_3[0],aorta_3[1],aorta_3[2]]
+slicer_radius = 30
+slicer_height = 4
+mask_plane_creator(slicer_points,'aorta_slicer',slicer_radius=slicer_radius,slicer_height=slicer_height)
 
-# file = open(path2points+'/aorta_PArt_points.json')
-# data = json.load(file)
-
-# aorta_1 = data['aorta_1']
-# aorta_2 = data['aorta_2']
-# aorta_3 = data['aorta_3']
-# slicer_points = [aorta_1[0],aorta_1[1],aorta_1[2],aorta_2[0],aorta_2[1],aorta_2[2],aorta_3[0],aorta_3[1],aorta_3[2]]
-# slicer_radius = 30
-# slicer_height = 4
-# mask_plane_creator(slicer_points,'aorta_slicer',slicer_radius=slicer_radius,slicer_height=slicer_height)
-
-# PArt_1 = data['PArt_1']
-# PArt_2 = data['PArt_2']
-# PArt_3 = data['PArt_3']
-# slicer_points = [PArt_1[0],PArt_1[1],PArt_1[2],PArt_2[0],PArt_2[1],PArt_2[2],PArt_3[0],PArt_3[1],PArt_3[2]]
-# slicer_radius = 30
-# slicer_height = 4
-# mask_plane_creator(slicer_points,'PArt_slicer',slicer_radius=slicer_radius,slicer_height=slicer_height)
+PArt_1 = data['PArt_1']
+PArt_2 = data['PArt_2']
+PArt_3 = data['PArt_3']
+slicer_points = [PArt_1[0],PArt_1[1],PArt_1[2],PArt_2[0],PArt_2[1],PArt_2[2],PArt_3[0],PArt_3[1],PArt_3[2]]
+slicer_radius = 30
+slicer_height = 4
+mask_plane_creator(slicer_points,'PArt_slicer',slicer_radius=slicer_radius,slicer_height=slicer_height)

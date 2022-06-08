@@ -4,10 +4,35 @@ import SimpleITK as sitk
 import numpy as np
 from scipy import ndimage
 
-def add_masks(imga, imgb, newmask):
-  newmask_ind=loc_mask(imgb)   
-  # set the new mask values 
+def add_masks_replace_only(imga, imgb, newmask, change_only):
+  # only overrides pixels that already belong to a specific mask
+  newmask_ind=loc_mask(imgb)
+  newmask_ind_trans=np.transpose(newmask_ind)
+  # set the new mask values
+  for i,n in enumerate(newmask_ind_trans):
+    A = imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
+    if A == 0:
+      imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
+    elif A == change_only:
+      imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
+  return imga
+
+def add_masks_replace(imga, imgb, newmask):
+  # overrides any pixels that already belong to a mask
+  newmask_ind=loc_mask(imgb)
+  # set the new mask values
   imga[newmask_ind[0], newmask_ind[1], newmask_ind[2]]= newmask;
+  return imga
+
+def add_masks(imga, imgb, newmask):
+  # does not override any pixels that already belong to a mask
+  newmask_ind=loc_mask(imgb)
+  newmask_ind_trans=np.transpose(newmask_ind)
+  # set the new mask values
+  for i,n in enumerate(newmask_ind_trans):
+    A = imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
+    if A == 0:
+      imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
   return imga
 
 def loc_mask(image_array): 

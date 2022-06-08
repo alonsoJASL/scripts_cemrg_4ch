@@ -5,8 +5,14 @@ import json
 import string
 import sys
 
-points_txt = sys.argv[1]
-labels_txt = sys.argv[2]
+import argparse
+parser = argparse.ArgumentParser(description='To run: python3 txt_2_json.py [points.txt] [labels.txt]')
+parser.add_argument("text_file")
+parser.add_argument("label_file")
+args = parser.parse_args()
+
+points_txt = args.text_file
+labels_txt = args.label_file
 points_json = "../points.json"
 
 def main():
@@ -24,6 +30,8 @@ def main():
 
 	with open(points_json, "w") as outfile:
 		outfile.write(json_object)
+
+	print("Successfully wrote .json file")
 
 if __name__ == '__main__':
 	main()
