@@ -1,0 +1,17 @@
+{
+	"LV": 1,
+	"RV": 2,
+	"LA": 3,
+	"RA": 4,
+	"mitral": 13,
+	"tricuspid": 14,
+	"PV_planes": [17,18,19,20,21],
+	"VC_planes": [22,23],
+	"RSPV": 10,
+	"RIPV": 9,
+	"LSPV": 8,
+	"LIPV": 8,
+	"LAA": 7,
+	"SVC": 11,
+	"IVC": 12
+}

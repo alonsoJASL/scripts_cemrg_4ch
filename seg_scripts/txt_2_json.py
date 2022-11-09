@@ -6,14 +6,15 @@ import string
 import sys
 
 import argparse
-parser = argparse.ArgumentParser(description='To run: python3 txt_2_json.py [points.txt] [labels.txt]')
+parser = argparse.ArgumentParser(description='To run: python3 txt_2_json.py [points.txt] [labels.txt] [output.json]')
 parser.add_argument("text_file")
 parser.add_argument("label_file")
+parser.add_argument("output_file")
 args = parser.parse_args()
 
 points_txt = args.text_file
 labels_txt = args.label_file
-points_json = "../points.json"
+output_json = args.output_file
 
 def main():
 	points = np.loadtxt(points_txt)
@@ -28,7 +29,7 @@ def main():
 
 	json_object = json.dumps(my_dict, indent = 4)
 
-	with open(points_json, "w") as outfile:
+	with open(output_json, "w") as outfile:
 		outfile.write(json_object)
 
 	print("Successfully wrote .json file")
