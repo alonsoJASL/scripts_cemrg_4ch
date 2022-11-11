@@ -23,17 +23,11 @@ list_of_files = sorted(filter(os.path.isfile, glob.glob(dir_name + '*') ) )
 
 ct_image = list_of_files[-1]
 
-# ct_image = path2points+'/Prospective 0.6mm Best Diastolic 76 % - 4/IM-0001-0314-0001.dcm'
-
-# specify your image path
 ds = dicom.dcmread(ct_image)
 image_origin = np.array(ds[0x0020, 0x0032].value,dtype=float)
 print(image_origin)
 
 
 seg_array, header = nrrd.read(seg_nrrd)
-# imgMin = header['axis mins']
 imgSpa = header['spacings']
-# imgSiz = header['sizes']
 print(imgSpa)
-# print(str(imgMin))
