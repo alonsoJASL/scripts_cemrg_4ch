@@ -5,10 +5,11 @@ import sys
 import argparse
 import json
 import string
-import SimpleITK as sitk
-import numpy as np
 import nrrd
 import pylab
+import glob
+import SimpleITK as sitk
+import numpy as np
 import pydicom as dicom
 
 parser = argparse.ArgumentParser(description='To run: python3 find_origin_and_spacing.py [path_to_points]')
@@ -16,7 +17,13 @@ parser.add_argument("path_to_points")
 args = parser.parse_args()
 path2points=args.path_to_points
 seg_nrrd = path2points+'/seg_corrected.nrrd'
-ct_image = path2points+'/Prospective 0.6mm Best Diastolic 76 % - 4/IM-0001-0314-0001.dcm'
+
+dir_name = path2points+'ct/'
+list_of_files = sorted(filter(os.path.isfile, glob.glob(dir_name + '*') ) )
+
+ct_image = list_of_files[-1]
+
+# ct_image = path2points+'/Prospective 0.6mm Best Diastolic 76 % - 4/IM-0001-0314-0001.dcm'
 
 # specify your image path
 ds = dicom.dcmread(ct_image)
