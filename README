@@ -9,15 +9,13 @@ Segmentation
 =========================================================================================================
 1) Make folder (e.g. henry) in /data/Dropbox then make folder “segmentations” inside
 2) Copy “points.txt”, “labels.txt”, “origin_spacing.txt” and “origin_spacing_labels.txt” templates into "segmentations" folder (currently in “h_templates” folder)
-3a) Move end-diastolic image CT image into folder and call that directory "ct"
-3b) Move segmented CT into "segmentations" folder.
-4) Manually split and relabel pulmonary veins (Seg3D for now)
-5) Export the segmentation as “seg_corrected.nrrd”
+3) Move end-diastolic image CT image into folder and call that directory "ct"
+4) Move segmented CT into "segmentations" folder.
+5) Manually split and relabel pulmonary veins (Seg3D for now)
+6) Export the segmentation as “seg_corrected.nrrd”
 
-6) Run “find_origin_and_spacing.py /heart_folder/segmentations”
-7) Copy origin and spacing into respective “.txt” files
-8) Run “txt_2_json.py [points.txt] [labels.txt] [output.json]”
-	a. Note: output.json = path + “origin_spacing.json”
+7) Run “find_origin_and_spacing.py /heart_folder/segmentations”
+8) Copy origin and spacing into respective “.txt” files
 
 9) Select 3 points for SVC and IVC and save in “points.txt”
 10) Select 3 points for Ao_slicer and for PArt_slicer and save in “points.txt”
