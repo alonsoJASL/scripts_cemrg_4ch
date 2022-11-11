@@ -1,6 +1,0 @@
-[submodule "uac_fch_example"]
-	path = uac_fch_example
-	url = https://github.com/MarinaStrocchi/py_atrial_fibres.git
-[submodule "py_atrial_fibres"]
-	path = py_atrial_fibres
-	url = https://github.com/MarinaStrocchi/py_atrial_fibres.git

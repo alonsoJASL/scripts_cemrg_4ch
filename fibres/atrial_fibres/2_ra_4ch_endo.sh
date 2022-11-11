@@ -7,7 +7,9 @@ if [ $# -eq 0 ] ; then
     exit 1
 fi
 
-DATA=$1
+
+heart_folder=$1
+DATA="${heart_folder}/atrial_fibres/UAC"
 
 me=$(basename "$0" | awk -F. '{print $1}')
 logfile=$DATA/$me"_"$(date +'%d%m%Y').log

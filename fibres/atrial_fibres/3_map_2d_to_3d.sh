@@ -1,7 +1,8 @@
 #!/bin/bash
 
-FCH="./rosie_example/myocardium_bayer_60_-60"
-UACFOLDER="./rosie_example/UAC/"
+heart_folder=$1
+FCH="${heart_folder}/surfaces_uvc/myocardium_bayer_60_-60"
+UACFOLDER="${heart_folder}/atrial_fibres/UAC/"
 
 # ---------------------------------------------------------------------------------
 

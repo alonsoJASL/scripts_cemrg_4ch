@@ -424,8 +424,8 @@ def meshtool_extract_surfaces(meshname,
 
 		ra_cc_old = copy.deepcopy(ra_cc)
 		sorted_size = np.argsort(cc_size)
-		ra_cc[0] = la_cc_old[sorted_size[-1]]
-		ra_cc[1] = la_cc_old[sorted_size[-2]]
+		ra_cc[0] = ra_cc_old[sorted_size[-1]]
+		ra_cc[1] = ra_cc_old[sorted_size[-2]]
 
 		for i in range(len(ra_cc)-2):
 			os.system("rm "+output_folder+"/tmp/"+ra_cc_old[sorted_size[i]]+".*")
@@ -580,6 +580,7 @@ def export_LA_vtk_msh(output_folder,
 
 def export_vtk_meshes_caroline(output_folder,
 							   raa_apex_file=None,
+							   scale_factor=1.0,
 							   surface="epi"):
 
 	tets = read_elem(output_folder+"/la/la.elem",el_type="Tt",tags=False)
@@ -687,83 +688,13 @@ def export_vtk_meshes_caroline(output_folder,
 	write_surf(output_folder+"/ra/ra_endo.surf",ra_endo_tr)
 
 	print('-----------------------------------------------------')
-	print('Finding LA landmarks...')
+	print('Finding LA and RA landmarks...')
 	print('-----------------------------------------------------')
 
-	la_roof_landmarks = find_roof_points_LSPV_RSPV(output_folder,
-												   surface=surface)
-	la_lspv_rspv_posterior_landmarks,la_region_landmarks_pv = find_LSPV_RSPV_posterior_points(output_folder,la_roof_landmarks,
-																							  surface=surface)
-
-	la_laa_septal_posterior_landmarks,laa_region_landmarks = find_LAA_septal_posterior_points(output_folder,
-																	np.concatenate((la_roof_landmarks,la_lspv_rspv_posterior_landmarks),axis=0),
-																	surface=surface)
-	
-	landmarks = np.concatenate((la_roof_landmarks,la_laa_septal_posterior_landmarks),axis=0)
-	landmarks = np.concatenate((landmarks,la_lspv_rspv_posterior_landmarks),axis=0)
-
-	landmarks_visualise = np.zeros((7,3),dtype=float)
-	landmarks_visualise[0,:] = landmarks[0,:]
-	landmarks_visualise[1:,:] = landmarks
-	write_pts(landmarks_visualise,output_folder+'/la/landmarks.pts')
-	np.savetxt(output_folder+"/la/prodLaLandmarks.txt",landmarks,delimiter=',')
-
-	region_landmarks = np.zeros((6,3),dtype=float)
-	region_landmarks[:4,:] = la_region_landmarks_pv
-	region_landmarks[4:,:] = laa_region_landmarks
-	np.savetxt(output_folder+"/la/prodLaRegion.txt",region_landmarks,delimiter=',')
-
-	landmarks_visualise = np.zeros((7,3),dtype=float)
-	landmarks_visualise[0,:] = region_landmarks[0,:]
-	landmarks_visualise[1:,:] = region_landmarks
-	write_pts(landmarks_visualise,output_folder+'/la/landmarks_regions.pts')
-
-	print('-----------------------------------------------------')
-	print('Finding RA landmarks...')
-	print('-----------------------------------------------------')
-
-	landmarks_septum = find_septal_point(output_folder,
-										 surface=surface)
-	landmarks_svc_ivc_posterior, landmarks_regions_roof = find_SVC_IVC_roof_points(output_folder,landmarks_septum,
-																				   surface=surface)
-	landmarks = np.concatenate((landmarks_septum,landmarks_svc_ivc_posterior),axis=0)
-
-	ivc_posterior_landmarks,region_landmarks_ivc = find_IVC_posterior_points(output_folder,landmarks,surface=surface)
-	
-	if raa_apex_file is not None:
-		if os.path.exists(raa_apex_file):
-			landmarks_raa_apex = np.loadtxt(raa_apex_file)
-			landmark_raa_base = find_raa_base(output_folder,landmarks_raa_apex,surface=surface)
-			region_landmarks_raa = np.concatenate((landmarks_raa_apex,landmark_raa_base),axis=0)
-		else:
-			raise Exception("Cannot find apex file.")
-	else:
-		region_landmarks_raa = find_raa_points(output_folder,landmarks_septum[0,:],surface=surface)
-
-
-	landmarks_rearranged = np.zeros((6,3),dtype=float)
-	landmarks_rearranged[0,:] = landmarks_septum[1,:]
-	landmarks_rearranged[1,:] = ivc_posterior_landmarks[0,:]
-	landmarks_rearranged[2,:] = landmarks_septum[0,:]
-	landmarks_rearranged[3,:] = ivc_posterior_landmarks[1,:]
-	landmarks_rearranged[4,:] = landmarks_svc_ivc_posterior[0,:]
-	landmarks_rearranged[5,:] = landmarks_svc_ivc_posterior[1,:]
-
-	landmarks_visualise[0,:] = landmarks_rearranged[0,:]
-	landmarks_visualise[1:,:] = landmarks_rearranged
-	write_pts(landmarks_visualise,output_folder+'/ra/landmarks.pts')
-	np.savetxt(output_folder+"/ra/prodRaLandmarks.txt",landmarks_rearranged,delimiter=',')
-
-	region_landmarks = np.zeros((6,3),dtype=float)
-	region_landmarks[:2,:] = region_landmarks_ivc
-	region_landmarks[2:4,:] = landmarks_regions_roof
-	region_landmarks[4:,:] = region_landmarks_raa
-	np.savetxt(output_folder+"/ra/prodRaRegion.txt",region_landmarks,delimiter=',')
-
-	landmarks_visualise = np.zeros((7,3),dtype=float)
-	landmarks_visualise[0,:] = region_landmarks[0,:]
-	landmarks_visualise[1:,:] = region_landmarks
-	write_pts(landmarks_visualise,output_folder+'/ra/landmarks_regions.pts')
+	find_landmarks(output_folder,
+				   surface=surface,
+				   scale_factor=scale_factor,
+				   raa_apex_file=raa_apex_file)
 
 	print('-----------------------------------------------------')
 	print('Organising folders...')
