@@ -483,6 +483,7 @@ sitk.WriteImage(SVC_ring,path2points+'/tmp/SVC_ring.nrrd',True)
 print(' ## SVC: Add the ring to the segmentation ## \n')
 SVC_ring_array, header = nrrd.read(path2points+'/tmp/SVC_ring.nrrd')
 seg_s4i_array = add_masks_replace_only(seg_s4i_array,SVC_ring_array,SVC_ring_label,Ao_wall_label)
+seg_s4i_array = add_masks_replace_only(seg_s4i_array,SVC_ring_array,SVC_ring_label,LA_myo_label)
 
 SVC_ring_array = and_filter(seg_s4i_array,RA_myo_thresh_array,SVC_ring_label,SVC_ring_label)
 seg_s4j_array = add_masks_replace(seg_s4j_array,SVC_ring_array,SVC_ring_label)
