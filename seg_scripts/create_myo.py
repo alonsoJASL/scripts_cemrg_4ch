@@ -70,183 +70,183 @@ RA_myo_label = 105
 Ao_wall_label = 106
 PArt_wall_label = 107
 
-# # ----------------------------------------------------------------------------------------------
-# # Create the LV outflow tract myocardium
-# # ----------------------------------------------------------------------------------------------
-# print('\n ## Step 1/10: Creating myocardium for the LV outflow tract ## \n')
-# print(' ## LV neck: Executing distance map ## \n')
-# LV_DistMap = distance_map(path2points+'/seg_s2f.nrrd',LV_BP_label)
-# print(' ## LV neck: Writing temporary image ## \n')
-# sitk.WriteImage(LV_DistMap,path2points+'/tmp/LV_DistMap.nrrd',True)
+# ----------------------------------------------------------------------------------------------
+# Create the LV outflow tract myocardium
+# ----------------------------------------------------------------------------------------------
+print('\n ## Step 1/10: Creating myocardium for the LV outflow tract ## \n')
+print(' ## LV neck: Executing distance map ## \n')
+LV_DistMap = distance_map(path2points+'/seg_s2f.nrrd',LV_BP_label)
+print(' ## LV neck: Writing temporary image ## \n')
+sitk.WriteImage(LV_DistMap,path2points+'/tmp/LV_DistMap.nrrd',True)
 
-# print(' ## LV neck: Thresholding distance filter ## \n')
-# LV_neck = threshold_filter_nrrd(path2points+'/tmp/LV_DistMap.nrrd',0,LV_neck_WT)
-# sitk.WriteImage(LV_neck,path2points+'/tmp/LV_neck.nrrd',True)
+print(' ## LV neck: Thresholding distance filter ## \n')
+LV_neck = threshold_filter_nrrd(path2points+'/tmp/LV_DistMap.nrrd',0,LV_neck_WT)
+sitk.WriteImage(LV_neck,path2points+'/tmp/LV_neck.nrrd',True)
 
-# print(' ## LV neck: Adding LV neck to LV myo ## \n')
-# LV_neck_array, header = nrrd.read(path2points+'/tmp/LV_neck.nrrd')
-# seg_s2f_array, header = nrrd.read(path2points+'seg_s2f.nrrd')
-# LV_neck_array = add_masks_replace(LV_neck_array,LV_neck_array,LV_neck_label)
-# seg_s3a_array = add_masks(seg_s2f_array,LV_neck_array,2)
+print(' ## LV neck: Adding LV neck to LV myo ## \n')
+LV_neck_array, header = nrrd.read(path2points+'/tmp/LV_neck.nrrd')
+seg_s2f_array, header = nrrd.read(path2points+'seg_s2f.nrrd')
+LV_neck_array = add_masks_replace(LV_neck_array,LV_neck_array,LV_neck_label)
+seg_s3a_array = add_masks(seg_s2f_array,LV_neck_array,2)
 
-# # ----------------------------------------------------------------------------------------------
-# # Format and save the segmentation
-# # ----------------------------------------------------------------------------------------------
-# print(' ## LV neck: Formatting and saving the segmentation ## \n')
-# seg_s3a_array = np.swapaxes(seg_s3a_array,0,2)
-# save_itk(seg_s3a_array, origin, spacings, path2points+'/seg_s3a.nrrd')
-# print(" ## LV neck: Saved segmentation with LV outflow tract added ## \n")
+# ----------------------------------------------------------------------------------------------
+# Format and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## LV neck: Formatting and saving the segmentation ## \n')
+seg_s3a_array = np.swapaxes(seg_s3a_array,0,2)
+save_itk(seg_s3a_array, origin, spacings, path2points+'/seg_s3a.nrrd')
+print(" ## LV neck: Saved segmentation with LV outflow tract added ## \n")
 
-# # ----------------------------------------------------------------------------------------------
-# # Create the aortic wall
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Step 2/10: Creating the aortic wall ## \n')
-# print(' ## Aortic wall: Executing distance map ## \n')
-# Ao_DistMap = distance_map(path2points+'seg_s3a.nrrd',Ao_BP_label)
-# print(' ## Aortic wall: Writing temporary image ## \n')
-# sitk.WriteImage(Ao_DistMap,path2points+'/tmp/Ao_DistMap.nrrd',True)
+# ----------------------------------------------------------------------------------------------
+# Create the aortic wall
+# ----------------------------------------------------------------------------------------------
+print(' ## Step 2/10: Creating the aortic wall ## \n')
+print(' ## Aortic wall: Executing distance map ## \n')
+Ao_DistMap = distance_map(path2points+'seg_s3a.nrrd',Ao_BP_label)
+print(' ## Aortic wall: Writing temporary image ## \n')
+sitk.WriteImage(Ao_DistMap,path2points+'/tmp/Ao_DistMap.nrrd',True)
 
-# print(' ## Aoritc wall: Thresholding distance filter ## \n')
-# Ao_wall = threshold_filter_nrrd(path2points+'/tmp/Ao_DistMap.nrrd',0,Ao_WT)
-# sitk.WriteImage(Ao_wall,path2points+'/tmp/Ao_wall.nrrd',True)
+print(' ## Aoritc wall: Thresholding distance filter ## \n')
+Ao_wall = threshold_filter_nrrd(path2points+'/tmp/Ao_DistMap.nrrd',0,Ao_WT)
+sitk.WriteImage(Ao_wall,path2points+'/tmp/Ao_wall.nrrd',True)
 
-# print(' ## Aortic wall: Adding aortic wall to segmentation ## \n')
-# Ao_wall_array, header = nrrd.read(path2points+'/tmp/Ao_wall.nrrd')
-# seg_s3a_array, header = nrrd.read(path2points+'seg_s3a.nrrd')
-# Ao_wall_array = add_masks_replace(Ao_wall_array,Ao_wall_array,Ao_wall_label)
-# seg_s3b_array = add_masks_replace_except_2(seg_s3a_array,Ao_wall_array,Ao_wall_label,LV_BP_label,LV_myo_label)
+print(' ## Aortic wall: Adding aortic wall to segmentation ## \n')
+Ao_wall_array, header = nrrd.read(path2points+'/tmp/Ao_wall.nrrd')
+seg_s3a_array, header = nrrd.read(path2points+'seg_s3a.nrrd')
+Ao_wall_array = add_masks_replace(Ao_wall_array,Ao_wall_array,Ao_wall_label)
+seg_s3b_array = add_masks_replace_except_2(seg_s3a_array,Ao_wall_array,Ao_wall_label,LV_BP_label,LV_myo_label)
 
-# # ----------------------------------------------------------------------------------------------
-# # Format and save the segmentation
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Aortic wall: Formatting and saving the segmentation ## \n')
-# seg_s3b_array = np.swapaxes(seg_s3b_array,0,2)
-# save_itk(seg_s3b_array, origin, spacings, path2points+'/seg_s3b.nrrd')
-# print(" ## Aortic wall: Saved segmentation with aortic wall added ## \n")
+# ----------------------------------------------------------------------------------------------
+# Format and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## Aortic wall: Formatting and saving the segmentation ## \n')
+seg_s3b_array = np.swapaxes(seg_s3b_array,0,2)
+save_itk(seg_s3b_array, origin, spacings, path2points+'/seg_s3b.nrrd')
+print(" ## Aortic wall: Saved segmentation with aortic wall added ## \n")
 
-# # ----------------------------------------------------------------------------------------------
-# # Create the pulmonary artery wall
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Step 3/10: Creating the pulmonary artery wall ## \n')
-# print(' ## Pulmonary artery wall: Executing distance map ## \n')
-# PArt_DistMap = distance_map(path2points+'seg_s3b.nrrd',PArt_BP_label)
-# print(' ## Pulmonary artery wall: Writing temporary image ## \n')
-# sitk.WriteImage(PArt_DistMap,path2points+'/tmp/PArt_DistMap.nrrd',True)
+# ----------------------------------------------------------------------------------------------
+# Create the pulmonary artery wall
+# ----------------------------------------------------------------------------------------------
+print(' ## Step 3/10: Creating the pulmonary artery wall ## \n')
+print(' ## Pulmonary artery wall: Executing distance map ## \n')
+PArt_DistMap = distance_map(path2points+'seg_s3b.nrrd',PArt_BP_label)
+print(' ## Pulmonary artery wall: Writing temporary image ## \n')
+sitk.WriteImage(PArt_DistMap,path2points+'/tmp/PArt_DistMap.nrrd',True)
 
-# print(' ## Pulmonary artery wall: Thresholding distance filter ## \n')
-# PArt_wall = threshold_filter_nrrd(path2points+'/tmp/PArt_DistMap.nrrd',0,PArt_WT)
-# sitk.WriteImage(PArt_wall,path2points+'/tmp/PArt_wall.nrrd',True)
+print(' ## Pulmonary artery wall: Thresholding distance filter ## \n')
+PArt_wall = threshold_filter_nrrd(path2points+'/tmp/PArt_DistMap.nrrd',0,PArt_WT)
+sitk.WriteImage(PArt_wall,path2points+'/tmp/PArt_wall.nrrd',True)
 
-# print(' ## Pulmonary artery wall: Adding pulmonary artery wall to segmentation ## \n')
-# PArt_wall_array, header = nrrd.read(path2points+'/tmp/PArt_wall.nrrd')
-# seg_s3b_array, header = nrrd.read(path2points+'seg_s3b.nrrd')
-# PArt_wall_array = add_masks_replace(PArt_wall_array,PArt_wall_array,PArt_wall_label)
-# seg_s3c_array = add_masks_replace_except_2(seg_s3b_array,PArt_wall_array,PArt_wall_label,3,Ao_wall_label)
+print(' ## Pulmonary artery wall: Adding pulmonary artery wall to segmentation ## \n')
+PArt_wall_array, header = nrrd.read(path2points+'/tmp/PArt_wall.nrrd')
+seg_s3b_array, header = nrrd.read(path2points+'seg_s3b.nrrd')
+PArt_wall_array = add_masks_replace(PArt_wall_array,PArt_wall_array,PArt_wall_label)
+seg_s3c_array = add_masks_replace_except_2(seg_s3b_array,PArt_wall_array,PArt_wall_label,3,Ao_wall_label)
 
-# # ----------------------------------------------------------------------------------------------
-# # Format and save the segmentation
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Pulmonary artery wall: Formatting and saving the segmentation ## \n')
-# seg_s3c_array = np.swapaxes(seg_s3c_array,0,2)
-# save_itk(seg_s3c_array, origin, spacings, path2points+'/seg_s3c.nrrd')
-# print(" ## Pulmonary artery wall: Saved segmentation with pulmonary artery wall added ## \n")
+# ----------------------------------------------------------------------------------------------
+# Format and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## Pulmonary artery wall: Formatting and saving the segmentation ## \n')
+seg_s3c_array = np.swapaxes(seg_s3c_array,0,2)
+save_itk(seg_s3c_array, origin, spacings, path2points+'/seg_s3c.nrrd')
+print(" ## Pulmonary artery wall: Saved segmentation with pulmonary artery wall added ## \n")
 
-# # ----------------------------------------------------------------------------------------------
-# # Push the pulmonary artery wall into the pulmonary artery blood pool
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Pulmonary artery wall: Pushing the wall of the pulmonary artery ## \n')
-# seg_s3d_array = push_inside(path2points,path2points+'seg_s3c.nrrd',Ao_wall_label,PArt_wall_label,PArt_BP_label,PArt_WT)
+# ----------------------------------------------------------------------------------------------
+# Push the pulmonary artery wall into the pulmonary artery blood pool
+# ----------------------------------------------------------------------------------------------
+print(' ## Pulmonary artery wall: Pushing the wall of the pulmonary artery ## \n')
+seg_s3d_array = push_inside(path2points,path2points+'seg_s3c.nrrd',Ao_wall_label,PArt_wall_label,PArt_BP_label,PArt_WT)
 
-# # ----------------------------------------------------------------------------------------------
-# # Format and save the segmentation
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Pulmonary artery wall: Formatting and saving the segmentation ## \n')
-# seg_s3d_array = np.swapaxes(seg_s3d_array,0,2)
-# save_itk(seg_s3d_array, origin, spacings, path2points+'/seg_s3d.nrrd')
-# print(" ## Pulmonary artery wall: Saved segmentation with pulmonary artery wall pushed inside ## \n")
+# ----------------------------------------------------------------------------------------------
+# Format and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## Pulmonary artery wall: Formatting and saving the segmentation ## \n')
+seg_s3d_array = np.swapaxes(seg_s3d_array,0,2)
+save_itk(seg_s3d_array, origin, spacings, path2points+'/seg_s3d.nrrd')
+print(" ## Pulmonary artery wall: Saved segmentation with pulmonary artery wall pushed inside ## \n")
 
-# # ----------------------------------------------------------------------------------------------
-# # Crop the aorta and pulmonary artery
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Step 4/10: Cropping veins ## \n')
-# seg_s3d_array, header = nrrd.read(path2points+'seg_s3d.nrrd')
+# ----------------------------------------------------------------------------------------------
+# Crop the aorta and pulmonary artery
+# ----------------------------------------------------------------------------------------------
+print(' ## Step 4/10: Cropping veins ## \n')
+seg_s3d_array, header = nrrd.read(path2points+'seg_s3d.nrrd')
 
-# aorta_slicer_nrrd = path2points+'/aorta_slicer.nrrd'
-# aorta_slicer_label = 0
+aorta_slicer_nrrd = path2points+'/aorta_slicer.nrrd'
+aorta_slicer_label = 0
 
-# aorta_slicer_array, header = nrrd.read(aorta_slicer_nrrd)
+aorta_slicer_array, header = nrrd.read(aorta_slicer_nrrd)
 
-# print(' ## Cropping major vessels: Slicing the aortic wall ## \n')
-# seg_s3e_array = add_masks_replace_only(seg_s3d_array, aorta_slicer_array, aorta_slicer_label, Ao_wall_label)
+print(' ## Cropping major vessels: Slicing the aortic wall ## \n')
+seg_s3e_array = add_masks_replace_only(seg_s3d_array, aorta_slicer_array, aorta_slicer_label, Ao_wall_label)
 
-# PArt_slicer_nrrd = path2points+'/PArt_slicer.nrrd'
-# PArt_slicer_label = 0
+PArt_slicer_nrrd = path2points+'/PArt_slicer.nrrd'
+PArt_slicer_label = 0
 
-# PArt_slicer_array, header = nrrd.read(PArt_slicer_nrrd)
+PArt_slicer_array, header = nrrd.read(PArt_slicer_nrrd)
 
-# print(' ## Cropping major vessels: Slicing the pulmonary artery wall ## \n')
-# seg_s3e_array = add_masks_replace_only(seg_s3e_array, PArt_slicer_array, PArt_slicer_label, PArt_wall_label)
+print(' ## Cropping major vessels: Slicing the pulmonary artery wall ## \n')
+seg_s3e_array = add_masks_replace_only(seg_s3e_array, PArt_slicer_array, PArt_slicer_label, PArt_wall_label)
 
-# # ----------------------------------------------------------------------------------------------
-# # Format and save the segmentation
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Cropping major vessels: Formatting and saving the segmentation ## \n')
-# seg_s3e_array = np.swapaxes(seg_s3e_array,0,2)
-# save_itk(seg_s3e_array, origin, spacings, path2points+'/seg_s3e.nrrd')
-# print(" ## Cropping major vessels: Saved segmentation with aorta and pulmonary artery sliced ## \n")
+# ----------------------------------------------------------------------------------------------
+# Format and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## Cropping major vessels: Formatting and saving the segmentation ## \n')
+seg_s3e_array = np.swapaxes(seg_s3e_array,0,2)
+save_itk(seg_s3e_array, origin, spacings, path2points+'/seg_s3e.nrrd')
+print(" ## Cropping major vessels: Saved segmentation with aorta and pulmonary artery sliced ## \n")
 
-# # ----------------------------------------------------------------------------------------------
-# # Prepare the seeds for the tips of the aorta and pulmonary artery
-# # ----------------------------------------------------------------------------------------------
-# Ao_tip_seed = points_data['Ao_tip']
-# PArt_tip_seed = points_data['PArt_tip']
-# Ao_wall_tip_seed = points_data['Ao_WT_tip']
-# PArt_wall_tip_seed = points_data['PArt_WT_tip']
+# ----------------------------------------------------------------------------------------------
+# Prepare the seeds for the tips of the aorta and pulmonary artery
+# ----------------------------------------------------------------------------------------------
+Ao_tip_seed = points_data['Ao_tip']
+PArt_tip_seed = points_data['PArt_tip']
+Ao_wall_tip_seed = points_data['Ao_WT_tip']
+PArt_wall_tip_seed = points_data['PArt_WT_tip']
 
-# # ----------------------------------------------------------------------------------------------
-# # Crop the aorta and save the segmentation
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Cropping major vessels: Cropping the aorta ## \n')
-# seg_s3e_nrrd = path2points+'/seg_s3e.nrrd'
-# seg_s3f_array = connected_component(seg_s3e_nrrd, Ao_tip_seed, Ao_BP_label,path2points)
-# seg_s3f_array = np.swapaxes(seg_s3f_array,0,2)
-# save_itk(seg_s3f_array, origin, spacings, path2points+'/seg_s3f.nrrd')
+# ----------------------------------------------------------------------------------------------
+# Crop the aorta and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## Cropping major vessels: Cropping the aorta ## \n')
+seg_s3e_nrrd = path2points+'/seg_s3e.nrrd'
+seg_s3f_array = connected_component(seg_s3e_nrrd, Ao_tip_seed, Ao_BP_label,path2points)
+seg_s3f_array = np.swapaxes(seg_s3f_array,0,2)
+save_itk(seg_s3f_array, origin, spacings, path2points+'/seg_s3f.nrrd')
 
-# # ----------------------------------------------------------------------------------------------
-# # Crop the pulmonary artery and save the segmentation
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Cropping major vessels: Cropping the pulmonary artery ## \n')
-# seg_s3f_nrrd = path2points+'/seg_s3f.nrrd'
-# seg_s3f_array = connected_component(seg_s3f_nrrd, PArt_tip_seed, PArt_BP_label,path2points)
-# seg_s3f_array = np.swapaxes(seg_s3f_array,0,2)
-# save_itk(seg_s3f_array, origin, spacings, path2points+'/seg_s3f.nrrd')
+# ----------------------------------------------------------------------------------------------
+# Crop the pulmonary artery and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## Cropping major vessels: Cropping the pulmonary artery ## \n')
+seg_s3f_nrrd = path2points+'/seg_s3f.nrrd'
+seg_s3f_array = connected_component(seg_s3f_nrrd, PArt_tip_seed, PArt_BP_label,path2points)
+seg_s3f_array = np.swapaxes(seg_s3f_array,0,2)
+save_itk(seg_s3f_array, origin, spacings, path2points+'/seg_s3f.nrrd')
 
-# # ----------------------------------------------------------------------------------------------
-# # Create the RV myocardium
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Step 5/10: Creating the right ventricular myocardium: ## \n')
-# print(' ## RV myo: Executing distance map ## \n')
-# RV_BP_DistMap = distance_map(path2points+'seg_s3f.nrrd',RV_BP_label)
-# print(' ## RV myo: Writing temporary image ## \n')
-# sitk.WriteImage(RV_BP_DistMap,path2points+'/tmp/RV_BP_DistMap.nrrd',True)
+# ----------------------------------------------------------------------------------------------
+# Create the RV myocardium
+# ----------------------------------------------------------------------------------------------
+print(' ## Step 5/10: Creating the right ventricular myocardium: ## \n')
+print(' ## RV myo: Executing distance map ## \n')
+RV_BP_DistMap = distance_map(path2points+'seg_s3f.nrrd',RV_BP_label)
+print(' ## RV myo: Writing temporary image ## \n')
+sitk.WriteImage(RV_BP_DistMap,path2points+'/tmp/RV_BP_DistMap.nrrd',True)
 
-# print(' ## RV myo: Thresholding distance filter ## \n')
-# RV_myo = threshold_filter_nrrd(path2points+'/tmp/RV_BP_DistMap.nrrd',0,RV_WT)
-# sitk.WriteImage(RV_myo,path2points+'/tmp/RV_myo.nrrd',True)
+print(' ## RV myo: Thresholding distance filter ## \n')
+RV_myo = threshold_filter_nrrd(path2points+'/tmp/RV_BP_DistMap.nrrd',0,RV_WT)
+sitk.WriteImage(RV_myo,path2points+'/tmp/RV_myo.nrrd',True)
 
-# print(' ## RV myo: Adding right ventricular myocardium to segmentation ## \n')
-# RV_myo_array, header = nrrd.read(path2points+'/tmp/RV_myo.nrrd')
-# seg_s3f_array, header = nrrd.read(path2points+'seg_s3f.nrrd')
-# RV_myo_array = add_masks_replace(RV_myo_array,RV_myo_array,RV_myo_label)
-# seg_s3g_array = add_masks(seg_s3f_array,RV_myo_array,RV_myo_label)
+print(' ## RV myo: Adding right ventricular myocardium to segmentation ## \n')
+RV_myo_array, header = nrrd.read(path2points+'/tmp/RV_myo.nrrd')
+seg_s3f_array, header = nrrd.read(path2points+'seg_s3f.nrrd')
+RV_myo_array = add_masks_replace(RV_myo_array,RV_myo_array,RV_myo_label)
+seg_s3g_array = add_masks(seg_s3f_array,RV_myo_array,RV_myo_label)
 
-# # ----------------------------------------------------------------------------------------------
-# # Format and save the segmentation
-# # ----------------------------------------------------------------------------------------------
-# print(' ## RV myo: Formatting and saving the segmentation ## \n')
-# seg_s3g_array = np.swapaxes(seg_s3g_array,0,2)
-# save_itk(seg_s3g_array, origin, spacings, path2points+'/seg_s3g.nrrd')
-# print(" ## RV myo: Saved segmentation with right ventricular myocardium added ## \n")
+# ----------------------------------------------------------------------------------------------
+# Format and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## RV myo: Formatting and saving the segmentation ## \n')
+seg_s3g_array = np.swapaxes(seg_s3g_array,0,2)
+save_itk(seg_s3g_array, origin, spacings, path2points+'/seg_s3g.nrrd')
+print(" ## RV myo: Saved segmentation with right ventricular myocardium added ## \n")
 
 # ----------------------------------------------------------------------------------------------
 # Create the LA myocardium
@@ -330,100 +330,100 @@ seg_s3i_array = np.swapaxes(seg_s3i_array,0,2)
 save_itk(seg_s3i_array, origin, spacings, path2points+'/seg_s3i.nrrd')
 print(" ## RA myo: Saved segmentation with right atrial myocardium added ## \n")
 
-# # ----------------------------------------------------------------------------------------------
-# # Right atrium is pushed by the left atrium
-# # ----------------------------------------------------------------------------------------------
-# print(' ## RA myo: Pushing the right atrium with the left atrium ## \n')
-# seg_s3j_array = push_inside(path2points,path2points+'seg_s3i.nrrd',LA_myo_label,RA_myo_label,RA_BP_label,RA_WT)
+# ----------------------------------------------------------------------------------------------
+# Right atrium is pushed by the left atrium
+# ----------------------------------------------------------------------------------------------
+print(' ## RA myo: Pushing the right atrium with the left atrium ## \n')
+seg_s3j_array = push_inside(path2points,path2points+'seg_s3i.nrrd',LA_myo_label,RA_myo_label,RA_BP_label,RA_WT)
 
-# # ----------------------------------------------------------------------------------------------
-# # Format and save the segmentation
-# # ----------------------------------------------------------------------------------------------
-# print(' ## RA myo: Formatting and saving the segmentation ## \n')
-# seg_s3j_array = np.swapaxes(seg_s3j_array,0,2)
-# save_itk(seg_s3j_array, origin, spacings, path2points+'/seg_s3j.nrrd')
-# print(" ## RA myo: Saved segmentation with right atrium pushed by the left atrium ## \n")
+# ----------------------------------------------------------------------------------------------
+# Format and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## RA myo: Formatting and saving the segmentation ## \n')
+seg_s3j_array = np.swapaxes(seg_s3j_array,0,2)
+save_itk(seg_s3j_array, origin, spacings, path2points+'/seg_s3j.nrrd')
+print(" ## RA myo: Saved segmentation with right atrium pushed by the left atrium ## \n")
 
-# # ----------------------------------------------------------------------------------------------
-# # Right atrium is pushed by the aorta
-# # ----------------------------------------------------------------------------------------------
-# print(' ## RA myo: Pushing the right atrium with the aorta ## \n')
-# seg_s3k_array = push_inside(path2points,path2points+'seg_s3j.nrrd',Ao_wall_label,RA_myo_label,RA_BP_label,RA_WT)
+# ----------------------------------------------------------------------------------------------
+# Right atrium is pushed by the aorta
+# ----------------------------------------------------------------------------------------------
+print(' ## RA myo: Pushing the right atrium with the aorta ## \n')
+seg_s3k_array = push_inside(path2points,path2points+'seg_s3j.nrrd',Ao_wall_label,RA_myo_label,RA_BP_label,RA_WT)
 
-# # ----------------------------------------------------------------------------------------------
-# # Format and save the segmentation
-# # ----------------------------------------------------------------------------------------------
-# print(' ## RA myo: Formatting and saving the segmentation ## \n')
-# seg_s3k_array = np.swapaxes(seg_s3k_array,0,2)
-# save_itk(seg_s3k_array, origin, spacings, path2points+'/seg_s3k.nrrd')
-# print(" ## RA myo: Saved segmentation with right atrium pushed by the aorta ## \n")
+# ----------------------------------------------------------------------------------------------
+# Format and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## RA myo: Formatting and saving the segmentation ## \n')
+seg_s3k_array = np.swapaxes(seg_s3k_array,0,2)
+save_itk(seg_s3k_array, origin, spacings, path2points+'/seg_s3k.nrrd')
+print(" ## RA myo: Saved segmentation with right atrium pushed by the aorta ## \n")
 
-# # ----------------------------------------------------------------------------------------------
-# # Right atrium is pushed by the left ventricle
-# # ----------------------------------------------------------------------------------------------
-# print(' ## RA myo: Pushing the right atrium with the left ventricle ## \n')
-# seg_s3l_array = push_inside(path2points,path2points+'seg_s3k.nrrd',LV_myo_label,RA_myo_label,RA_BP_label,RA_WT)
+# ----------------------------------------------------------------------------------------------
+# Right atrium is pushed by the left ventricle
+# ----------------------------------------------------------------------------------------------
+print(' ## RA myo: Pushing the right atrium with the left ventricle ## \n')
+seg_s3l_array = push_inside(path2points,path2points+'seg_s3k.nrrd',LV_myo_label,RA_myo_label,RA_BP_label,RA_WT)
 
-# # ----------------------------------------------------------------------------------------------
-# # Format and save the segmentation
-# # ----------------------------------------------------------------------------------------------
-# print(' ## RA myo: Formatting and saving the segmentation ## \n')
-# seg_s3l_array = np.swapaxes(seg_s3l_array,0,2)
-# save_itk(seg_s3l_array, origin, spacings, path2points+'/seg_s3l.nrrd')
-# print(" ## RA myo: Saved segmentation with right atrium pushed by the left ventricle ## \n")
+# ----------------------------------------------------------------------------------------------
+# Format and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## RA myo: Formatting and saving the segmentation ## \n')
+seg_s3l_array = np.swapaxes(seg_s3l_array,0,2)
+save_itk(seg_s3l_array, origin, spacings, path2points+'/seg_s3l.nrrd')
+print(" ## RA myo: Saved segmentation with right atrium pushed by the left ventricle ## \n")
 
-# # ----------------------------------------------------------------------------------------------
-# # Left atrium is pushed by the aorta
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Step 8/10: LA myo: Pushing the left atrium with the aorta ## \n')
-# seg_s3m_array = push_inside(path2points,path2points+'seg_s3l.nrrd',Ao_wall_label,LA_myo_label,LA_BP_label,LA_WT)
+# ----------------------------------------------------------------------------------------------
+# Left atrium is pushed by the aorta
+# ----------------------------------------------------------------------------------------------
+print(' ## Step 8/10: LA myo: Pushing the left atrium with the aorta ## \n')
+seg_s3m_array = push_inside(path2points,path2points+'seg_s3l.nrrd',Ao_wall_label,LA_myo_label,LA_BP_label,LA_WT)
 
-# # ----------------------------------------------------------------------------------------------
-# # Format and save the segmentation
-# # ----------------------------------------------------------------------------------------------
-# print(' ## LA myo: Formatting and saving the segmentation ## \n')
-# seg_s3m_array = np.swapaxes(seg_s3m_array,0,2)
-# save_itk(seg_s3m_array, origin, spacings, path2points+'/seg_s3m.nrrd')
-# print(" ## LA myo: Saved segmentation with left atrium pushed by the aorta ## \n")
+# ----------------------------------------------------------------------------------------------
+# Format and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## LA myo: Formatting and saving the segmentation ## \n')
+seg_s3m_array = np.swapaxes(seg_s3m_array,0,2)
+save_itk(seg_s3m_array, origin, spacings, path2points+'/seg_s3m.nrrd')
+print(" ## LA myo: Saved segmentation with left atrium pushed by the aorta ## \n")
 
-# # ----------------------------------------------------------------------------------------------
-# # Pulmonary artery is pushed by the aorta
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Step 9/10: PArt wall: Pushing the pulmonary artery with the aorta ## \n')
-# seg_s3n_array = push_inside(path2points,path2points+'seg_s3m.nrrd',Ao_wall_label,PArt_wall_label,PArt_BP_label,PArt_WT)
+# ----------------------------------------------------------------------------------------------
+# Pulmonary artery is pushed by the aorta
+# ----------------------------------------------------------------------------------------------
+print(' ## Step 9/10: PArt wall: Pushing the pulmonary artery with the aorta ## \n')
+seg_s3n_array = push_inside(path2points,path2points+'seg_s3m.nrrd',Ao_wall_label,PArt_wall_label,PArt_BP_label,PArt_WT)
 
-# # ----------------------------------------------------------------------------------------------
-# # Format and save the segmentation
-# # ----------------------------------------------------------------------------------------------
-# print(' ## PArt wall: Formatting and saving the segmentation ## \n')
-# seg_s3n_array = np.swapaxes(seg_s3n_array,0,2)
-# save_itk(seg_s3n_array, origin, spacings, path2points+'/seg_s3n.nrrd')
-# print(" ## PArt wall: Saved segmentation with pulmonary artery pushed by the aorta ## \n")
+# ----------------------------------------------------------------------------------------------
+# Format and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## PArt wall: Formatting and saving the segmentation ## \n')
+seg_s3n_array = np.swapaxes(seg_s3n_array,0,2)
+save_itk(seg_s3n_array, origin, spacings, path2points+'/seg_s3n.nrrd')
+print(" ## PArt wall: Saved segmentation with pulmonary artery pushed by the aorta ## \n")
 
-# # ----------------------------------------------------------------------------------------------
-# # Pulmonary artery is pushed by the left ventricle
-# # ----------------------------------------------------------------------------------------------
-# print(' ## PArt wall: Pushing the pulmonary artery with the left ventricle ## \n')
-# seg_s3o_array = push_inside(path2points,path2points+'seg_s3n.nrrd',LV_myo_label,PArt_wall_label,PArt_BP_label,PArt_WT)
+# ----------------------------------------------------------------------------------------------
+# Pulmonary artery is pushed by the left ventricle
+# ----------------------------------------------------------------------------------------------
+print(' ## PArt wall: Pushing the pulmonary artery with the left ventricle ## \n')
+seg_s3o_array = push_inside(path2points,path2points+'seg_s3n.nrrd',LV_myo_label,PArt_wall_label,PArt_BP_label,PArt_WT)
 
-# # ----------------------------------------------------------------------------------------------
-# # Format and save the segmentation
-# # ----------------------------------------------------------------------------------------------
-# print(' ## PArt wall: Formatting and saving the segmentation ## \n')
-# seg_s3o_array = np.swapaxes(seg_s3o_array,0,2)
-# save_itk(seg_s3o_array, origin, spacings, path2points+'/seg_s3o.nrrd')
-# print(" ## PArt wall: Saved segmentation pulmonary artery pushed by the left ventricle ## \n")
+# ----------------------------------------------------------------------------------------------
+# Format and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## PArt wall: Formatting and saving the segmentation ## \n')
+seg_s3o_array = np.swapaxes(seg_s3o_array,0,2)
+save_itk(seg_s3o_array, origin, spacings, path2points+'/seg_s3o.nrrd')
+print(" ## PArt wall: Saved segmentation pulmonary artery pushed by the left ventricle ## \n")
 
-# # ----------------------------------------------------------------------------------------------
-# # Right ventricle is pushed by the aorta
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Step 10/10: RV myo: Pushing the right ventricle with the aorta ## \n')
-# seg_s3p_array = push_inside(path2points,path2points+'seg_s3o.nrrd',Ao_wall_label,RV_myo_label,RV_BP_label,RV_WT)
+# ----------------------------------------------------------------------------------------------
+# Right ventricle is pushed by the aorta
+# ----------------------------------------------------------------------------------------------
+print(' ## Step 10/10: RV myo: Pushing the right ventricle with the aorta ## \n')
+seg_s3p_array = push_inside(path2points,path2points+'seg_s3o.nrrd',Ao_wall_label,RV_myo_label,RV_BP_label,RV_WT)
 
-# # ----------------------------------------------------------------------------------------------
-# # Format and save the segmentation
-# # ----------------------------------------------------------------------------------------------
-# print(' ## RV myo: Formatting and saving the segmentation ## \n')
-# seg_s3p_array = np.swapaxes(seg_s3p_array,0,2)
-# save_itk(seg_s3p_array, origin, spacings, path2points+'/seg_s3p.nrrd')
-# print(" ## RV myo: Saved segmentation with right ventricle pushed by the aorta ## \n")
+# ----------------------------------------------------------------------------------------------
+# Format and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## RV myo: Formatting and saving the segmentation ## \n')
+seg_s3p_array = np.swapaxes(seg_s3p_array,0,2)
+save_itk(seg_s3p_array, origin, spacings, path2points+'/seg_s3p.nrrd')
+print(" ## RV myo: Saved segmentation with right ventricle pushed by the aorta ## \n")
