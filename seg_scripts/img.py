@@ -99,7 +99,7 @@ def distance_map(img_nrrd,label):
   return DistMap
 
 def mask_plane_creator_alternative(seg_nrrd,origin,spacing,points,plane_name,slicer_radius, slicer_height, segPath, scriptsPath):
-  
+  # used when header has different labels
   seg_array, header = nrrd.read(seg_nrrd)
   imgMin = origin
   imgSpa = spacing
