@@ -58,8 +58,8 @@ def main(args):
 	print('Computing element centers on both meshes 3D and 2D meshes...')
 	print('================================================================')
 
-	compute_elemCenters(meshname_3d)
-	compute_elemCenters(meshname_2d)
+	compute_elemCenters(meshname_3d,el_type="Tt")
+	compute_elemCenters(meshname_2d,el_type="Tr")
 
 	if args.tag_labels_endo is not None:
 		labels_list_endo = args.tag_labels_endo

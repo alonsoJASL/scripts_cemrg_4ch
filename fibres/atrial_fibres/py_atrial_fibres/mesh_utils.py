@@ -5,10 +5,11 @@ import trimesh
 from py_atrial_fibres.file_utils import *
 from py_atrial_fibres.linalg_utils import *
 
-def compute_elemCenters(meshname):
+def compute_elemCenters(meshname,
+						el_type):
 
 	pts = read_pts(meshname+".pts") 
-	elem = read_elem(meshname+".elem",el_type='Tt',tags=False) 
+	elem = read_elem(meshname+".elem",el_type=el_type,tags=False) 
 	n_tet = elem.shape[0] 
 
 	cog_el = np.zeros((n_tet,3),dtype=float) 
