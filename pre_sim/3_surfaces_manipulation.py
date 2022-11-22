@@ -2,6 +2,7 @@ import os
 import sys
 import json
 from SIMULATION_library import mesh_utils
+import argparse
 
 # I want to have only one epicardial surface and one map
 # for scaling the stiffness of the peri springs
@@ -13,8 +14,13 @@ from SIMULATION_library import mesh_utils
 #######################
 # mesh with refined atria
 #######################
-meshFolder = '/data/Dropbox/Segmentations/2016111001EP/final_heart/'
-meshName = 'myocardium'
+parser = argparse.ArgumentParser(description='To run: python3 surfaces_manipulation.py [heart_folder]')
+parser.add_argument("heart_folder")
+args = parser.parse_args()
+HEART_FOLDER = args.heart_folder
+
+meshFolder=HEART_FOLDER+"pre_simulation/"
+meshName = 'myocardium_AV_FEC_BB'
 
 cmd = 'mkdir '+meshFolder+'/surfaces_simulation'
 os.system(cmd)
@@ -33,7 +39,7 @@ os.system(cmd)
 
 # map five connected components:
 # 0 : RA endo
-mesh_utils.connected_component_to_surface(meshFolder+'/surfaces_simulation/surface_heart_CC.part1.eidx',
+mesh_utils.connected_component_to_surface(meshFolder+'/surfaces_simulation/surface_heart_CC.part2.eidx',
 								   meshFolder+'/surfaces_simulation/surface_heart.surf',
 								   meshFolder+'/surfaces_simulation/RA_endo.surf')
 mesh_utils.surf2vtk(meshFolder+meshName,
@@ -41,7 +47,7 @@ mesh_utils.surf2vtk(meshFolder+meshName,
 			 meshFolder+'/surfaces_simulation/RA_endo.surf.vtu')
 
 # 1 : epicardium
-mesh_utils.connected_component_to_surface(meshFolder+'/surfaces_simulation/surface_heart_CC.part0.eidx',
+mesh_utils.connected_component_to_surface(meshFolder+'/surfaces_simulation/surface_heart_CC.part1.eidx',
 								   meshFolder+'/surfaces_simulation/surface_heart.surf',
 								   meshFolder+'/surfaces_simulation/epicardium.surf')
 mesh_utils.surf2vtk(meshFolder+meshName,
@@ -57,7 +63,7 @@ mesh_utils.surf2vtk(meshFolder+meshName,
 			 meshFolder+'/surfaces_simulation/LA_endo.surf.vtu')
 
 # 3 : RV endo
-mesh_utils.connected_component_to_surface(meshFolder+'/surfaces_simulation/surface_heart_CC.part2.eidx',
+mesh_utils.connected_component_to_surface(meshFolder+'/surfaces_simulation/surface_heart_CC.part3.eidx',
 								   meshFolder+'/surfaces_simulation/surface_heart.surf',
 								   meshFolder+'/surfaces_simulation/RV_endo.surf')
 mesh_utils.surf2vtk(meshFolder+meshName,
@@ -65,9 +71,11 @@ mesh_utils.surf2vtk(meshFolder+meshName,
 			 meshFolder+'/surfaces_simulation/RV_endo.surf.vtu')
 
 # 4 : LV endo
-mesh_utils.connected_component_to_surface(meshFolder+'/surfaces_simulation/surface_heart_CC.part3.eidx',
+mesh_utils.connected_component_to_surface(meshFolder+'/surfaces_simulation/surface_heart_CC.part0.eidx',
 								   meshFolder+'/surfaces_simulation/surface_heart.surf',
 								   meshFolder+'/surfaces_simulation/LV_endo.surf')
 mesh_utils.surf2vtk(meshFolder+meshName,
 			 meshFolder+'/surfaces_simulation/LV_endo.surf',
 			 meshFolder+'/surfaces_simulation/LV_endo.surf.vtu')
+
+print("CHECK THAT THE SURFACES ARE AS EXPECTED!")

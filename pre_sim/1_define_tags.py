@@ -12,9 +12,9 @@ HEART_FOLDER = args.heart_folder
 MESHFOLDER=HEART_FOLDER+"pre_simulation/"
 
 os.system("mkdir "+MESHFOLDER)
-os.system("cp "+HEART_FOLDER+"/atrial_fibres/myocardium_bayer_60_-60_fibres_l.elem "+MESHFOLDER+"/myocardium.elem")
-os.system("cp "+HEART_FOLDER+"/atrial_fibres/myocardium_bayer_60_-60_fibres_l.pts "+MESHFOLDER+"/myocardium.pts")
-os.system("cp "+HEART_FOLDER+"/atrial_fibres/myocardium_bayer_60_-60_fibres_l.lon "+MESHFOLDER+"/myocardium.lon")
+os.system("cp "+HEART_FOLDER+"/atrial_fibres/myocardium_fibres_l.elem "+MESHFOLDER+"/myocardium.elem")
+os.system("cp "+HEART_FOLDER+"/atrial_fibres/myocardium_fibres_l.pts "+MESHFOLDER+"/myocardium.pts")
+os.system("cp "+HEART_FOLDER+"/atrial_fibres/myocardium_fibres_l.lon "+MESHFOLDER+"/myocardium.lon")
 
 MESHNAME="myocardium"
 MESHNAME_AV="myocardium_AV"

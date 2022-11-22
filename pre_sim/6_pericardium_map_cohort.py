@@ -11,6 +11,12 @@ import numpy as np
 import sets
 import scipy.linalg as spla
 import scipy.signal as spsig
+import argparse
+
+parser = argparse.ArgumentParser(description='To run: python3 pericardium_map_cohort.py [heart_folder]')
+parser.add_argument("heart_folder")
+args = parser.parse_args()
+basedir = args.heart_folder
 
 def read_pnts(filename):
     return np.loadtxt(filename, dtype=float, skiprows=1)
@@ -78,8 +84,7 @@ def main():
 
     outfile='elem_dat_UVC_ek.dat'
 
-    basedir = '/data/Dropbox/Segmentations/2016111001EP/final_heart'
-    basename = os.path.join(basedir, 'myocardium')
+    basename = basedir+'/pre_simulation/myocardium_AV_FEC_BB'
     pnts = read_pnts(basename+'.pts')    
     elem = read_elems(basename+'.elem')
 
@@ -117,7 +122,7 @@ def main():
 
     print('Something to do with pericardium tags (part 2)')
 
-    np.savetxt(os.path.join(basedir, 'UVC_elem.dat'), UVCelem, fmt='%.8f')
+    np.savetxt(os.path.join(basedir+'/pre_simulation/', 'UVC_elem.dat'), UVCelem, fmt='%.8f')
 
     # compute the data on the elements
     p1 = 1.5266
@@ -139,11 +144,15 @@ def main():
         else:
             elemdat.append(0.0)    
 
-    np.savetxt(os.path.join(basedir,outfile), elemdat, fmt='%.8f') 
+    # np.savetxt(os.path.join(basedir,outfile), elemdat, fmt='%.8f')
+    np.savetxt(basedir+'/pre_simulation/'+outfile, elemdat, fmt='%.8f') 
 
     print('DONE')
 
-    cmd = 'GlVTKConvert -m '+basename+' -e '+os.path.join(basedir, outfile)+' -e '+os.path.join(basedir, 'UVC_elem.dat')+' -F bin -o '+basename+'_elem_dat_UVC'+' --trim-names'
+    # cmd = 'GlVTKConvert -m '+basename+' -e '+os.path.join(basedir, outfile)+' -e '+os.path.join(basedir, '/UVC_elem.dat')+' -F bin -o '+basename+'_elem_dat_UVC'+' --trim-names'
+    # os.system(str(cmd))
+
+    cmd = 'GlVTKConvert -m '+basename+' -e '+basedir+'/pre_simulation/'+outfile+' -e '+basedir+'/pre_simulation/UVC_elem.dat'+' -F bin -o '+basename+'_elem_dat_UVC'+' --trim-names'
     os.system(str(cmd))
 
 if __name__ == '__main__':

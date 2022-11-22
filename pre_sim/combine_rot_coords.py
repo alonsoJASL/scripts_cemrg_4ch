@@ -1,6 +1,7 @@
 # combine rotational coordinates
 
 import numpy as np
+import sys
 
 def combine_elem_file(input_elemFiles,
 					  output_file,
@@ -21,7 +22,7 @@ def combine_elem_file(input_elemFiles,
 	print('Writing output...')
 	np.savetxt(output_file,elemData_new)
 
-combine_elem_file(["/data/Dropbox/Segmentations/2016111001EP/final_heart/elem_dat_UVC_ek.dat", 
-				  "/data/Dropbox/Segmentations/2016111001EP/final_heart/elem_dat_UVC_ek_inc_la.dat",
-				  "/data/Dropbox/Segmentations/2016111001EP/final_heart/elem_dat_UVC_ek_inc_ra.dat"], 
-				  "/data/Dropbox/Segmentations/2016111001EP/final_heart/elem_dat_UVC_ek_combined.dat")
+combine_elem_file([sys.argv[1]+"/pre_simulation/elem_dat_UVC_ek.dat", 
+				  sys.argv[1]+"/pre_simulation/elem_dat_UVC_ek_inc_la.dat",
+				  sys.argv[1]+"/pre_simulation/elem_dat_UVC_ek_inc_ra.dat"], 
+				  sys.argv[1]+"/pre_simulation/elem_dat_UVC_ek_combined.dat")

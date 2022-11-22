@@ -16,6 +16,6 @@ meshtool extract surface -msh=$mesh -surf=${folder}/peri_surface -ofmt=vtk -op=1
 
 meshtool extract unreachable -msh=${folder}/peri_surface.surfmesh -ifmt=vtk -ofmt=vtk -submsh=${folder}/peri_surface_CC
 
-python peri_surface_mapping.py ${folder}/peri_surface_CC.part0 ${folder}/peri_surface.surf ${folder}/epicardium_for_sim ${mesh}
+python peri_surface_mapping.py ${folder}/peri_surface_CC.part1 ${folder}/peri_surface.surf ${folder}/epicardium_for_sim ${mesh}
 
 rm ${folder}/*CC*
