@@ -297,11 +297,38 @@ save_itk(seg_s4f_array, origin, spacings, path2points+'/seg_s4f.nrrd')
 print(" ## AV: Saved segmentation with AV and MV separated ## \n")
 
 # ----------------------------------------------------------------------------------------------
+# Closing new holes around the mitral valve (MV)
+# ----------------------------------------------------------------------------------------------
+print(' ## MV corrections: Closing holes around the mitral valve ## \n')
+print(' ## MV corrections: Executing distance map ## \n')
+LV_myo_DistMap = distance_map(path2points+'seg_s4f.nrrd',LV_myo_label)
+print(' ## MV corrections: Writing temporary image ## \n')
+sitk.WriteImage(LV_myo_DistMap,path2points+'/tmp/LV_myo_DistMap.nrrd',True)
+
+print(' ## MV corrections: Thresholding distance filter ## \n')
+LA_myo_extra = threshold_filter_nrrd(path2points+'/tmp/LV_myo_DistMap.nrrd',0,LA_WT)
+sitk.WriteImage(LA_myo_extra,path2points+'/tmp/LA_myo_extra.nrrd',True)
+
+print(' ## MV correction: AND filter of distance map and LA blood pool ## \n')
+LA_myo_extra_array, header = nrrd.read(path2points+'/tmp/LA_myo_extra.nrrd')
+seg_s4ff_array, header = nrrd.read(path2points+'/seg_s4f.nrrd')
+LA_myo_extra_array = and_filter(seg_s4ff_array,LA_myo_extra_array,LA_BP_label,LA_myo_label)
+seg_s4ff_array = add_masks_replace(seg_s4ff_array,LA_myo_extra_array,LA_myo_label)
+
+# ----------------------------------------------------------------------------------------------
+# Format and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## MV corrections: Formatting and saving the segmentation ## \n')
+seg_s4ff_array = np.swapaxes(seg_s4ff_array,0,2)
+save_itk(seg_s4ff_array, origin, spacings, path2points+'/seg_s4ff.nrrd')
+print(" ## MV extra: Saved segmentation with holes closed around mitral valve ## \n")
+
+# ----------------------------------------------------------------------------------------------
 # Create the pulmonary valve (PV)
 # ----------------------------------------------------------------------------------------------
 print('\n ## Step 5/8: Creating the pulmonary valve ## \n')
 print(' ## PV: Executing distance map ## \n')
-PArt_BP_DistMap = distance_map(path2points+'/seg_s4f.nrrd',PArt_BP_label)
+PArt_BP_DistMap = distance_map(path2points+'/seg_s4ff.nrrd',PArt_BP_label)
 print(' ## PV: Writing temporary image ## \n')
 sitk.WriteImage(PArt_BP_DistMap,path2points+'/tmp/PArt_BP_DistMap.nrrd',True)
 
@@ -311,9 +338,9 @@ sitk.WriteImage(PV,path2points+'/tmp/PV.nrrd',True)
 
 print(' ## PV: AND filter of distance map and RV blood pool ## \n')
 PV_array, header = nrrd.read(path2points+'/tmp/PV.nrrd')
-seg_s4f_array, header = nrrd.read(path2points+'/seg_s4f.nrrd')
-PV_array = and_filter(seg_s4f_array,PV_array,RV_BP_label,PV_label)
-seg_s4g_array = add_masks_replace(seg_s4f_array,PV_array,PV_label)
+seg_s4ff_array, header = nrrd.read(path2points+'/seg_s4ff.nrrd')
+PV_array = and_filter(seg_s4ff_array,PV_array,RV_BP_label,PV_label)
+seg_s4g_array = add_masks_replace(seg_s4ff_array,PV_array,PV_label)
 
 # ----------------------------------------------------------------------------------------------
 # Format and save the segmentation
