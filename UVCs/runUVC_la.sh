@@ -9,7 +9,7 @@ cmd="cp /data/Dropbox/af_hearts/h_template/etags_la.sh ${MESHFOLDER}/etags.sh"
 echo $cmd
 eval $cmd
 
-cmd="mguvc --ID=$MESH/UVC_ek --model-name $MESHFOLDER/la --input-model lv --output-model lv --np 20 --tags-file $MESHFOLDER/etags.sh --output-dir $MESHFOLDER/uvc/ --laplace-solution"
+cmd="mguvc --ID=$MESH/UVC_ek --model-name $MESHFOLDER/la --input-model lv --output-model lv --np 20 --tags-file $MESHFOLDER/etags.sh --output-dir $MESHFOLDER/uvc/ --laplace-solution --custom-apex"
 
 echo $cmd
 eval $cmd

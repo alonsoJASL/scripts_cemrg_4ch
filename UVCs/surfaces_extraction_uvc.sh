@@ -25,24 +25,28 @@ meshtool extract unreachable -msh=${surf_folder}/epi_endo.surfmesh -ifmt=vtk -of
 # Extract the RV septum
 # ----------------------------------------------------------------------------------------------
 echo " ## Extracting septum ## "
-meshtool extract surface -msh=$mesh -surf=${surf_folder}/myocardium.rvsept -ofmt=vtk -op=1-2
+meshtool extract surface -msh=$mesh -surf=${surf_folder}/myocardium.rvsept -ofmt=vtk -op=1-2,4,6
 meshtool extract unreachable -msh=${surf_folder}/myocardium.rvsept.surfmesh -ifmt=vtk -ofmt=vtk -submsh=${surf_folder}/myocardium.rvsept_CC
 
 # ----------------------------------------------------------------------------------------------
 # Surface mapping
 # ----------------------------------------------------------------------------------------------
 echo " ## Mapping surfaces ## "
-# python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part0 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.lvendo ${mesh}
-# python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part1 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.epi ${mesh}
-# python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part2 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.rvendo ${mesh}
-
 python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part0 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.lvendo ${mesh}
-python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part1 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.rvendo ${mesh}
-python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part2 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.epi ${mesh}
+python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part1 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.epi ${mesh}
+python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part2 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.rvendo ${mesh}
+
+# python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part0 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.lvendo ${mesh}
+# python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part1 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.rvendo ${mesh}
+# python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part2 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.epi ${mesh}
 
 # python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part0 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.rvendo ${mesh}
 # python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part1 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.lvendo ${mesh}
 # python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part2 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.epi ${mesh}
+
+# python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part0 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.epi ${mesh}
+# python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part1 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.lvendo ${mesh}
+# python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/epi_endo_CC.part2 ${surf_folder}/epi_endo.surf ${surf_folder}/myocardium.rvendo ${mesh}
 
 python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/myocardium.rvsept_CC.part0 ${surf_folder}/myocardium.rvsept.surf ${surf_folder}/lvepi ${mesh}
 python /data/Dropbox/scripts_cemrgapp/UVCs/surface_mapping.py ${surf_folder}/myocardium.rvsept_CC.part1 ${surf_folder}/myocardium.rvsept.surf ${surf_folder}/myocardium.rvsept ${mesh}

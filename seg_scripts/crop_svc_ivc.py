@@ -74,24 +74,24 @@ origin_spacing_data = json.load(origin_spacing_file)
 origin = origin_spacing_data['origin']
 spacings = origin_spacing_data['spacing']
 
-# ----------------------------------------------------------------------------------------------
-# Slice svc and ivc
-# ---------------------------------------------------------------------------------------------
-SVC_slicer_1 = points_data['SVC_slicer_1']
-SVC_slicer_2 = points_data['SVC_slicer_2']
-SVC_slicer_3 = points_data['SVC_slicer_3']
-slicer_points = [SVC_slicer_1[0],SVC_slicer_1[1],SVC_slicer_1[2],SVC_slicer_2[0],SVC_slicer_2[1],SVC_slicer_2[2],SVC_slicer_3[0],SVC_slicer_3[1],SVC_slicer_3[2]]
-slicer_radius = 30
-slicer_height = 1
-mask_plane_creator_alternative(path2points+'/seg_s2a.nrrd',origin,spacings,slicer_points,'SVC_slicer',slicer_radius=slicer_radius,slicer_height=slicer_height,segPath=path2points,scriptsPath=scriptsPath)
+# # ----------------------------------------------------------------------------------------------
+# # Slice svc and ivc
+# # ---------------------------------------------------------------------------------------------
+# SVC_slicer_1 = points_data['SVC_slicer_1']
+# SVC_slicer_2 = points_data['SVC_slicer_2']
+# SVC_slicer_3 = points_data['SVC_slicer_3']
+# slicer_points = [SVC_slicer_1[0],SVC_slicer_1[1],SVC_slicer_1[2],SVC_slicer_2[0],SVC_slicer_2[1],SVC_slicer_2[2],SVC_slicer_3[0],SVC_slicer_3[1],SVC_slicer_3[2]]
+# slicer_radius = 30
+# slicer_height = 1
+# mask_plane_creator_alternative(path2points+'/seg_s2a.nrrd',origin,spacings,slicer_points,'SVC_slicer',slicer_radius=slicer_radius,slicer_height=slicer_height,segPath=path2points,scriptsPath=scriptsPath)
 
-IVC_slicer_1 = points_data['IVC_slicer_1']
-IVC_slicer_2 = points_data['IVC_slicer_2']
-IVC_slicer_3 = points_data['IVC_slicer_3']
-slicer_points = [IVC_slicer_1[0],IVC_slicer_1[1],IVC_slicer_1[2],IVC_slicer_2[0],IVC_slicer_2[1],IVC_slicer_2[2],IVC_slicer_3[0],IVC_slicer_3[1],IVC_slicer_3[2]]
-slicer_radius = 30
-slicer_height = 1
-mask_plane_creator_alternative(path2points+'/seg_s2a.nrrd',origin,spacings,slicer_points,'IVC_slicer',slicer_radius=slicer_radius,slicer_height=slicer_height,segPath=path2points,scriptsPath=scriptsPath)
+# IVC_slicer_1 = points_data['IVC_slicer_1']
+# IVC_slicer_2 = points_data['IVC_slicer_2']
+# IVC_slicer_3 = points_data['IVC_slicer_3']
+# slicer_points = [IVC_slicer_1[0],IVC_slicer_1[1],IVC_slicer_1[2],IVC_slicer_2[0],IVC_slicer_2[1],IVC_slicer_2[2],IVC_slicer_3[0],IVC_slicer_3[1],IVC_slicer_3[2]]
+# slicer_radius = 30
+# slicer_height = 1
+# mask_plane_creator_alternative(path2points+'/seg_s2a.nrrd',origin,spacings,slicer_points,'IVC_slicer',slicer_radius=slicer_radius,slicer_height=slicer_height,segPath=path2points,scriptsPath=scriptsPath)
 
 # ----------------------------------------------------------------------------------------------
 # Give the paths to the SVC/IVC cylinders and the aorta/pulmonary artery slicers

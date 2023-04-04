@@ -9,7 +9,7 @@ import subprocess
 import time
 import multiprocessing as mp
 
-from scipy import ndimage
+# from scipy import ndimage
 
 def push_inside(path2points,img_nrrd,pusher_wall_lab,pushed_wall_lab,pushed_BP_lab,pushed_WT):
   # distance map of the pusher wall
@@ -46,6 +46,7 @@ def push_ring_inside(path2points,img_nrrd,pusher_wall_lab,pushed_wall_lab,pushed
   return img_array
 
 def and_filter(imga_array,imgb_array,label_a,new_label):
+  # looks at everywhere in image_a and image_b that has label_a and replaces with new_label
   newmask_ind=loc_mask(imgb_array)
   newmask_ind_trans=np.transpose(newmask_ind)
 
@@ -344,6 +345,7 @@ def rotation2unity(v):
   return R
 
 def save_itk(image_array, origin, spacing, filename):
+  # always do np.swapaxes(seg_array,0,2) before using save_itk
   itkimage=array2itk(image_array, origin, spacing)
   sitk.WriteImage(itkimage, filename, True)
 

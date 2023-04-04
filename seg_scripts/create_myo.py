@@ -98,6 +98,15 @@ save_itk(seg_s3a_array, origin, spacings, path2points+'/seg_s3a.nrrd')
 print(" ## LV neck: Saved segmentation with LV outflow tract added ## \n")
 
 # ----------------------------------------------------------------------------------------------
+# LV_myo is pushed by RV_BP
+# ----------------------------------------------------------------------------------------------
+print(' ## Pushing LV_myo with RV_BP ## \n')
+seg_s3a_array = push_inside(path2points,path2points+'seg_s3a.nrrd',RV_BP_label,LV_myo_label,LV_BP_label,LV_neck_WT)
+seg_s3a_array = np.swapaxes(seg_s3a_array,0,2)
+save_itk(seg_s3a_array, origin, spacings, path2points+'/seg_s3a.nrrd')
+print(" ## LV neck: Preventing hole in neck due to RV BP ## \n")
+
+# ----------------------------------------------------------------------------------------------
 # Create the aortic wall
 # ----------------------------------------------------------------------------------------------
 print(' ## Step 2/10: Creating the aortic wall ## \n')
@@ -106,7 +115,7 @@ Ao_DistMap = distance_map(path2points+'seg_s3a.nrrd',Ao_BP_label)
 print(' ## Aortic wall: Writing temporary image ## \n')
 sitk.WriteImage(Ao_DistMap,path2points+'/tmp/Ao_DistMap.nrrd',True)
 
-print(' ## Aoritc wall: Thresholding distance filter ## \n')
+print(' ## Aortic wall: Thresholding distance filter ## \n')
 Ao_wall = threshold_filter_nrrd(path2points+'/tmp/Ao_DistMap.nrrd',0,Ao_WT)
 sitk.WriteImage(Ao_wall,path2points+'/tmp/Ao_wall.nrrd',True)
 
@@ -238,7 +247,7 @@ print(' ## RV myo: Adding right ventricular myocardium to segmentation ## \n')
 RV_myo_array, header = nrrd.read(path2points+'/tmp/RV_myo.nrrd')
 seg_s3f_array, header = nrrd.read(path2points+'seg_s3f.nrrd')
 RV_myo_array = add_masks_replace(RV_myo_array,RV_myo_array,RV_myo_label)
-seg_s3g_array = add_masks(seg_s3f_array,RV_myo_array,RV_myo_label)
+seg_s3g_array = add_masks_replace_only(seg_s3f_array,RV_myo_array,RV_myo_label,Ao_wall_label) #NEW CHANGE SO SEE WHAT HAPPENS!
 
 # ----------------------------------------------------------------------------------------------
 # Format and save the segmentation
@@ -320,7 +329,7 @@ print(' ## RA myo: Adding right atrial myocardium to segmentation ## \n')
 RA_myo_array, header = nrrd.read(path2points+'/tmp/RA_myo.nrrd')
 seg_s3hi_array, header = nrrd.read(path2points+'seg_s3hi.nrrd')
 RA_myo_array = add_masks_replace(RA_myo_array,RA_myo_array,RA_myo_label)
-seg_s3i_array = add_masks(seg_s3hi_array,RA_myo_array,RA_myo_label)
+seg_s3i_array = add_masks_replace_only(seg_s3hi_array,RA_myo_array,RA_myo_label,RPV1_label)
 
 # ----------------------------------------------------------------------------------------------
 # Format and save the segmentation

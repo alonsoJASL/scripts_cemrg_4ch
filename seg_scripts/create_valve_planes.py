@@ -511,6 +511,8 @@ print(' ## SVC: Add the ring to the segmentation ## \n')
 SVC_ring_array, header = nrrd.read(path2points+'/tmp/SVC_ring.nrrd')
 seg_s4i_array = add_masks_replace_only(seg_s4i_array,SVC_ring_array,SVC_ring_label,Ao_wall_label)
 seg_s4i_array = add_masks_replace_only(seg_s4i_array,SVC_ring_array,SVC_ring_label,LA_myo_label)
+seg_s4i_array = add_masks_replace_only(seg_s4i_array,SVC_ring_array,SVC_ring_label,RPV1_ring_label)
+seg_s4i_array = add_masks_replace_only(seg_s4i_array,SVC_ring_array,SVC_ring_label,RPV1_label)
 
 SVC_ring_array = and_filter(seg_s4i_array,RA_myo_thresh_array,SVC_ring_label,SVC_ring_label)
 seg_s4j_array = add_masks_replace(seg_s4j_array,SVC_ring_array,SVC_ring_label)
@@ -600,7 +602,9 @@ sitk.WriteImage(RA_BP_thresh_2mm,path2points+'/tmp/RA_BP_thresh_2mm.nrrd',True)
 RA_BP_thresh_2mm_array, header = nrrd.read(path2points+'/tmp/RA_BP_thresh_2mm.nrrd')
 
 plane_SVC_array = and_filter(seg_s4k_array,RA_BP_thresh_2mm_array,SVC_label,plane_SVC_label)
+plane_SVC_extra_array = and_filter(seg_s4k_array,RA_BP_thresh_2mm_array,RPV1_ring_label,plane_SVC_label)
 seg_s4k_array = add_masks_replace(seg_s4k_array,plane_SVC_array,plane_SVC_label)
+seg_s4k_array = add_masks_replace(seg_s4k_array,plane_SVC_extra_array,plane_SVC_label)
 
 # ----------------------------------------------------------------------------------------------
 # Creating plane for IVC

@@ -73,7 +73,7 @@ PArt_slicer_array, header5 = nrrd.read(PArt_slicer_nrrd)
 # Add the SVC and IVC 
 # ----------------------------------------------------------------------------------------------
 print('\n ## Adding the SVC, IVC and slicers ## \n')
-seg_s2a_array = add_masks(seg_s2_array, svc_array, SVC_label)
+seg_s2a_array = add_masks_replace_only(seg_s2_array, svc_array, SVC_label,RPV1_label)
 seg_s2a_array = add_masks(seg_s2a_array, ivc_array, IVC_label)
 
 # ----------------------------------------------------------------------------------------------

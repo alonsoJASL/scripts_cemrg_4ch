@@ -3,10 +3,14 @@
 heart_folder=$1
 MSHFOLDER="${heart_folder}/meshing/myocardium_OUT"
 
-mv ${MSHFOLDER}/myocardium.elem ${MSHFOLDER}/heart_mesh.elem
-mv ${MSHFOLDER}/myocardium.lon ${MSHFOLDER}/heart_mesh.lon
-mv ${MSHFOLDER}/myocardium.pts ${MSHFOLDER}/heart_mesh.pts
-mv ${MSHFOLDER}/myocardium.vtk ${MSHFOLDER}/heart_mesh.vtk
+CMD="mv ${MSHFOLDER}/myocardium.elem ${MSHFOLDER}/heart_mesh.elem"
+eval $CMD
+CMD="mv ${MSHFOLDER}/myocardium.lon ${MSHFOLDER}/heart_mesh.lon"
+eval $CMD
+CMD="mv ${MSHFOLDER}/myocardium.pts ${MSHFOLDER}/heart_mesh.pts"
+eval $CMD
+CMD="mv ${MSHFOLDER}/myocardium.vtk ${MSHFOLDER}/heart_mesh.vtk"
+eval $CMD
 
 MESHTOOL_PATH="/home/rb21/Software/2021_1108_CARPentry_KCL_latest/CARPentry_KCL_latest/meshtool/standalones/"
 

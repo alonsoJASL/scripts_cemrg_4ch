@@ -24,10 +24,10 @@ cmd="meshtool convert -imsh=${mshPath}/ra/ra -omsh=${mshPath}/ra/ra -ofmt=vtk_bi
 echo $cmd
 eval $cmd
 
-# cmd="cp /data/Dropbox/af_hearts/h_template/ra.apex.vtx ${mshPath}/ra/ra.apex.vtx"
-# echo $cmd
-# eval $cmd
+cmd="cp /data/Dropbox/scripts_cemrgapp/h_template/ra.lvapex.vtx ${mshPath}/ra/ra.lvapex.vtx"
+echo $cmd
+eval $cmd
 
-# cmd="cp /data/Dropbox/af_hearts/h_template/ra.rvsept_pt.vtx ${mshPath}/ra/ra.rvsept_pt.vtx"
-# echo $cmd
-# eval $cmd
+cmd="cp /data/Dropbox/scripts_cemrgapp/h_template/ra.rvsept_pt.vtx ${mshPath}/ra/ra.rvsept_pt.vtx"
+echo $cmd
+eval $cmd

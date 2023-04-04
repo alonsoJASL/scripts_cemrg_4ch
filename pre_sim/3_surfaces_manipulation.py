@@ -39,7 +39,7 @@ os.system(cmd)
 
 # map five connected components:
 # 0 : RA endo
-mesh_utils.connected_component_to_surface(meshFolder+'/surfaces_simulation/surface_heart_CC.part2.eidx',
+mesh_utils.connected_component_to_surface(meshFolder+'/surfaces_simulation/surface_heart_CC.part4.eidx',
 								   meshFolder+'/surfaces_simulation/surface_heart.surf',
 								   meshFolder+'/surfaces_simulation/RA_endo.surf')
 mesh_utils.surf2vtk(meshFolder+meshName,
@@ -55,7 +55,7 @@ mesh_utils.surf2vtk(meshFolder+meshName,
 			 meshFolder+'/surfaces_simulation/epicardium.surf.vtu')
 
 # # 2 : LA endo
-mesh_utils.connected_component_to_surface(meshFolder+'/surfaces_simulation/surface_heart_CC.part4.eidx',
+mesh_utils.connected_component_to_surface(meshFolder+'/surfaces_simulation/surface_heart_CC.part2.eidx',
 								   meshFolder+'/surfaces_simulation/surface_heart.surf',
 								   meshFolder+'/surfaces_simulation/LA_endo.surf')
 mesh_utils.surf2vtk(meshFolder+meshName,
