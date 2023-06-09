@@ -111,69 +111,49 @@ def cylinder(seg_nrrd,points,plane_name,slicer_radius, slicer_height,origin,spac
 file = open(path2points+'/points.json')
 points_data = json.load(file)
 
-file = open(path2points+'./origin_spacing.json')
+file = open(path2points+'/origin_spacing.json')
 origin_data = json.load(file)
 origin = origin_data["origin"]
 spacing = origin_data["spacing"]
 
 seg_name = path2points+"/seg_corrected.nrrd"
 
-# # SVC
-# pts1 = points_data['SVC_1']
-# pts2 = points_data['SVC_2']
-# pts3 = points_data['SVC_3']
-# points = np.row_stack((pts1,pts2,pts3))
+# SVC
+pts1 = points_data['SVC_1']
+pts2 = points_data['SVC_2']
+pts3 = points_data['SVC_3']
+points = np.row_stack((pts1,pts2,pts3))
 
-# slicer_radius = 10
-# slicer_height = 30
-# cylinder(seg_name,points,path2points+"/SVC.nrrd",slicer_radius, slicer_height,origin,spacing)
+slicer_radius = 10
+slicer_height = 30
+cylinder(seg_name,points,path2points+"/SVC.nrrd",slicer_radius, slicer_height,origin,spacing)
 
-# # IVC
-# pts1 = points_data['IVC_1']
-# pts2 = points_data['IVC_2']
-# pts3 = points_data['IVC_3']
-# points = np.row_stack((pts1,pts2,pts3))
+# IVC
+pts1 = points_data['IVC_1']
+pts2 = points_data['IVC_2']
+pts3 = points_data['IVC_3']
+points = np.row_stack((pts1,pts2,pts3))
 
-# slicer_radius = 10
-# slicer_height = 30
-# cylinder(seg_name,points,path2points+"/IVC.nrrd",slicer_radius, slicer_height,origin,spacing)
+slicer_radius = 10
+slicer_height = 30
+cylinder(seg_name,points,path2points+"/IVC.nrrd",slicer_radius, slicer_height,origin,spacing)
 
-# # Aorta slicer
-# pts1 = points_data['Ao_1']
-# pts2 = points_data['Ao_2']
-# pts3 = points_data['Ao_3']
-# points = np.row_stack((pts1,pts2,pts3))
-
-# slicer_radius = 30
-# slicer_height = 2
-# cylinder(seg_name,points,path2points+"/aorta_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
-
-# # PArt slicer
-# pts1 = points_data['PArt_1']
-# pts2 = points_data['PArt_2']
-# pts3 = points_data['PArt_3']
-# points = np.row_stack((pts1,pts2,pts3))
-
-# slicer_radius = 30
-# slicer_height = 2
-# cylinder(seg_name,points,path2points+"/PArt_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
-
-# SVC slicer
-pts1 = points_data['SVC_slicer_1']
-pts2 = points_data['SVC_slicer_2']
-pts3 = points_data['SVC_slicer_3']
+# Aorta slicer
+pts1 = points_data['Ao_1']
+pts2 = points_data['Ao_2']
+pts3 = points_data['Ao_3']
 points = np.row_stack((pts1,pts2,pts3))
 
 slicer_radius = 30
 slicer_height = 2
-cylinder(seg_name,points,path2points+"/SVC_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
+cylinder(seg_name,points,path2points+"/aorta_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
 
-# IVC slicer
-pts1 = points_data['IVC_slicer_1']
-pts2 = points_data['IVC_slicer_2']
-pts3 = points_data['IVC_slicer_3']
+# PArt slicer
+pts1 = points_data['PArt_1']
+pts2 = points_data['PArt_2']
+pts3 = points_data['PArt_3']
 points = np.row_stack((pts1,pts2,pts3))
 
 slicer_radius = 30
 slicer_height = 2
-cylinder(seg_name,points,path2points+"/IVC_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
+cylinder(seg_name,points,path2points+"/PArt_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)

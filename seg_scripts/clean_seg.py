@@ -16,7 +16,7 @@ import SimpleITK as sitk
 
 import numpy as np
 import nrrd
-import pylab
+# import pylab
 import json
 import argparse
 import os
@@ -146,12 +146,21 @@ seg_s5_array = np.swapaxes(seg_s5_array,0,2)
 save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
 print(" ## Correcting rings: Formatted and saved segmentation ## \n")
 
-# # ----------------------------------------------------------------------------------------------
-# # LA_myo is pushed by SVC_ring
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Pushing LA_myo with SVC_ring ## \n')
-# seg_s5_array = push_inside(path2points,path2points+'seg_s5.nrrd',SVC_ring_label,LA_myo_label,LA_BP_label,LA_WT)
-# seg_s5_array = np.swapaxes(seg_s5_array,0,2)
-# save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
-# print(" ## Correcting rings: Formatted and saved segmentation ## \n")
+# ----------------------------------------------------------------------------------------------
+# Ao_wall is pushed by RV_myo
+# ----------------------------------------------------------------------------------------------
+print(' ## Pushing Ao wall with RV_myo ## \n')
+seg_s5_array = push_inside(path2points,path2points+'seg_s5.nrrd',RV_myo_label,Ao_wall_label,Ao_BP_label,Ao_WT)
+seg_s5_array = np.swapaxes(seg_s5_array,0,2)
+save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
+print(" ## Correcting rings: Formatted and saved segmentation ## \n")
+
+# ----------------------------------------------------------------------------------------------
+# LA_myo is pushed by SVC_ring
+# ----------------------------------------------------------------------------------------------
+print(' ## Pushing LA_myo with SVC_ring ## \n')
+seg_s5_array = push_inside(path2points,path2points+'seg_s5.nrrd',SVC_ring_label,LA_myo_label,LA_BP_label,LA_WT)
+seg_s5_array = np.swapaxes(seg_s5_array,0,2)
+save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
+print(" ## Correcting rings: Formatted and saved segmentation ## \n")
 

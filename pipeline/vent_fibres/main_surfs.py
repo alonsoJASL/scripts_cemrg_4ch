@@ -14,7 +14,6 @@ def main(args):
 	warnings.warn("MAKE SURE INPUT TAGS ARE CORRECT")
 
 	input_tags = load_json(args.input_tags_setup)
-	# seg_tags = load_json(args.seg_tags_setup)
 	apexFolder = args.apex_septum_setup
 
 	heartFolder = args.heartFolder
@@ -149,7 +148,7 @@ if __name__ == '__main__':
     parser.add_argument('--heartFolder', type=str, default=None,
                         help='Provide path to the heart folder')
 
-    parser.add_argument('--input_tags_setup', type=str, default="./parfiles/input_tags_setup.json",
+    parser.add_argument('--input_tags_setup', type=str, default="./parfiles/input_tags_setup",
                         help='Provide json file with input tags settings')
 
     # parser.add_argument('--seg_tags_setup', type=str, default="./parfiles/seg_tags_setup.json",

@@ -3,7 +3,7 @@ import SimpleITK as sitk
 
 import numpy as np
 import nrrd
-import pylab
+# import pylab
 import copy
 import json
 import os

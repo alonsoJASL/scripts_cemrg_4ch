@@ -1,10 +1,11 @@
 import os
 import sys
+import copy
+
 import json
 import time
 import argparse
 # import pandas
-import copy
 import numpy as np
 import meshio
 
