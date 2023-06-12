@@ -285,39 +285,58 @@ seg_s3h_array = np.swapaxes(seg_s3h_array,0,2)
 save_itk(seg_s3h_array, origin, spacings, path2points+'/seg_s3h.nrrd')
 print(" ## LA myo: Saved segmentation with left atrial myocardium added ## \n")
 
+# # ----------------------------------------------------------------------------------------------
+# # Create the RA myocardium
+# # ----------------------------------------------------------------------------------------------
+# print(' ## Step 7/10: Creating the right atrial myocardium: ## \n')
+# print(' ## RA myo: Executing distance map ## \n')
+# RA_BP_DistMap = distance_map(path2points+'seg_s3h.nrrd',RA_BP_label)
+# print(' ## RA myo: Writing temporary image ## \n')
+# sitk.WriteImage(RA_BP_DistMap,path2points+'/tmp/RA_BP_DistMap_for_pads.nrrd',True)
+
+# print(' ## RA myo: Thresholding distance filter ## \n')
+# SVC_pad = threshold_filter_nrrd(path2points+'/tmp/RA_BP_DistMap_for_pads.nrrd',0,svc_ivc_pad)
+# sitk.WriteImage(SVC_pad,path2points+'/tmp/SVC_pad.nrrd',True)
+
+# print(' ## RA myo: Adding SVC pad to segmentation ## \n')
+# SVC_pad_array, header = nrrd.read(path2points+'/tmp/SVC_pad.nrrd')
+# seg_s3h_array, header = nrrd.read(path2points+'seg_s3h.nrrd')
+# SVC_pad_array = and_filter(seg_s3h_array,SVC_pad_array,SVC_label,RA_BP_label)
+
+# print(' ## RA myo: Adding IVC pad to segmentation ## \n')
+# IVC_pad_array, header = nrrd.read(path2points+'/tmp/SVC_pad.nrrd')
+# seg_s3h_array, header = nrrd.read(path2points+'seg_s3h.nrrd')
+# IVC_pad_array = and_filter(seg_s3h_array,IVC_pad_array,IVC_label,RA_BP_label)
+
+# seg_s3hi_array = add_masks_replace_only(seg_s3h_array,SVC_pad_array,RA_BP_label,SVC_label)
+# seg_s3hi_array = add_masks_replace_only(seg_s3hi_array,IVC_pad_array,RA_BP_label,IVC_label)
+
+# print(' ## RA myo: Formatting and saving the segmentation ## \n')
+# seg_s3hi_array = np.swapaxes(seg_s3hi_array,0,2)
+# save_itk(seg_s3hi_array, origin, spacings, path2points+'/seg_s3hi.nrrd')
+# print(" ## RA myo: Saved segmentation with SVC/IVC pads added ## \n")
+
+# print(' ## RA myo: Executing distance map again ## \n')
+# RA_BP_DistMap = distance_map(path2points+'seg_s3hi.nrrd',RA_BP_label)
+# print(' ## RA myo: Writing temporary image ## \n')
+# sitk.WriteImage(RA_BP_DistMap,path2points+'/tmp/RA_BP_DistMap.nrrd',True)
+
+# print(' ## RA myo: Thresholding distance filter ## \n')
+# RA_myo = threshold_filter_nrrd(path2points+'/tmp/RA_BP_DistMap.nrrd',0,RA_WT)
+# sitk.WriteImage(RA_myo,path2points+'/tmp/RA_myo.nrrd',True)
+
+# print(' ## RA myo: Adding right atrial myocardium to segmentation ## \n')
+# RA_myo_array, header = nrrd.read(path2points+'/tmp/RA_myo.nrrd')
+# seg_s3hi_array, header = nrrd.read(path2points+'seg_s3hi.nrrd')
+# RA_myo_array = add_masks_replace(RA_myo_array,RA_myo_array,RA_myo_label)
+# seg_s3i_array = add_masks_replace_only(seg_s3hi_array,RA_myo_array,RA_myo_label,RPV1_label)
+
 # ----------------------------------------------------------------------------------------------
 # Create the RA myocardium
 # ----------------------------------------------------------------------------------------------
 print(' ## Step 7/10: Creating the right atrial myocardium: ## \n')
 print(' ## RA myo: Executing distance map ## \n')
 RA_BP_DistMap = distance_map(path2points+'seg_s3h.nrrd',RA_BP_label)
-print(' ## RA myo: Writing temporary image ## \n')
-sitk.WriteImage(RA_BP_DistMap,path2points+'/tmp/RA_BP_DistMap_for_pads.nrrd',True)
-
-print(' ## RA myo: Thresholding distance filter ## \n')
-SVC_pad = threshold_filter_nrrd(path2points+'/tmp/RA_BP_DistMap_for_pads.nrrd',0,svc_ivc_pad)
-sitk.WriteImage(SVC_pad,path2points+'/tmp/SVC_pad.nrrd',True)
-
-print(' ## RA myo: Adding SVC pad to segmentation ## \n')
-SVC_pad_array, header = nrrd.read(path2points+'/tmp/SVC_pad.nrrd')
-seg_s3h_array, header = nrrd.read(path2points+'seg_s3h.nrrd')
-SVC_pad_array = and_filter(seg_s3h_array,SVC_pad_array,SVC_label,RA_BP_label)
-
-print(' ## RA myo: Adding IVC pad to segmentation ## \n')
-IVC_pad_array, header = nrrd.read(path2points+'/tmp/SVC_pad.nrrd')
-seg_s3h_array, header = nrrd.read(path2points+'seg_s3h.nrrd')
-IVC_pad_array = and_filter(seg_s3h_array,IVC_pad_array,IVC_label,RA_BP_label)
-
-seg_s3hi_array = add_masks_replace_only(seg_s3h_array,SVC_pad_array,RA_BP_label,SVC_label)
-seg_s3hi_array = add_masks_replace_only(seg_s3hi_array,IVC_pad_array,RA_BP_label,IVC_label)
-
-print(' ## RA myo: Formatting and saving the segmentation ## \n')
-seg_s3hi_array = np.swapaxes(seg_s3hi_array,0,2)
-save_itk(seg_s3hi_array, origin, spacings, path2points+'/seg_s3hi.nrrd')
-print(" ## RA myo: Saved segmentation with SVC/IVC pads added ## \n")
-
-print(' ## RA myo: Executing distance map again ## \n')
-RA_BP_DistMap = distance_map(path2points+'seg_s3hi.nrrd',RA_BP_label)
 print(' ## RA myo: Writing temporary image ## \n')
 sitk.WriteImage(RA_BP_DistMap,path2points+'/tmp/RA_BP_DistMap.nrrd',True)
 
@@ -327,7 +346,7 @@ sitk.WriteImage(RA_myo,path2points+'/tmp/RA_myo.nrrd',True)
 
 print(' ## RA myo: Adding right atrial myocardium to segmentation ## \n')
 RA_myo_array, header = nrrd.read(path2points+'/tmp/RA_myo.nrrd')
-seg_s3hi_array, header = nrrd.read(path2points+'seg_s3hi.nrrd')
+seg_s3hi_array, header = nrrd.read(path2points+'seg_s3h.nrrd')
 RA_myo_array = add_masks_replace(RA_myo_array,RA_myo_array,RA_myo_label)
 seg_s3i_array = add_masks_replace_only(seg_s3hi_array,RA_myo_array,RA_myo_label,RPV1_label)
 
@@ -358,6 +377,13 @@ print(" ## RA myo: Saved segmentation with right atrium pushed by the left atriu
 # ----------------------------------------------------------------------------------------------
 print(' ## RA myo: Pushing the right atrium with the aorta ## \n')
 seg_s3k_array = push_inside(path2points,path2points+'seg_s3j.nrrd',Ao_wall_label,RA_myo_label,RA_BP_label,RA_WT)
+
+print(' ## RA myo: Formatting and saving the segmentation ## \n')
+seg_s3k_array = np.swapaxes(seg_s3k_array,0,2)
+save_itk(seg_s3k_array, origin, spacings, path2points+'/seg_s3k.nrrd')
+print(" ## RA myo: Saved segmentation with right atrium pushed by the aorta ## \n")
+
+seg_s3k_array = push_inside(path2points,path2points+'seg_s3k.nrrd',Ao_wall_label,RA_myo_label,SVC_label,RA_WT)
 
 # ----------------------------------------------------------------------------------------------
 # Format and save the segmentation
