@@ -11,6 +11,12 @@ import multiprocessing as mp
 
 # from scipy import ndimage
 
+def pad_image(img_array):
+  padded_img_array = np.pad(img_array, ((10,10),(10,10),(10,10)), 'constant', constant_values=((0,0),(0,0),(0,0)))
+
+  return padded_img_array
+
+
 def push_inside(path2points,img_nrrd,pusher_wall_lab,pushed_wall_lab,pushed_BP_lab,pushed_WT):
   # distance map of the pusher wall
   pusher_wall_DistMap = distance_map(img_nrrd,pusher_wall_lab)
