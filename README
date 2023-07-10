@@ -69,41 +69,6 @@ Meshing
 
 4) Run “bash mesh_post.sh /heart_folder” ## watch out mesh tool path currently hard-coded ##
 
-=========================================================================================================
-UVCs
-=========================================================================================================
-1) Run “bash surfaces_extraction_uvc.sh /heart_folder”
-	a. Note: the base number in “pick apex” refers to the LA in the segmentation (104) so watch out for this step if segmentation labels change
-
-2) Run “extract_bivmesh_uvc.sh /heart_folder” – watch out – scriptsPath hardcoded
-
-3) Run “runUVC.sh /heart_folder”
-
-4) Run “surfaces_extraction_fibres_la.sh /heart_folder”
-
-5) Run “extract_la.sh /heart_folder”
-
-6) Use “la.vtk” to select points for the la apex and la septum
-7) Run “runUVC_la.sh /heart_folder”
- 
-8) Run “surfaces_extraction_fibres_ra.sh /heart_folder”
-
-9) Run “extract_ra.sh /heart_folder”
-
-10) Use “ra.vtk” to select points for the ra apex and ra septum 
-11) Run “runUVC_ra.sh /heart_folder”
-
-==========
-Ventricular fibres
-==========
-
-==========
-Atrial fibres
-=========
-
-=========
-Pre-sim
-=========
 
 
 
