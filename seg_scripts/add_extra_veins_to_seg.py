@@ -30,15 +30,15 @@ spacings = origin_spacing_data['spacing']
 LV_BP_label = 1
 LV_myo_label = 2
 RV_BP_label = 3
-LA_BP_label = 4
-RA_BP_label = 5
-Ao_BP_label = 6
-PArt_BP_label = 7
-LPV1_label = 8
-LPV2_label = 9
-RPV1_label = 10
-RPV2_label = 11
-LAA_label = 12
+LA_BP_label = 8
+RA_BP_label = 4
+Ao_BP_label = 5
+PArt_BP_label = 6
+LPV1_label = 9
+LPV2_label = 12
+RPV1_label = 7
+RPV2_label = 10
+LAA_label = 11
 SVC_label = 13
 IVC_label = 14
 
@@ -46,6 +46,11 @@ IVC_label = 14
 # Give the path to the segmentation (with pulmonary veins separated)
 # ----------------------------------------------------------------------------------------------
 seg_corrected_nrrd = path2points+'/seg_corrected.nrrd'
+
+# seg_array, header = nrrd.read(seg_corrected_nrrd)
+
+# We read the image with Simple ITK so we don't lose the header information.
+seg_array = sitk.ReadImage(seg_corrected_nrrd)
 
 # ----------------------------------------------------------------------------------------------
 # Give the paths to the SVC/IVC cylinders and the aorta/pulmonary artery slicers
@@ -72,11 +77,11 @@ LAA_array, header6 = nrrd.read(LAA_nrrd)
 # Add the SVC and IVC 
 # ----------------------------------------------------------------------------------------------
 print('\n ## Adding the extra veins ## \n')
-seg_corrected_array = add_masks(seg_corrected_array, LSPV_array, LPV1_label)
+# seg_corrected_array = add_masks(seg_corrected_array, LSPV_array, LPV1_label)
 seg_corrected_array = add_masks(seg_corrected_array, LIPV_array, LPV2_label)
-seg_corrected_array = add_masks(seg_corrected_array, RSPV_array, RPV1_label)
-seg_corrected_array = add_masks(seg_corrected_array, RIPV_array, RPV2_label)
-seg_corrected_array = add_masks(seg_corrected_array, LAA_array, LAA_label)
+# seg_corrected_array = add_masks(seg_corrected_array, RSPV_array, RPV1_label)
+# seg_corrected_array = add_masks(seg_corrected_array, RIPV_array, RPV2_label)
+# seg_corrected_array = add_masks(seg_corrected_array, LAA_array, LAA_label)
 
 
 # ----------------------------------------------------------------------------------------------
@@ -84,5 +89,6 @@ seg_corrected_array = add_masks(seg_corrected_array, LAA_array, LAA_label)
 # ----------------------------------------------------------------------------------------------
 print(' ## Formatting and saving the segmentation ##')
 seg_corrected_array = np.swapaxes(seg_corrected_array,0,2)
-save_itk(seg_corrected_array, origin, spacings, path2points+'/seg_corrected.nrrd')
+# save_itk(seg_corrected_array, origin, spacings, path2points+'/seg_corrected.nrrd')
+save_itk_keeping_header(new_image = seg_corrected_array, original_image=seg_array, filename=path2points+'/seg_corrected.nrrd')
 print(" ## Saved segmentation with extra veins added ##")
