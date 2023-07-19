@@ -355,3 +355,15 @@ def save_itk(image_array, origin, spacing, filename):
   itkimage=array2itk(image_array, origin, spacing)
   sitk.WriteImage(itkimage, filename, True)
 
+def save_itk_keeping_header(new_image, original_image, filename):
+  """
+  Function to save an image (new image) using the header information of another image (original image). 
+  Not needed for CT images, needed for MRI images.
+
+  new_image (numpy array): Array with the values of the image to save
+  original image (Simple ITK image): image that we use as reference to extract the header information from.
+  filename (str): Full path to save the image.
+  """
+  itkimage=sitk.GetImageFromArray(new_image, isVector=False)
+  itkimage.CopyInformation(original_image)
+  sitk.WriteImage(itkimage, filename, True)
