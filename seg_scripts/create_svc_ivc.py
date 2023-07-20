@@ -63,6 +63,8 @@ PArt_slicer_label = 0
 # ----------------------------------------------------------------------------------------------
 # Convert all of the segmentations to arrays
 # ----------------------------------------------------------------------------------------------
+seg_array = sitk.ReadImage(seg_corrected_nrrd)
+
 seg_s2_array, header1 = nrrd.read(seg_corrected_nrrd)
 svc_array, header2 = nrrd.read(svc_nrrd)
 ivc_array, header3 = nrrd.read(ivc_nrrd)
@@ -81,5 +83,6 @@ seg_s2a_array = add_masks(seg_s2a_array, ivc_array, IVC_label)
 # ----------------------------------------------------------------------------------------------
 print(' ## Formatting and saving the segmentation ##')
 seg_s2a_array = np.swapaxes(seg_s2a_array,0,2)
-save_itk(seg_s2a_array, origin, spacings, path2points+'/seg_s2a.nrrd')
+# save_itk(seg_s2a_array, origin, spacings, path2points+'/seg_s2a.nrrd')
+save_itk_keeping_header(new_image=seg_s2a_array, original_image=seg_array, filename=path2points+'/seg_s2a.nrrd')
 print(" ## Saved segmentation with SVC/IVC added ##")

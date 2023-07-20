@@ -96,6 +96,11 @@ IVC_ring_label = 227
 Ao_wall_tip_seed = points_data['Ao_WT_tip']
 PArt_wall_tip_seed = points_data['PArt_WT_tip']
 
+# ---------------------------------------------------------------------
+# Reference for the header
+# ---------------------------------------------------------------------
+seg_array_good_header = sitk.ReadImage(path2points+'/seg_s2a.nrrd')
+
 # ----------------------------------------------------------------------------------------------
 # Removing parts of Ao and PArt wall remaining from cropping 
 # ----------------------------------------------------------------------------------------------
@@ -103,12 +108,16 @@ print('\n ## Step 1/8: Cropping major vessels ## \n')
 print(' ## Cropping major vessels: Removing remaining wall segments ## \n')
 seg_s3r_array = connected_component(path2points+'seg_s3p.nrrd', Ao_wall_tip_seed, Ao_wall_label,path2points)
 seg_s3r_array = np.swapaxes(seg_s3r_array,0,2)
-save_itk(seg_s3r_array, origin, spacings, path2points+'/seg_s3r.nrrd')
+# save_itk(seg_s3r_array, origin, spacings, path2points+'/seg_s3r.nrrd')
+save_itk_keeping_header(new_image=seg_s3r_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3r.nrrd')
+
 print(" ## Cropping major vessels: Saved segmentation with aorta cropped ## \n")
 
 seg_s3s_array = connected_component(path2points+'seg_s3r.nrrd', PArt_wall_tip_seed, PArt_wall_label,path2points)
 seg_s3s_array = np.swapaxes(seg_s3s_array,0,2)
-save_itk(seg_s3s_array, origin, spacings, path2points+'/seg_s3s.nrrd')
+# save_itk(seg_s3s_array, origin, spacings, path2points+'/seg_s3s.nrrd')
+save_itk_keeping_header(new_image=seg_s3s_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3s.nrrd')
+
 print(" ## Cropping major vessels: Saved segmentation with pulmonary artery cropped ## \n")
 
 # ----------------------------------------------------------------------------------------------
@@ -135,7 +144,9 @@ seg_s4a_array = add_masks_replace(seg_s3s_array,MV_array,MV_label)
 # ----------------------------------------------------------------------------------------------
 print(' ## MV: Formatting and saving the segmentation ## \n')
 seg_s4a_array = np.swapaxes(seg_s4a_array,0,2)
-save_itk(seg_s4a_array, origin, spacings, path2points+'/seg_s4a.nrrd')
+# save_itk(seg_s4a_array, origin, spacings, path2points+'/seg_s4a.nrrd')
+save_itk_keeping_header(new_image=seg_s4a_array, original_image=seg_array_good_header, filename=path2points+'/seg_s4a.nrrd')
+
 print(" ## MV: Saved segmentation with mitral valve added ## \n")
 
 # ----------------------------------------------------------------------------------------------
@@ -162,7 +173,9 @@ seg_s4b_array = add_masks_replace(seg_s4a_array,LA_myo_extra_array,LA_myo_label)
 # ----------------------------------------------------------------------------------------------
 print(' ## MV corrections: Formatting and saving the segmentation ## \n')
 seg_s4b_array = np.swapaxes(seg_s4b_array,0,2)
-save_itk(seg_s4b_array, origin, spacings, path2points+'/seg_s4b.nrrd')
+# save_itk(seg_s4b_array, origin, spacings, path2points+'/seg_s4b.nrrd')
+save_itk_keeping_header(new_image=seg_s4b_array, original_image=seg_array_good_header, filename=path2points+'/seg_s4b.nrrd')
+
 print(" ## MV extra: Saved segmentation with holes closed around mitral valve ## \n")
 
 # ----------------------------------------------------------------------------------------------
@@ -189,7 +202,9 @@ seg_s4c_array = add_masks_replace(seg_s4b_array,TV_array,TV_label)
 # ----------------------------------------------------------------------------------------------
 print(' ## TV: Formatting and saving the segmentation ## \n')
 seg_s4c_array = np.swapaxes(seg_s4c_array,0,2)
-save_itk(seg_s4c_array, origin, spacings, path2points+'/seg_s4c.nrrd')
+# save_itk(seg_s4c_array, origin, spacings, path2points+'/seg_s4c.nrrd')
+save_itk_keeping_header(new_image=seg_s4c_array, original_image=seg_array_good_header, filename=path2points+'/seg_s4c.nrrd')
+
 print(" ## TV: Saved segmentation with tricuspid valve added ## \n")
 
 # ----------------------------------------------------------------------------------------------
@@ -216,7 +231,9 @@ seg_s4d_array = add_masks_replace(seg_s4c_array,RA_myo_extra_array,RA_myo_label)
 # ----------------------------------------------------------------------------------------------
 print(' ## TV corrections: Formatting and saving the segmentation ## \n')
 seg_s4d_array = np.swapaxes(seg_s4d_array,0,2)
-save_itk(seg_s4d_array, origin, spacings, path2points+'/seg_s4d.nrrd')
+# save_itk(seg_s4d_array, origin, spacings, path2points+'/seg_s4d.nrrd')
+save_itk_keeping_header(new_image=seg_s4d_array, original_image=seg_array_good_header, filename=path2points+'/seg_s4d.nrrd')
+
 print(" ## TV corrections: Saved segmentation with holes closed around tricuspid valve ## \n")
 
 # ----------------------------------------------------------------------------------------------
@@ -243,7 +260,9 @@ seg_s4e_array = add_masks_replace(seg_s4d_array,AV_array,AV_label)
 # ----------------------------------------------------------------------------------------------
 print(' ## AV: Formatting and saving the segmentation ## \n')
 seg_s4e_array = np.swapaxes(seg_s4e_array,0,2)
-save_itk(seg_s4e_array, origin, spacings, path2points+'/seg_s4e.nrrd')
+# save_itk(seg_s4e_array, origin, spacings, path2points+'/seg_s4e.nrrd')
+save_itk_keeping_header(new_image=seg_s4e_array, original_image=seg_array_good_header, filename=path2points+'/seg_s4e.nrrd')
+
 print(" ## AV: Saved segmentation with aortic valve added ## \n")
 
 # ----------------------------------------------------------------------------------------------
@@ -266,7 +285,9 @@ seg_s4f_array = add_masks_replace(seg_s4e_array,Ao_wall_extra_array,Ao_wall_labe
 # ----------------------------------------------------------------------------------------------
 print(' ## AV corrections: Formatting and saving the segmentation ## \n')
 seg_s4f_array = np.swapaxes(seg_s4f_array,0,2)
-save_itk(seg_s4f_array, origin, spacings, path2points+'/seg_s4f.nrrd')
+# save_itk(seg_s4f_array, origin, spacings, path2points+'/seg_s4f.nrrd')
+save_itk_keeping_header(new_image=seg_s4f_array, original_image=seg_array_good_header, filename=path2points+'/seg_s4f.nrrd')
+
 print(" ## AV corrections: Saved segmentation with holes closed around aortic valve ## \n")
 
 # ----------------------------------------------------------------------------------------------
@@ -293,7 +314,9 @@ seg_s4f_array = add_masks_replace(seg_s4f_array,AV_sep_array,LV_myo_label)
 # ----------------------------------------------------------------------------------------------
 print(' ## AV: Formatting and saving the segmentation ## \n')
 seg_s4f_array = np.swapaxes(seg_s4f_array,0,2)
-save_itk(seg_s4f_array, origin, spacings, path2points+'/seg_s4f.nrrd')
+# save_itk(seg_s4f_array, origin, spacings, path2points+'/seg_s4f.nrrd')
+save_itk_keeping_header(new_image=seg_s4f_array, original_image=seg_array_good_header, filename=path2points+'/seg_s4f.nrrd')
+
 print(" ## AV: Saved segmentation with AV and MV separated ## \n")
 
 # ----------------------------------------------------------------------------------------------
@@ -320,7 +343,9 @@ seg_s4ff_array = add_masks_replace(seg_s4ff_array,LA_myo_extra_array,LA_myo_labe
 # ----------------------------------------------------------------------------------------------
 print(' ## MV corrections: Formatting and saving the segmentation ## \n')
 seg_s4ff_array = np.swapaxes(seg_s4ff_array,0,2)
-save_itk(seg_s4ff_array, origin, spacings, path2points+'/seg_s4ff.nrrd')
+# save_itk(seg_s4ff_array, origin, spacings, path2points+'/seg_s4ff.nrrd')
+save_itk_keeping_header(new_image=seg_s4ff_array, original_image=seg_array_good_header, filename=path2points+'/seg_s4ff.nrrd')
+
 print(" ## MV extra: Saved segmentation with holes closed around mitral valve ## \n")
 
 # ----------------------------------------------------------------------------------------------
@@ -347,7 +372,9 @@ seg_s4g_array = add_masks_replace(seg_s4ff_array,PV_array,PV_label)
 # ----------------------------------------------------------------------------------------------
 print(' ## PV: Formatting and saving the segmentation ## \n')
 seg_s4g_array = np.swapaxes(seg_s4g_array,0,2)
-save_itk(seg_s4g_array, origin, spacings, path2points+'/seg_s4g.nrrd')
+# save_itk(seg_s4g_array, origin, spacings, path2points+'/seg_s4g.nrrd')
+save_itk_keeping_header(new_image=seg_s4g_array, original_image=seg_array_good_header, filename=path2points+'/seg_s4g.nrrd')
+
 print(" ## PV: Saved segmentation with pulmonary valve added ## \n")
 
 # ----------------------------------------------------------------------------------------------
@@ -370,7 +397,9 @@ seg_s4h_array = add_masks_replace(seg_s4g_array,PArt_wall_extra_array,PArt_wall_
 # ----------------------------------------------------------------------------------------------
 print(' ## PV corrections: Formatting and saving the segmentation ## \n')
 seg_s4h_array = np.swapaxes(seg_s4h_array,0,2)
-save_itk(seg_s4h_array, origin, spacings, path2points+'/seg_s4h.nrrd')
+# save_itk(seg_s4h_array, origin, spacings, path2points+'/seg_s4h.nrrd')
+save_itk_keeping_header(new_image=seg_s4h_array, original_image=seg_array_good_header, filename=path2points+'/seg_s4h.nrrd')
+
 print(" ## PV corrections: Saved segmentation with holes closed around pulmonary valve ## \n")
 
 # ----------------------------------------------------------------------------------------------
@@ -542,7 +571,9 @@ seg_s4j_array = add_masks_replace(seg_s4j_array,IVC_ring_array,IVC_ring_label)
 # ----------------------------------------------------------------------------------------------
 print(' ## Vein rings: Formatting and saving the segmentation ## \n')
 seg_s4i_array = np.swapaxes(seg_s4i_array,0,2)
-save_itk(seg_s4i_array, origin, spacings, path2points+'/seg_s4i.nrrd')
+# save_itk(seg_s4i_array, origin, spacings, path2points+'/seg_s4i.nrrd')
+save_itk_keeping_header(new_image=seg_s4i_array, original_image=seg_array_good_header, filename=path2points+'/seg_s4i.nrrd')
+
 print(" ## Vein rings: Saved segmentation with veins rings added ## \n")
 
 # ----------------------------------------------------------------------------------------------
@@ -550,7 +581,9 @@ print(" ## Vein rings: Saved segmentation with veins rings added ## \n")
 # ----------------------------------------------------------------------------------------------
 print(' ## Cutting vein rings: Formatting and saving the segmentation ## \n')
 seg_s4j_array = np.swapaxes(seg_s4j_array,0,2)
-save_itk(seg_s4j_array, origin, spacings, path2points+'/seg_s4j.nrrd')
+# save_itk(seg_s4j_array, origin, spacings, path2points+'/seg_s4j.nrrd')
+save_itk_keeping_header(new_image=seg_s4j_array, original_image=seg_array_good_header, filename=path2points+'/seg_s4j.nrrd')
+
 print(" ## Cutting vein rings: Saved segmentation with veins rings added ## \n")
 
 # ----------------------------------------------------------------------------------------------
@@ -618,6 +651,8 @@ seg_s4k_array = add_masks_replace(seg_s4k_array,plane_IVC_array,plane_IVC_label)
 # ----------------------------------------------------------------------------------------------
 print(' ## Valve planes: Formatting and saving the segmentation ## \n')
 seg_s4k_array = np.swapaxes(seg_s4k_array,0,2)
-save_itk(seg_s4k_array, origin, spacings, path2points+'/seg_s4k.nrrd')
+# save_itk(seg_s4k_array, origin, spacings, path2points+'/seg_s4k.nrrd')
+save_itk_keeping_header(new_image=seg_s4k_array, original_image=seg_array_good_header, filename=path2points+'/seg_s4k.nrrd')
+
 print(" ## Valve planes: Saved segmentation with all valve planes added ## \n")
 

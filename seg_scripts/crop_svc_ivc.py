@@ -114,16 +114,24 @@ PArt_slicer_array, header = nrrd.read(PArt_slicer_nrrd)
 SVC_slicer_array, header = nrrd.read(SVC_slicer_nrrd)
 IVC_slicer_array, header = nrrd.read(IVC_slicer_nrrd)
 
+# ----------------------------------------------------------------------------------------------------
+# Read the segmentation with the right header
+# --------------------------------------------------------------------------------------------
+seg_array_good_header = sitk.ReadImage(path2points+'/seg_s2a.nrrd')
+
 # ----------------------------------------------------------------------------------------------
 # Remove protruding SVC/IVC and add the slicers
 # ----------------------------------------------------------------------------------------------
 print(' ## Removing any protruding SVC/IVC ## \n')
 seg_s2b_array = connected_component_keep(path2points+'/seg_s2a.nrrd', SVC_seed, SVC_label,path2points)
 seg_s2b_array = np.swapaxes(seg_s2b_array,0,2)
-save_itk(seg_s2b_array, origin, spacings, path2points+'/seg_s2b.nrrd')
+# save_itk(seg_s2b_array, origin, spacings, path2points+'/seg_s2b.nrrd')
+save_itk_keeping_header(new_image=seg_s2b_array, original_image=seg_array_good_header, filename=path2points+'/seg_s2b.nrrd')
 seg_s2c_array = connected_component_keep(path2points+'/seg_s2b.nrrd', IVC_seed, IVC_label,path2points)
 seg_s2c_array = np.swapaxes(seg_s2c_array,0,2)
-save_itk(seg_s2c_array, origin, spacings, path2points+'/seg_s2c.nrrd')
+# save_itk(seg_s2c_array, origin, spacings, path2points+'/seg_s2c.nrrd')
+save_itk_keeping_header(new_image=seg_s2c_array, original_image=seg_array_good_header, filename=path2points+'/seg_s2c.nrrd')
+
 
 seg_s2c_array, header1 = nrrd.read(path2points+'/seg_s2c.nrrd')
 seg_s2d_array = add_masks_replace_only(seg_s2c_array, aorta_slicer_array, aorta_slicer_label, Ao_BP_label)
@@ -140,7 +148,9 @@ seg_s2d_array = add_masks_replace_only(seg_s2d_array, new_RA_array, RA_BP_label,
 # ----------------------------------------------------------------------------------------------
 print(' ## Formatting and saving the segmentation ##')
 seg_s2d_array = np.swapaxes(seg_s2d_array,0,2)
-save_itk(seg_s2d_array, origin, spacings, path2points+'/seg_s2d.nrrd')
+# save_itk(seg_s2d_array, origin, spacings, path2points+'/seg_s2d.nrrd')
+save_itk_keeping_header(new_image=seg_s2d_array, original_image=seg_array_good_header, filename=path2points+'/seg_s2d.nrrd')
+
 print(" ## Saved segmentation with SVC/IVC added and aorta/pulmonary artery cropped ##")
 
 # ----------------------------------------------------------------------------------------------
@@ -153,7 +163,9 @@ CC_array, header = nrrd.read(path2points+'/tmp/CC.nrrd')
 seg_s2e_array = add_masks_replace(seg_s2e_array, CC_array, SVC_label)
 
 seg_s2e_array = np.swapaxes(seg_s2e_array,0,2)
-save_itk(seg_s2e_array, origin, spacings, path2points+'/seg_s2e.nrrd')
+# save_itk(seg_s2e_array, origin, spacings, path2points+'/seg_s2e.nrrd')
+save_itk_keeping_header(new_image=seg_s2e_array, original_image=seg_array_good_header, filename=path2points+'/seg_s2e.nrrd')
+
 
 seg_s2f_array = connected_component(path2points+'/seg_s2e.nrrd', IVC_seed, IVC_label,path2points)
 seg_s2f_array = add_masks_replace_only(seg_s2f_array,seg_s2f_array,RA_BP_label,IVC_label)
@@ -161,4 +173,5 @@ CC_array, header = nrrd.read(path2points+'/tmp/CC.nrrd')
 seg_s2f_array = add_masks_replace(seg_s2f_array, CC_array, IVC_label)
 
 seg_s2f_array = np.swapaxes(seg_s2f_array,0,2)
-save_itk(seg_s2f_array, origin, spacings, path2points+'/seg_s2f.nrrd')
+# save_itk(seg_s2f_array, origin, spacings, path2points+'/seg_s2f.nrrd')
+save_itk_keeping_header(new_image=seg_s2f_array, original_image=seg_array_good_header, filename=path2points+'/seg_s2f.nrrd')
