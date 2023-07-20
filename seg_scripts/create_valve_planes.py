@@ -36,7 +36,8 @@ spacings = origin_spacing_data['spacing']
 # ----------------------------------------------------------------------------------------------
 # Define the wall thickness
 # ----------------------------------------------------------------------------------------------
-sf = 1/0.39844 # scale factor
+# sf = 1/0.39844 # scale factor
+sf = 1.0/spacings[0] # scale factor
 
 valve_WT = sf*4
 valve_WT_svc_ivc = sf*4
