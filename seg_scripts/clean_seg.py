@@ -12,6 +12,7 @@ from img import threshold_filter_nrrd
 from img import push_inside
 from img import remove_filter
 from img import and_filter
+from img import save_itk_keeping_header
 import SimpleITK as sitk
 
 import numpy as np
@@ -42,6 +43,11 @@ origin_spacing_file = open(path2points+'/origin_spacing.json')
 origin_spacing_data = json.load(origin_spacing_file)
 origin = origin_spacing_data['origin']
 spacings = origin_spacing_data['spacing']
+
+# ---------------------------------------------------------------------
+# Reference for the header
+# ---------------------------------------------------------------------
+seg_array_good_header = sitk.ReadImage(path2points+'/seg_s2a.nrrd')
 
 # ----------------------------------------------------------------------------------------------
 # Define the wall thickness
@@ -117,7 +123,9 @@ os.system("cp "+path2points+"/seg_s4k.nrrd "+path2points+"/seg_s5.nrrd")
 print(' ## Correcting rings: Pushing RPV2_ring with RPV1_ring ## \n')
 seg_s5_array = push_inside(path2points,path2points+'seg_s5.nrrd',RPV1_ring_label,RPV2_ring_label,RPV2_label,ring_thickness)
 seg_s5_array = np.swapaxes(seg_s5_array,0,2)
-save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
+# save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
+save_itk_keeping_header(new_image=seg_s5_array, original_image=seg_array_good_header, filename=path2points+'/seg_s5.nrrd')
+
 print(" ## Correcting rings: Formatted and saved segmentation ## \n")
 
 # ----------------------------------------------------------------------------------------------
@@ -126,7 +134,9 @@ print(" ## Correcting rings: Formatted and saved segmentation ## \n")
 print(' ## Correcting rings: Pushing LPV2_ring with LPV1_ring ## \n')
 seg_s5_array = push_inside(path2points,path2points+'seg_s5.nrrd',LPV1_ring_label,LPV2_ring_label,LPV2_label,ring_thickness)
 seg_s5_array = np.swapaxes(seg_s5_array,0,2)
-save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
+# save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
+save_itk_keeping_header(new_image=seg_s5_array, original_image=seg_array_good_header, filename=path2points+'/seg_s5.nrrd')
+
 print(" ## Correcting rings: Formatted and saved segmentation ## \n")
 
 # ----------------------------------------------------------------------------------------------
@@ -135,7 +145,9 @@ print(" ## Correcting rings: Formatted and saved segmentation ## \n")
 print(' ## Correcting rings: Pushing LAA_ring with LPV1_ring ## \n')
 seg_s5_array = push_inside(path2points,path2points+'seg_s5.nrrd',LPV1_ring_label,LAA_ring_label,LAA_label,ring_thickness)
 seg_s5_array = np.swapaxes(seg_s5_array,0,2)
-save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
+# save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
+save_itk_keeping_header(new_image=seg_s5_array, original_image=seg_array_good_header, filename=path2points+'/seg_s5.nrrd')
+
 print(" ## Correcting rings: Formatted and saved segmentation ## \n")
 
 # # ----------------------------------------------------------------------------------------------
@@ -153,7 +165,9 @@ print(" ## Correcting rings: Formatted and saved segmentation ## \n")
 print(' ## Pushing Ao wall with RV_myo ## \n')
 seg_s5_array = push_inside(path2points,path2points+'seg_s5.nrrd',RV_myo_label,Ao_wall_label,Ao_BP_label,Ao_WT)
 seg_s5_array = np.swapaxes(seg_s5_array,0,2)
-save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
+# save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
+save_itk_keeping_header(new_image=seg_s5_array, original_image=seg_array_good_header, filename=path2points+'/seg_s5.nrrd')
+
 print(" ## Correcting rings: Formatted and saved segmentation ## \n")
 
 # ----------------------------------------------------------------------------------------------
@@ -162,6 +176,8 @@ print(" ## Correcting rings: Formatted and saved segmentation ## \n")
 print(' ## Pushing LA_myo with SVC_ring ## \n')
 seg_s5_array = push_inside(path2points,path2points+'seg_s5.nrrd',SVC_ring_label,LA_myo_label,LA_BP_label,LA_WT)
 seg_s5_array = np.swapaxes(seg_s5_array,0,2)
-save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
+# save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
+save_itk_keeping_header(new_image=seg_s5_array, original_image=seg_array_good_header, filename=path2points+'/seg_s5.nrrd')
+
 print(" ## Correcting rings: Formatted and saved segmentation ## \n")
 
