@@ -46,7 +46,7 @@ spacings = origin_spacing_data['spacing']
 # Define the wall thickness
 # ----------------------------------------------------------------------------------------------
 # sf = 1/0.39844 # scale factor
-sf = 1.0/spacings[0] # scale factor
+sf = np.ceil(1.0/spacings[0]) # scale factor
 
 valve_WT = sf*2.5
 ring_thickness = sf*4
