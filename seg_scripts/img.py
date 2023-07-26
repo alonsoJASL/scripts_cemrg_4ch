@@ -356,14 +356,52 @@ def save_itk(image_array, origin, spacing, filename):
   sitk.WriteImage(itkimage, filename, True)
 
 def save_itk_keeping_header(new_image, original_image, filename):
-  """
-  Function to save an image (new image) using the header information of another image (original image). 
-  Not needed for CT images, needed for MRI images.
 
-  new_image (numpy array): Array with the values of the image to save
-  original image (Simple ITK image): image that we use as reference to extract the header information from.
-  filename (str): Full path to save the image.
-  """
-  itkimage=sitk.GetImageFromArray(new_image, isVector=False)
-  itkimage.CopyInformation(original_image)
-  sitk.WriteImage(itkimage, filename, True)
+  image_bad_header_itk=sitk.ReadImage(new_image)
+  image_good_header=sitk.ReadImage(original_image)
+
+  image_bad_header_itk.CopyInformation(image_good_header)
+
+  image_bad_header_itk.SetDirection(image_good_header.GetDirection())
+  image_bad_header_itk.SetOrigin(image_good_header.GetOrigin())
+  [image_bad_header_itk.SetMetaData(key,image_good_header.GetMetaData(key)) for key in image_good_header.GetMetaDataKeys()]
+
+  sitk.WriteImage(image_bad_header_itk, filename, True)
+
+def transfer_header_keeping_spacings(image_bad_header_path,image_good_header_path,new_image_path):
+  
+  image_bad_header_itk=sitk.ReadImage(image_bad_header_path)
+  image_good_header=sitk.ReadImage(image_good_header_path)
+  
+  image_bad_header_itk.SetSpacing(image_bad_header_itk.GetSpacing())
+  image_bad_header_itk.SetDirection(image_good_header.GetDirection())
+
+  sitk.WriteImage(image_bad_header_itk, new_image_path, True)
+
+
+def resample_img(itk_image_path="/media/croderog/SeagateExpansionDrive/010_001_TREDHF/segmentations/seg_corrected.nrrd", out_spacing=[0.5, 0.5, 0.5], new_image_path="/media/croderog/SeagateExpansionDrive/010_001_TREDHF/segmentations/seg_corrected_smooth_good_header.nrrd"):
+    
+    itk_image=sitk.ReadImage(itk_image_path)
+    
+    # Resample images to 2mm spacing with SimpleITK
+    original_spacing = itk_image.GetSpacing()
+    original_size = itk_image.GetSize()
+
+    out_size = [
+        int(np.round(original_size[0] * (original_spacing[0] / out_spacing[0]))),
+        int(np.round(original_size[1] * (original_spacing[1] / out_spacing[1]))),
+        int(np.round(original_size[2] * (original_spacing[2] / out_spacing[2])))]
+
+    resample = sitk.ResampleImageFilter()
+    resample.SetOutputSpacing(out_spacing)
+    resample.SetSize(out_size)
+    
+    resample.SetOutputOrigin(itk_image.GetOrigin())
+    resample.SetTransform(sitk.Transform())
+    resample.SetDefaultPixelValue(itk_image.GetPixelIDValue())
+
+    resample.SetInterpolator(sitk.sitkNearestNeighbor)
+
+    final_image=resample.Execute(itk_image)
+
+    sitk.WriteImage(final_image, new_image_path, True)
