@@ -119,14 +119,14 @@ spacing = origin_data["spacing"]
 seg_name = path2points+"/seg_corrected.nrrd"
 
 # LSPV
-pts1 = points_data['LSPV_1']
-pts2 = points_data['LSPV_2']
-pts3 = points_data['LSPV_3']
-points = np.row_stack((pts1,pts2,pts3))
+# pts1 = points_data['LSPV_1']
+# pts2 = points_data['LSPV_2']
+# pts3 = points_data['LSPV_3']
+# points = np.row_stack((pts1,pts2,pts3))
 
-slicer_radius = 5
-slicer_height = 15
-cylinder(seg_name,points,path2points+"/LSPV.nrrd",slicer_radius, slicer_height,origin,spacing)
+# slicer_radius = 5
+# slicer_height = 15
+# cylinder(seg_name,points,path2points+"/LSPV.nrrd",slicer_radius, slicer_height,origin,spacing)
 
 # LIPV
 pts1 = points_data['LIPV_1']
@@ -138,32 +138,32 @@ slicer_radius = 5
 slicer_height = 15
 cylinder(seg_name,points,path2points+"/LIPV.nrrd",slicer_radius, slicer_height,origin,spacing)
 
-# RSPV
-pts1 = points_data['RSPV_1']
-pts2 = points_data['RSPV_2']
-pts3 = points_data['RSPV_3']
-points = np.row_stack((pts1,pts2,pts3))
+# # RSPV
+# pts1 = points_data['RSPV_1']
+# pts2 = points_data['RSPV_2']
+# pts3 = points_data['RSPV_3']
+# points = np.row_stack((pts1,pts2,pts3))
 
-slicer_radius = 5
-slicer_height = 15
-cylinder(seg_name,points,path2points+"/RSPV.nrrd",slicer_radius, slicer_height,origin,spacing)
+# slicer_radius = 5
+# slicer_height = 15
+# cylinder(seg_name,points,path2points+"/RSPV.nrrd",slicer_radius, slicer_height,origin,spacing)
 
 # RIPV
-pts1 = points_data['RIPV_1']
-pts2 = points_data['RIPV_2']
-pts3 = points_data['RIPV_3']
-points = np.row_stack((pts1,pts2,pts3))
+# pts1 = points_data['RIPV_1']
+# pts2 = points_data['RIPV_2']
+# pts3 = points_data['RIPV_3']
+# points = np.row_stack((pts1,pts2,pts3))
 
-slicer_radius = 5
-slicer_height = 15
-cylinder(seg_name,points,path2points+"/RIPV.nrrd",slicer_radius, slicer_height,origin,spacing)
+# slicer_radius = 5
+# slicer_height = 15
+# cylinder(seg_name,points,path2points+"/RIPV.nrrd",slicer_radius, slicer_height,origin,spacing)
 
 # LAA
-pts1 = points_data['LAA_1']
-pts2 = points_data['LAA_2']
-pts3 = points_data['LAA_3']
-points = np.row_stack((pts1,pts2,pts3))
+# pts1 = points_data['LAA_1']
+# pts2 = points_data['LAA_2']
+# pts3 = points_data['LAA_3']
+# points = np.row_stack((pts1,pts2,pts3))
 
-slicer_radius = 5
-slicer_height = 15
-cylinder(seg_name,points,path2points+"/LAA.nrrd",slicer_radius, slicer_height,origin,spacing)
+# slicer_radius = 5
+# slicer_height = 15
+# cylinder(seg_name,points,path2points+"/LAA.nrrd",slicer_radius, slicer_height,origin,spacing)
