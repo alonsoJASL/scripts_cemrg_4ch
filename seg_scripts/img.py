@@ -379,29 +379,34 @@ def transfer_header_keeping_spacings(image_bad_header_path,image_good_header_pat
   sitk.WriteImage(image_bad_header_itk, new_image_path, True)
 
 
-def resample_img(itk_image_path="/media/croderog/SeagateExpansionDrive/010_001_TREDHF/segmentations/seg_corrected.nrrd", out_spacing=[0.5, 0.5, 0.5], new_image_path="/media/croderog/SeagateExpansionDrive/010_001_TREDHF/segmentations/seg_corrected_smooth_good_header.nrrd"):
-    
-    itk_image=sitk.ReadImage(itk_image_path)
-    
-    # Resample images to 2mm spacing with SimpleITK
-    original_spacing = itk_image.GetSpacing()
-    original_size = itk_image.GetSize()
+def resample_img(input_image_path="/media/croderog/SeagateExpansionDrive/010_001_TREDHF/segmentations/seg_corrected.nrrd", new_spacing=[0.5, 0.5, 0.5], output_image_path="/media/croderog/SeagateExpansionDrive/010_001_TREDHF/segmentations/seg_corrected_smooth_good_header.nrrd"):
+        # Load the input image
+    input_image = sitk.ReadImage(input_image_path)
 
-    out_size = [
-        int(np.round(original_size[0] * (original_spacing[0] / out_spacing[0]))),
-        int(np.round(original_size[1] * (original_spacing[1] / out_spacing[1]))),
-        int(np.round(original_size[2] * (original_spacing[2] / out_spacing[2])))]
+    # Get the current spacing and size of the image
+    current_spacing = input_image.GetSpacing()
+    current_size = input_image.GetSize()
 
-    resample = sitk.ResampleImageFilter()
-    resample.SetOutputSpacing(out_spacing)
-    resample.SetSize(out_size)
-    
-    resample.SetOutputOrigin(itk_image.GetOrigin())
-    resample.SetTransform(sitk.Transform())
-    resample.SetDefaultPixelValue(itk_image.GetPixelIDValue())
+    # Calculate the resampling factor
+    resampling_factor = [current_spacing[i] / new_spacing[i] for i in range(input_image.GetDimension())]
 
-    resample.SetInterpolator(sitk.sitkNearestNeighbor)
+    # Compute the new size of the image after resampling
+    new_size = [int(current_size[i] * current_spacing[i] / new_spacing[i]) for i in range(input_image.GetDimension())]
 
-    final_image=resample.Execute(itk_image)
+    # Create the resampler
+    resampler = sitk.ResampleImageFilter()
+    resampler.SetOutputSpacing(new_spacing)
+    resampler.SetSize(new_size)
+    resampler.SetOutputDirection(input_image.GetDirection()) # Maintain the original direction
+    resampler.SetOutputOrigin(input_image.GetOrigin())       # Maintain the original origin
 
-    sitk.WriteImage(final_image, new_image_path, True)
+    # Use nearest neighbor interpolation for multi-label segmentation
+    resampler.SetInterpolator(sitk.sitkNearestNeighbor)
+
+    # Perform the resampling
+    output_image = resampler.Execute(input_image)
+
+    # Save the resampled image
+    sitk.WriteImage(output_image, output_image_path)
+
+    print("Image resampled and saved successfully!")
