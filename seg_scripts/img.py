@@ -357,8 +357,12 @@ def save_itk(image_array, origin, spacing, filename):
 
 def save_itk_keeping_header(new_image, original_image, filename):
 
-  image_bad_header_itk=sitk.ReadImage(new_image)
-  image_good_header=sitk.ReadImage(original_image)
+  if isinstance(new_image,str):
+    image_bad_header_itk=sitk.ReadImage(new_image)
+    image_good_header=sitk.ReadImage(original_image)
+  else:
+    image_bad_header_itk = new_image
+    image_good_header = original_image
 
   image_bad_header_itk.CopyInformation(image_good_header)
 

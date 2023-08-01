@@ -66,11 +66,11 @@ LAA_nrrd = path2points+'/LAA.nrrd'
 # Convert all of the segmentations to arrays
 # ----------------------------------------------------------------------------------------------
 seg_corrected_array, header1 = nrrd.read(seg_corrected_nrrd)
-LSPV_array, header2 = nrrd.read(LSPV_nrrd)
+# LSPV_array, header2 = nrrd.read(LSPV_nrrd)
 LIPV_array, header3 = nrrd.read(LIPV_nrrd)
-RSPV_array, header4 = nrrd.read(RSPV_nrrd)
-RIPV_array, header5 = nrrd.read(RIPV_nrrd)
-LAA_array, header6 = nrrd.read(LAA_nrrd)
+# RSPV_array, header4 = nrrd.read(RSPV_nrrd)
+# RIPV_array, header5 = nrrd.read(RIPV_nrrd)
+# LAA_array, header6 = nrrd.read(LAA_nrrd)
 
 
 # ----------------------------------------------------------------------------------------------
@@ -90,5 +90,6 @@ seg_corrected_array = add_masks(seg_corrected_array, LIPV_array, LPV2_label)
 print(' ## Formatting and saving the segmentation ##')
 seg_corrected_array = np.swapaxes(seg_corrected_array,0,2)
 # save_itk(seg_corrected_array, origin, spacings, path2points+'/seg_corrected.nrrd')
-save_itk_keeping_header(new_image = seg_corrected_array, original_image=seg_array, filename=path2points+'/seg_corrected.nrrd')
+seg_corrected_itk = array2itk(seg_corrected_array,seg_array.GetOrigin(),seg_array.GetSpacing())
+save_itk_keeping_header(new_image = seg_corrected_itk, original_image=seg_array, filename=path2points+'/seg_corrected.nrrd')
 print(" ## Saved segmentation with extra veins added ##")
