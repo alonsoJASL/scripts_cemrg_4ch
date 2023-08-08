@@ -16,4 +16,4 @@ scipy
 sets
 tqdm
 trimesh
-vtk
+vtk@^9.2.6

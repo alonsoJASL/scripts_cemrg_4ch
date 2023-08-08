@@ -12,15 +12,7 @@ import multiprocessing as mp
 import json
 import argparse
 
-parser = argparse.ArgumentParser(description='To run: python3 create_cylinders.py [path_to_points]')
-parser.add_argument("path_to_points")
-args = parser.parse_args()
-
-
-path2points = args.path_to_points
-os.system("python3 txt_2_json.py "+path2points+"/points.txt "+path2points+"/labels.txt "+path2points+"/points.json")
-os.system("python3 txt_2_json.py "+path2points+"/origin_spacing.txt "+path2points+"/origin_spacing_labels.txt "+path2points+"/origin_spacing.json")
-
+from txt_2_json import txt2json
 
 def cylinder(seg_nrrd,points,plane_name,slicer_radius, slicer_height,origin,spacing):
 	
@@ -107,53 +99,94 @@ def cylinder(seg_nrrd,points,plane_name,slicer_radius, slicer_height,origin,spac
 	print("Saving...")
 	save_itk(seg_array_cylinder, origin, spacing, plane_name)
 
+def main(args) : 
+	path2points = args.path_to_points
+	path2ptsjson = args.points_json
+	path2originjson = args.origin_spacing_json
 
-file = open(path2points+'/points.json')
-points_data = json.load(file)
+	if path2ptsjson == "" :
+		points_file = f'{path2points}/points.txt'
+		labels_file = f'{path2points}/labels.txt'
+		points_output_file = f'{path2points}/points.json'
+		txt2json(points_file, labels_file, points_output_file)
+	else : 
+		points_output_file = os.path.join(path2points, path2ptsjson)
 
-file = open(path2points+'/origin_spacing.json')
-origin_data = json.load(file)
-origin = origin_data["origin"]
-spacing = origin_data["spacing"]
+	if path2originjson == "" :
+		origin_spacing_file = f'{path2points}/origin_spacing.txt'
+		origin_spacing_labels_file = f'{path2points}/origin_spacing_labels.txt'
+		origin_spacing_output_file = f'{path2points}/origin_spacing.json'
+		txt2json(origin_spacing_file, origin_spacing_labels_file, origin_spacing_output_file)
+	else :
+		origin_spacing_output_file = os.path.join(path2points, path2originjson)
+	
+	if not os.path.exists(points_output_file):
+		print("ERROR: points.json file does not exist. Please run txt_2_json.py first.")
+		return
+	
+	if not os.path.exists(origin_spacing_output_file):
+		print("ERROR: origin_spacing.json file does not exist. Please run txt_2_json.py first.")
+		return
 
-seg_name = path2points+"/seg_corrected.nrrd"
+	with open(points_output_file) as file:
+		points_data = json.load(file)
 
-# SVC
-pts1 = points_data['SVC_1']
-pts2 = points_data['SVC_2']
-pts3 = points_data['SVC_3']
-points = np.row_stack((pts1,pts2,pts3))
+	with open(origin_spacing_output_file) as file:
+		origin_data = json.load(file)
 
-slicer_radius = 10
-slicer_height = 30
-cylinder(seg_name,points,path2points+"/SVC.nrrd",slicer_radius, slicer_height,origin,spacing)
+	origin = origin_data["origin"]
+	spacing = origin_data["spacing"]
 
-# IVC
-pts1 = points_data['IVC_1']
-pts2 = points_data['IVC_2']
-pts3 = points_data['IVC_3']
-points = np.row_stack((pts1,pts2,pts3))
+	seg_name = f'{path2points}/seg_corrected.nrrd'
+	if not os.path.exists(seg_name):
+		print("seg_corrected.nrrd file does not exist. Attempting using .nii.")
+		seg_name = f'{path2points}/seg_corrected.nii'
 
-slicer_radius = 10
-slicer_height = 30
-cylinder(seg_name,points,path2points+"/IVC.nrrd",slicer_radius, slicer_height,origin,spacing)
+	# SVC
+	pts1 = points_data['SVC_1']
+	pts2 = points_data['SVC_2']
+	pts3 = points_data['SVC_3']
+	points = np.row_stack((pts1,pts2,pts3))
 
-# Aorta slicer
-pts1 = points_data['Ao_1']
-pts2 = points_data['Ao_2']
-pts3 = points_data['Ao_3']
-points = np.row_stack((pts1,pts2,pts3))
+	slicer_radius = 10
+	slicer_height = 30
+	cylinder(seg_name,points,path2points+"/SVC.nrrd",slicer_radius, slicer_height,origin,spacing)
 
-slicer_radius = 30
-slicer_height = 2
-cylinder(seg_name,points,path2points+"/aorta_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
+	# IVC
+	pts1 = points_data['IVC_1']
+	pts2 = points_data['IVC_2']
+	pts3 = points_data['IVC_3']
+	points = np.row_stack((pts1,pts2,pts3))
 
-# PArt slicer
-pts1 = points_data['PArt_1']
-pts2 = points_data['PArt_2']
-pts3 = points_data['PArt_3']
-points = np.row_stack((pts1,pts2,pts3))
+	slicer_radius = 10
+	slicer_height = 30
+	cylinder(seg_name,points,path2points+"/IVC.nrrd",slicer_radius, slicer_height,origin,spacing)
 
-slicer_radius = 30
-slicer_height = 2
-cylinder(seg_name,points,path2points+"/PArt_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
+	# Aorta slicer
+	pts1 = points_data['Ao_1']
+	pts2 = points_data['Ao_2']
+	pts3 = points_data['Ao_3']
+	points = np.row_stack((pts1,pts2,pts3))
+
+	slicer_radius = 30
+	slicer_height = 2
+	cylinder(seg_name,points,path2points+"/aorta_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
+
+	# PArt slicer
+	pts1 = points_data['PArt_1']
+	pts2 = points_data['PArt_2']
+	pts3 = points_data['PArt_3']
+	points = np.row_stack((pts1,pts2,pts3))
+
+	slicer_radius = 30
+	slicer_height = 2
+	cylinder(seg_name,points,path2points+"/PArt_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
+
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser(description='To run: python3 create_cylinders.py [path_to_points]')
+	parser.add_argument("path_to_points")
+	parser.add_argument("--points-json", "-pts", type=str, required=False, default="", help="Name of the json file containing the points")
+	parser.add_argument("--origin-spacing-json", "-os", type=str, required=False, default="", help="Name of the json file containing the origin and spacing")	
+	args = parser.parse_args()
+	
+	main(args)
