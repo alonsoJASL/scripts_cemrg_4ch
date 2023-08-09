@@ -5,7 +5,7 @@ import numpy as np
 import os
 import SimpleITK as sitk
 import string
-from img import *
+import img
 import subprocess
 import time
 import multiprocessing as mp
@@ -97,7 +97,7 @@ def cylinder(seg_nrrd,points,plane_name,slicer_radius, slicer_height,origin,spac
 	seg_array_cylinder = np.swapaxes(seg_array_cylinder,0,2)
 
 	print("Saving...")
-	save_itk(seg_array_cylinder, origin, spacing, plane_name)
+	img.save_itk(seg_array_cylinder, origin, spacing, plane_name)
 
 def main(args) : 
 	path2points = args.path_to_points
