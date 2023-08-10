@@ -360,10 +360,14 @@ def save_itk_keeping_header(new_image, original_image, filename):
   if isinstance(new_image,str):
     image_bad_header_itk=sitk.ReadImage(new_image)
     image_good_header=sitk.ReadImage(original_image)
+  elif isinstance(new_image, np.ndarray):
+    image_bad_header_itk=array2itk(new_image, original_image.GetOrigin(), original_image.GetSpacing())
+    image_good_header = original_image
   else:
     image_bad_header_itk = new_image
     image_good_header = original_image
 
+    
   image_bad_header_itk.CopyInformation(image_good_header)
 
   image_bad_header_itk.SetDirection(image_good_header.GetDirection())
