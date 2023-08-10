@@ -361,7 +361,7 @@ def save_itk_keeping_header(new_image, original_image, filename):
     image_bad_header_itk=sitk.ReadImage(new_image)
     image_good_header=sitk.ReadImage(original_image)
   elif isinstance(new_image, np.ndarray):
-    image_bad_header_itk=array2itk(new_image, original_image.GetOrigin(), original_image.GetSpacing())
+    image_bad_header_itk = sitk.GetImageFromArray(new_image, isVector=False)
     image_good_header = original_image
   else:
     image_bad_header_itk = new_image
@@ -371,8 +371,12 @@ def save_itk_keeping_header(new_image, original_image, filename):
   image_bad_header_itk.CopyInformation(image_good_header)
 
   image_bad_header_itk.SetDirection(image_good_header.GetDirection())
+
   image_bad_header_itk.SetOrigin(image_good_header.GetOrigin())
-  [image_bad_header_itk.SetMetaData(key,image_good_header.GetMetaData(key)) for key in image_good_header.GetMetaDataKeys()]
+  
+  for key in image_good_header.GetMetaDataKeys():
+    if key[:7] != 'Segment':
+      image_bad_header_itk.SetMetaData(key,image_good_header.GetMetaData(key))
 
   sitk.WriteImage(image_bad_header_itk, filename, True)
 
