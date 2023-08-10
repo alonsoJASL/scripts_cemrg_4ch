@@ -5,22 +5,12 @@ import numpy as np
 import os
 import SimpleITK as sitk
 import string
-from img import *
+import img
 import subprocess
 import time
 import multiprocessing as mp
 import json
 import argparse
-
-parser = argparse.ArgumentParser(description='To run: python3 create_cylinders.py [path_to_points]')
-parser.add_argument("path_to_points")
-args = parser.parse_args()
-
-
-path2points = args.path_to_points
-os.system("python3 txt_2_json.py "+path2points+"/points.txt "+path2points+"/labels.txt "+path2points+"/points.json")
-os.system("python3 txt_2_json.py "+path2points+"/origin_spacing.txt "+path2points+"/origin_spacing_labels.txt "+path2points+"/origin_spacing.json")
-
 
 def cylinder(seg_nrrd,points,plane_name,slicer_radius, slicer_height,origin,spacing):
 	
@@ -105,35 +95,46 @@ def cylinder(seg_nrrd,points,plane_name,slicer_radius, slicer_height,origin,spac
 	seg_array_cylinder = np.swapaxes(seg_array_cylinder,0,2)
 
 	print("Saving...")
-	save_itk(seg_array_cylinder, origin, spacing, plane_name)
+	img.save_itk(seg_array_cylinder, origin, spacing, plane_name)
 
+def main(args) : 
+	path2points = args.path_to_points
+	os.system("python3 txt_2_json.py "+path2points+"/points.txt "+path2points+"/labels.txt "+path2points+"/points.json")
+	os.system("python3 txt_2_json.py "+path2points+"/origin_spacing.txt "+path2points+"/origin_spacing_labels.txt "+path2points+"/origin_spacing.json")
 
-file = open(path2points+'/points.json')
-points_data = json.load(file)
+	file = open(path2points+'/points.json')
+	points_data = json.load(file)
 
-file = open(path2points+'/origin_spacing.json')
-origin_data = json.load(file)
-origin = origin_data["origin"]
-spacing = origin_data["spacing"]
+	file = open(path2points+'/origin_spacing.json')
+	origin_data = json.load(file)
+	origin = origin_data["origin"]
+	spacing = origin_data["spacing"]
 
-seg_name = path2points+"/seg_s2a.nrrd"
+	seg_name = path2points+"/seg_s2a.nrrd"
 
-# SVC slicer
-pts1 = points_data['SVC_slicer_1']
-pts2 = points_data['SVC_slicer_2']
-pts3 = points_data['SVC_slicer_3']
-points = np.row_stack((pts1,pts2,pts3))
+	# SVC slicer
+	pts1 = points_data['SVC_slicer_1']
+	pts2 = points_data['SVC_slicer_2']
+	pts3 = points_data['SVC_slicer_3']
+	points = np.row_stack((pts1,pts2,pts3))
 
-slicer_radius = 30
-slicer_height = 2
-cylinder(seg_name,points,path2points+"/SVC_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
+	slicer_radius = 30
+	slicer_height = 2
+	cylinder(seg_name,points,path2points+"/SVC_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
 
-# IVC slicer
-pts1 = points_data['IVC_slicer_1']
-pts2 = points_data['IVC_slicer_2']
-pts3 = points_data['IVC_slicer_3']
-points = np.row_stack((pts1,pts2,pts3))
+	# IVC slicer
+	pts1 = points_data['IVC_slicer_1']
+	pts2 = points_data['IVC_slicer_2']
+	pts3 = points_data['IVC_slicer_3']
+	points = np.row_stack((pts1,pts2,pts3))
 
-slicer_radius = 30
-slicer_height = 2
-cylinder(seg_name,points,path2points+"/IVC_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
+	slicer_radius = 30
+	slicer_height = 2
+	cylinder(seg_name,points,path2points+"/IVC_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
+
+if __name__ == '__main__' :
+
+	parser = argparse.ArgumentParser(description='To run: python3 create_cylinders.py [path_to_points]')
+	parser.add_argument("path_to_points")
+	args = parser.parse_args()
+	main(args)
