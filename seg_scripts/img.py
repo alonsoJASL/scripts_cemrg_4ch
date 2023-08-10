@@ -366,7 +366,6 @@ def save_itk_keeping_header(new_image, original_image, filename):
   else:
     image_bad_header_itk = new_image
     image_good_header = original_image
-
     
   image_bad_header_itk.CopyInformation(image_good_header)
 
@@ -377,8 +376,10 @@ def save_itk_keeping_header(new_image, original_image, filename):
   for key in image_good_header.GetMetaDataKeys():
     if key[:7] != 'Segment':
       image_bad_header_itk.SetMetaData(key,image_good_header.GetMetaData(key))
+  
+  image_now_good_header = sitk.DICOMOrient(image_bad_header_itk, "LPS")
 
-  sitk.WriteImage(image_bad_header_itk, filename, True)
+  sitk.WriteImage(image_now_good_header, filename, True)
 
 def transfer_header_keeping_spacings(image_bad_header_path,image_good_header_path,new_image_path):
   
