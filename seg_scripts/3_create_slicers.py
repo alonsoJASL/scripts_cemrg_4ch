@@ -140,3 +140,5 @@ points = np.row_stack((pts1,pts2,pts3))
 slicer_radius = 30
 slicer_height = 2
 cylinder(seg_name,points,path2points+"/IVC_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
+
+print("Now run 4_crop_svc_ivc")
