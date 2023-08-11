@@ -12,7 +12,7 @@ pydicom
 pygeodesic
 pylab
 pyvista
-scipy
+scipy@^1.9
 sets
 tqdm
 trimesh
