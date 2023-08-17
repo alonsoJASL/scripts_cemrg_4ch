@@ -12,7 +12,7 @@ eval $CMD
 CMD="mv ${MSHFOLDER}/myocardium.vtk ${MSHFOLDER}/heart_mesh.vtk"
 eval $CMD
 
-MESHTOOL_PATH="/home/rb21/Software/2021_1108_CARPentry_KCL_latest/CARPentry_KCL_latest/meshtool/standalones/"
+MESHTOOL_PATH="/home/common/CARPentry_KCL_latest/meshtool/standalones/standalones/"
 
 meshtool extract mesh -msh=${MSHFOLDER}/heart_mesh -tags=2,103,104,105,106,107,201,202,203,204,205,206,207,208,209,210,211,221,222,223,224,225,226,227 -submsh=${MSHFOLDER}/myocardium -ifmt=carp_txt
 

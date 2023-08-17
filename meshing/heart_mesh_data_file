@@ -3,8 +3,8 @@
 #-------------------------------------------------
 
 [segmentation]
-seg_dir = ./
-seg_name = myocardium.inr 
+seg_dir = /media/croderog/SeagateExpansionDrive/010_001_TREDHF/segmentations/
+seg_name = seg_final_smooth.inr 
 mesh_from_segmentation = 1
 boundary_relabelling = 0
 
@@ -28,7 +28,7 @@ eval_thickness  = 1
 
 
 [output]
-outdir          = ./myocardium_OUT
+outdir          = /media/croderog/SeagateExpansionDrive/010_001_TREDHF/meshing/myocardium_OUT/
 name            = myocardium
 out_medit       = 0
 out_carp        = 1
