@@ -1,0 +1,5 @@
+../h_template/
+._premetadata.nrrd
+__pycache__/
+runtimes.txt
+../venv_barrows_segmentation/
