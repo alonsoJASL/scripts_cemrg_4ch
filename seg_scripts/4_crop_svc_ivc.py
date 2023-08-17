@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(description='To run: python3 crop_svc_ivc.py [p
 parser.add_argument("path_to_points")
 args = parser.parse_args()
 path2points = args.path_to_points
-scriptsPath = "/data/Dropbox/scripts_cemrgapp/seg_scripts/"
+scriptsPath = "~/Desktop/IC_projects/barrows_segmentation/scripts_cemrg/seg_scripts/"
 
 os.system("python3 txt_2_json.py "+path2points+"/points.txt "+path2points+"/labels.txt "+path2points+"/points.json")
 points_file = open(path2points+'/points.json')
