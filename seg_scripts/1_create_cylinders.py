@@ -105,9 +105,7 @@ def cylinder(seg_nrrd,points,plane_name,slicer_radius, slicer_height,origin,spac
 	seg_array_cylinder = np.swapaxes(seg_array_cylinder,0,2)
 
 	print("Saving...")
-	save_itk(seg_array_cylinder, origin, spacing, plane_name[:-5] + "noheader.nrrd")
-	seg_array = sitk.ReadImage(seg_nrrd)
-	save_itk_keeping_header(new_image=seg_array_cylinder, original_image=seg_array, filename=plane_name)
+	save_itk(seg_array_cylinder, origin, spacing, plane_name)
 
 
 
