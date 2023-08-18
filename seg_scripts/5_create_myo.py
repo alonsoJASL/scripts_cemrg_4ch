@@ -212,11 +212,11 @@ seg_s3d_array = np.swapaxes(seg_s3d_array,0,2)
 save_itk_keeping_header(new_image=seg_s3d_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3d.nrrd')
 
 print(" ## Pulmonary artery wall: Saved segmentation with pulmonary artery wall pushed inside ## \n")
-"""
+
 # ----------------------------------------------------------------------------------------------
-# Crop the aorta and pulmonary artery
+# Open the aorta and pulmonary artery
 # ----------------------------------------------------------------------------------------------
-print(' ## Step 4/10: Cropping veins ## \n')
+print(' ## Step 4/10: Opening arteries ## \n')
 seg_s3d_array, header = nrrd.read(path2points+'seg_s3d.nrrd')
 
 aorta_slicer_nrrd = path2points+'/aorta_slicer.nrrd'
@@ -232,7 +232,7 @@ PArt_slicer_label = 0
 
 PArt_slicer_array, header = nrrd.read(PArt_slicer_nrrd)
 
-print(' ## Cropping major vessels: Slicing the pulmonary artery wall ## \n')
+print(' ## Opening major vessels: Slicing the pulmonary artery wall ## \n')
 seg_s3e_array = add_masks_replace_only(seg_s3e_array, PArt_slicer_array, PArt_slicer_label, PArt_wall_label)
 
 # ----------------------------------------------------------------------------------------------
@@ -244,7 +244,7 @@ seg_s3e_array = np.swapaxes(seg_s3e_array,0,2)
 save_itk_keeping_header(new_image=seg_s3e_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3e.nrrd')
 
 print(" ## Cropping major vessels: Saved segmentation with aorta and pulmonary artery sliced ## \n")
-
+"""
 # ----------------------------------------------------------------------------------------------
 # Prepare the seeds for the tips of the aorta and pulmonary artery
 # ----------------------------------------------------------------------------------------------
@@ -280,7 +280,7 @@ save_itk_keeping_header(new_image=seg_s3f_array, original_image=seg_array_good_h
 # ----------------------------------------------------------------------------------------------
 print(' ## Step 5/10: Creating the right ventricular myocardium: ## \n')
 print(' ## RV myo: Executing distance map ## \n')
-RV_BP_DistMap = distance_map(path2points+'seg_s3d.nrrd',RV_BP_label)
+RV_BP_DistMap = distance_map(path2points+'seg_s3e.nrrd',RV_BP_label)
 print(' ## RV myo: Writing temporary image ## \n')
 sitk.WriteImage(RV_BP_DistMap,path2points+'/tmp/RV_BP_DistMap.nrrd',True)
 
@@ -290,9 +290,9 @@ sitk.WriteImage(RV_myo,path2points+'/tmp/RV_myo.nrrd',True)
 
 print(' ## RV myo: Adding right ventricular myocardium to segmentation ## \n')
 RV_myo_array, header = nrrd.read(path2points+'/tmp/RV_myo.nrrd')
-seg_s3d_array, header = nrrd.read(path2points+'seg_s3d.nrrd')
+seg_s3e_array, header = nrrd.read(path2points+'seg_s3e.nrrd')
 RV_myo_array = add_masks_replace(RV_myo_array,RV_myo_array,RV_myo_label)
-seg_s3g_array = add_masks_replace_only(seg_s3d_array,RV_myo_array,RV_myo_label,Ao_wall_label) 
+seg_s3g_array = add_masks_replace_only(seg_s3e_array,RV_myo_array,RV_myo_label,Ao_wall_label) 
 
 # ----------------------------------------------------------------------------------------------
 # Format and save the segmentation
