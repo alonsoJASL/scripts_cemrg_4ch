@@ -71,12 +71,43 @@ RA_myo_label = 105
 Ao_wall_label = 106
 PArt_wall_label = 107
 
+seg_array_good_header = sitk.ReadImage(path2points+'/seg_s2a.nrrd')
+
+# ----------------------------------------------------------------------------------------------
+# Prepare the seeds for the tips of the aorta and pulmonary artery
+# ----------------------------------------------------------------------------------------------
+Ao_tip_seed = points_data['Ao_tip']
+PArt_tip_seed = points_data['PArt_tip']
+Ao_wall_tip_seed = points_data['Ao_WT_tip']
+PArt_wall_tip_seed = points_data['PArt_WT_tip']
+
+# ----------------------------------------------------------------------------------------------
+# Connected component in the aorta and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## Running connected component in the aorta ## \n')
+seg_s2f_nrrd = path2points+'/seg_s2f.nrrd'
+seg_aorta_cc_array = connected_component(seg_s2f_nrrd, Ao_tip_seed, Ao_BP_label,path2points)
+seg_aorta_cc_array = np.swapaxes(seg_aorta_cc_array,0,2)
+save_itk_keeping_header(new_image=seg_aorta_cc_array, original_image=seg_array_good_header, filename=path2points+'/seg_aorta_cc.nrrd')
+
+
+# ----------------------------------------------------------------------------------------------
+# Connected component in the pulmonary artery and save the segmentation
+# ----------------------------------------------------------------------------------------------
+print(' ## Running connected component in the pulmonary artery ## \n')
+seg_aorta_cc_nrrd = path2points+'/seg_aorta_cc.nrrd'
+seg_PA_cc_array = connected_component(seg_aorta_cc_nrrd, PArt_tip_seed, PArt_BP_label,path2points)
+seg_PA_cc_array = np.swapaxes(seg_PA_cc_array,0,2)
+
+save_itk_keeping_header(new_image=seg_PA_cc_array, original_image=seg_array_good_header, filename=path2points+'/seg_PA_cc.nrrd')
+
+
 # ----------------------------------------------------------------------------------------------
 # Create the LV outflow tract myocardium
 # ----------------------------------------------------------------------------------------------
 print('\n ## Step 1/10: Creating myocardium for the LV outflow tract ## \n')
 print(' ## LV neck: Executing distance map ## \n')
-LV_DistMap = distance_map(path2points+'/seg_s2f.nrrd',LV_BP_label)
+LV_DistMap = distance_map(path2points+'/seg_PA_cc.nrrd',LV_BP_label)
 print(' ## LV neck: Writing temporary image ## \n')
 sitk.WriteImage(LV_DistMap,path2points+'/tmp/LV_DistMap.nrrd',True)
 
@@ -86,9 +117,9 @@ sitk.WriteImage(LV_neck,path2points+'/tmp/LV_neck.nrrd',True)
 
 print(' ## LV neck: Adding LV neck to LV myo ## \n')
 LV_neck_array, header = nrrd.read(path2points+'/tmp/LV_neck.nrrd')
-seg_s2f_array, header = nrrd.read(path2points+'seg_s2f.nrrd')
+seg_PA_cc_array, header = nrrd.read(path2points+'seg_PA_cc.nrrd')
 LV_neck_array = add_masks_replace(LV_neck_array,LV_neck_array,LV_neck_label)
-seg_s3a_array = add_masks(seg_s2f_array,LV_neck_array,2)
+seg_s3a_array = add_masks(seg_PA_cc_array,LV_neck_array,2)
 
 # ----------------------------------------------------------------------------------------------
 # Format and save the segmentation
@@ -96,7 +127,6 @@ seg_s3a_array = add_masks(seg_s2f_array,LV_neck_array,2)
 print(' ## LV neck: Formatting and saving the segmentation ## \n')
 seg_s3a_array = np.swapaxes(seg_s3a_array,0,2)
 # save_itk(seg_s3a_array, origin, spacings, path2points+'/seg_s3a.nrrd')
-seg_array_good_header = sitk.ReadImage(path2points+'/seg_s2a.nrrd')
 save_itk_keeping_header(new_image=seg_s3a_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3a.nrrd')
 print(" ## LV neck: Saved segmentation with LV outflow tract added ## \n")
 
@@ -182,7 +212,7 @@ seg_s3d_array = np.swapaxes(seg_s3d_array,0,2)
 save_itk_keeping_header(new_image=seg_s3d_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3d.nrrd')
 
 print(" ## Pulmonary artery wall: Saved segmentation with pulmonary artery wall pushed inside ## \n")
-
+"""
 # ----------------------------------------------------------------------------------------------
 # Crop the aorta and pulmonary artery
 # ----------------------------------------------------------------------------------------------
@@ -244,13 +274,13 @@ seg_s3f_array = np.swapaxes(seg_s3f_array,0,2)
 # save_itk(seg_s3f_array, origin, spacings, path2points+'/seg_s3f.nrrd')
 save_itk_keeping_header(new_image=seg_s3f_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3f.nrrd')
 
-
+"""
 # ----------------------------------------------------------------------------------------------
 # Create the RV myocardium
 # ----------------------------------------------------------------------------------------------
 print(' ## Step 5/10: Creating the right ventricular myocardium: ## \n')
 print(' ## RV myo: Executing distance map ## \n')
-RV_BP_DistMap = distance_map(path2points+'seg_s3f.nrrd',RV_BP_label)
+RV_BP_DistMap = distance_map(path2points+'seg_s3d.nrrd',RV_BP_label)
 print(' ## RV myo: Writing temporary image ## \n')
 sitk.WriteImage(RV_BP_DistMap,path2points+'/tmp/RV_BP_DistMap.nrrd',True)
 
@@ -260,9 +290,9 @@ sitk.WriteImage(RV_myo,path2points+'/tmp/RV_myo.nrrd',True)
 
 print(' ## RV myo: Adding right ventricular myocardium to segmentation ## \n')
 RV_myo_array, header = nrrd.read(path2points+'/tmp/RV_myo.nrrd')
-seg_s3f_array, header = nrrd.read(path2points+'seg_s3f.nrrd')
+seg_s3d_array, header = nrrd.read(path2points+'seg_s3d.nrrd')
 RV_myo_array = add_masks_replace(RV_myo_array,RV_myo_array,RV_myo_label)
-seg_s3g_array = add_masks_replace_only(seg_s3f_array,RV_myo_array,RV_myo_label,Ao_wall_label) #NEW CHANGE SO SEE WHAT HAPPENS!
+seg_s3g_array = add_masks_replace_only(seg_s3d_array,RV_myo_array,RV_myo_label,Ao_wall_label) 
 
 # ----------------------------------------------------------------------------------------------
 # Format and save the segmentation
@@ -303,52 +333,6 @@ seg_s3h_array = np.swapaxes(seg_s3h_array,0,2)
 save_itk_keeping_header(new_image=seg_s3h_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3h.nrrd')
 
 print(" ## LA myo: Saved segmentation with left atrial myocardium added ## \n")
-
-# # ----------------------------------------------------------------------------------------------
-# # Create the RA myocardium
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Step 7/10: Creating the right atrial myocardium: ## \n')
-# print(' ## RA myo: Executing distance map ## \n')
-# RA_BP_DistMap = distance_map(path2points+'seg_s3h.nrrd',RA_BP_label)
-# print(' ## RA myo: Writing temporary image ## \n')
-# sitk.WriteImage(RA_BP_DistMap,path2points+'/tmp/RA_BP_DistMap_for_pads.nrrd',True)
-
-# print(' ## RA myo: Thresholding distance filter ## \n')
-# SVC_pad = threshold_filter_nrrd(path2points+'/tmp/RA_BP_DistMap_for_pads.nrrd',0,svc_ivc_pad)
-# sitk.WriteImage(SVC_pad,path2points+'/tmp/SVC_pad.nrrd',True)
-
-# print(' ## RA myo: Adding SVC pad to segmentation ## \n')
-# SVC_pad_array, header = nrrd.read(path2points+'/tmp/SVC_pad.nrrd')
-# seg_s3h_array, header = nrrd.read(path2points+'seg_s3h.nrrd')
-# SVC_pad_array = and_filter(seg_s3h_array,SVC_pad_array,SVC_label,RA_BP_label)
-
-# print(' ## RA myo: Adding IVC pad to segmentation ## \n')
-# IVC_pad_array, header = nrrd.read(path2points+'/tmp/SVC_pad.nrrd')
-# seg_s3h_array, header = nrrd.read(path2points+'seg_s3h.nrrd')
-# IVC_pad_array = and_filter(seg_s3h_array,IVC_pad_array,IVC_label,RA_BP_label)
-
-# seg_s3hi_array = add_masks_replace_only(seg_s3h_array,SVC_pad_array,RA_BP_label,SVC_label)
-# seg_s3hi_array = add_masks_replace_only(seg_s3hi_array,IVC_pad_array,RA_BP_label,IVC_label)
-
-# print(' ## RA myo: Formatting and saving the segmentation ## \n')
-# seg_s3hi_array = np.swapaxes(seg_s3hi_array,0,2)
-# save_itk(seg_s3hi_array, origin, spacings, path2points+'/seg_s3hi.nrrd')
-# print(" ## RA myo: Saved segmentation with SVC/IVC pads added ## \n")
-
-# print(' ## RA myo: Executing distance map again ## \n')
-# RA_BP_DistMap = distance_map(path2points+'seg_s3hi.nrrd',RA_BP_label)
-# print(' ## RA myo: Writing temporary image ## \n')
-# sitk.WriteImage(RA_BP_DistMap,path2points+'/tmp/RA_BP_DistMap.nrrd',True)
-
-# print(' ## RA myo: Thresholding distance filter ## \n')
-# RA_myo = threshold_filter_nrrd(path2points+'/tmp/RA_BP_DistMap.nrrd',0,RA_WT)
-# sitk.WriteImage(RA_myo,path2points+'/tmp/RA_myo.nrrd',True)
-
-# print(' ## RA myo: Adding right atrial myocardium to segmentation ## \n')
-# RA_myo_array, header = nrrd.read(path2points+'/tmp/RA_myo.nrrd')
-# seg_s3hi_array, header = nrrd.read(path2points+'seg_s3hi.nrrd')
-# RA_myo_array = add_masks_replace(RA_myo_array,RA_myo_array,RA_myo_label)
-# seg_s3i_array = add_masks_replace_only(seg_s3hi_array,RA_myo_array,RA_myo_label,RPV1_label)
 
 # ----------------------------------------------------------------------------------------------
 # Create the RA myocardium
