@@ -78,8 +78,6 @@ seg_array_good_header = sitk.ReadImage(path2points+'/seg_s2a.nrrd')
 # ----------------------------------------------------------------------------------------------
 Ao_tip_seed = points_data['Ao_tip']
 PArt_tip_seed = points_data['PArt_tip']
-Ao_wall_tip_seed = points_data['Ao_WT_tip']
-PArt_wall_tip_seed = points_data['PArt_WT_tip']
 
 # ----------------------------------------------------------------------------------------------
 # Connected component in the aorta and save the segmentation

@@ -49,7 +49,6 @@ conda activate pyseg
 
 17) Run “create_myo.py /heart_folder/segmentations”
 
-18) Select a seed point for the Ao_wall_tip and PArt_wall_tip
 19) Run “create_valve_planes.py /heart_folder/segmentations”
 
 20) Run “clean_seg.py /heart_folder/segmentations”
