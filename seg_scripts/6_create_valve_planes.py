@@ -91,42 +91,36 @@ LAA_ring_label = 225
 SVC_ring_label = 226
 IVC_ring_label = 227
 
-# ----------------------------------------------------------------------------------------------
-# Prepare the seed points
-# ----------------------------------------------------------------------------------------------
-Ao_wall_tip_seed = points_data['Ao_WT_tip']
-PArt_wall_tip_seed = points_data['PArt_WT_tip']
-
 # ---------------------------------------------------------------------
 # Reference for the header
 # ---------------------------------------------------------------------
 seg_array_good_header = sitk.ReadImage(path2points+'/seg_s2a.nrrd')
 
-# ----------------------------------------------------------------------------------------------
-# Removing parts of Ao and PArt wall remaining from cropping 
-# ----------------------------------------------------------------------------------------------
-print('\n ## Step 1/8: Cropping major vessels ## \n')
-print(' ## Cropping major vessels: Removing remaining wall segments ## \n')
-seg_s3r_array = connected_component(path2points+'seg_s3p.nrrd', Ao_wall_tip_seed, Ao_wall_label,path2points)
-seg_s3r_array = np.swapaxes(seg_s3r_array,0,2)
-# save_itk(seg_s3r_array, origin, spacings, path2points+'/seg_s3r.nrrd')
-save_itk_keeping_header(new_image=seg_s3r_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3r.nrrd')
+# # ----------------------------------------------------------------------------------------------
+# # Removing parts of Ao and PArt wall remaining from cropping 
+# # ----------------------------------------------------------------------------------------------
+# print('\n ## Step 1/8: Cropping major vessels ## \n')
+# print(' ## Cropping major vessels: Removing remaining wall segments ## \n')
+# seg_s3r_array = connected_component(path2points+'seg_s3p.nrrd', Ao_wall_tip_seed, Ao_wall_label,path2points)
+# seg_s3r_array = np.swapaxes(seg_s3r_array,0,2)
+# # save_itk(seg_s3r_array, origin, spacings, path2points+'/seg_s3r.nrrd')
+# save_itk_keeping_header(new_image=seg_s3r_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3r.nrrd')
 
-print(" ## Cropping major vessels: Saved segmentation with aorta cropped ## \n")
+# print(" ## Cropping major vessels: Saved segmentation with aorta cropped ## \n")
 
-seg_s3s_array = connected_component(path2points+'seg_s3r.nrrd', PArt_wall_tip_seed, PArt_wall_label,path2points)
-seg_s3s_array = np.swapaxes(seg_s3s_array,0,2)
-# save_itk(seg_s3s_array, origin, spacings, path2points+'/seg_s3s.nrrd')
-save_itk_keeping_header(new_image=seg_s3s_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3s.nrrd')
+# seg_s3s_array = connected_component(path2points+'seg_s3r.nrrd', PArt_wall_tip_seed, PArt_wall_label,path2points)
+# seg_s3s_array = np.swapaxes(seg_s3s_array,0,2)
+# # save_itk(seg_s3s_array, origin, spacings, path2points+'/seg_s3s.nrrd')
+# save_itk_keeping_header(new_image=seg_s3s_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3s.nrrd')
 
-print(" ## Cropping major vessels: Saved segmentation with pulmonary artery cropped ## \n")
+# print(" ## Cropping major vessels: Saved segmentation with pulmonary artery cropped ## \n")
 
 # ----------------------------------------------------------------------------------------------
 # Create the mitral valve (MV)
 # ----------------------------------------------------------------------------------------------
 print('\n ## Step 2/8: Creating the mitral valve ## \n')
 print(' ## MV: Executing distance map ## \n')
-LA_BP_DistMap = distance_map(path2points+'seg_s3s.nrrd',LA_BP_label)
+LA_BP_DistMap = distance_map(path2points+'seg_s3p.nrrd',LA_BP_label)
 print(' ## MV: Writing temporary image ## \n')
 sitk.WriteImage(LA_BP_DistMap,path2points+'/tmp/LA_BP_DistMap.nrrd',True)
 
@@ -136,9 +130,9 @@ sitk.WriteImage(LA_BP_thresh,path2points+'/tmp/LA_BP_thresh.nrrd',True)
 
 print(' ## MV: AND filter of distance map and LV blood pool ## \n')
 MV_array, header = nrrd.read(path2points+'/tmp/LA_BP_thresh.nrrd')
-seg_s3s_array, header = nrrd.read(path2points+'seg_s3s.nrrd')
-MV_array = and_filter(seg_s3s_array,MV_array,LV_BP_label,MV_label)
-seg_s4a_array = add_masks_replace(seg_s3s_array,MV_array,MV_label)
+seg_s3p_array, header = nrrd.read(path2points+'seg_s3p.nrrd')
+MV_array = and_filter(seg_s3p_array,MV_array,LV_BP_label,MV_label)
+seg_s4a_array = add_masks_replace(seg_s3p_array,MV_array,MV_label)
 
 # ----------------------------------------------------------------------------------------------
 # Format and save the segmentation
