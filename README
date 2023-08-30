@@ -1,5 +1,3 @@
-README
-
 =========================================================================================================
 Instructions for using four-chamber mesh generation pipeline
 =========================================================================================================
@@ -11,7 +9,8 @@ Segmentation
 2) Copy “points.txt”, “labels.txt”, “origin_spacing.txt” and “origin_spacing_labels.txt” templates into "segmentations" folder (currently in “h_templates” folder)
 3) Move end-diastolic image CT image into folder and call that directory "ct"
 4) Move segmented CT into "segmentations" folder.
-5) Manually split and relabel pulmonary veins:
+5) a) Manually split and relabel pulmonary veins
+   b) MRI - Ensure the atrial blood pools are relatively close together (so that they will definitely be contact between the LA myo and RA myo). If this is not the case, you will need to correct this or abandon the case.
 6) Export the segmentation as “seg_corrected.nrrd” with the new tags:
         LSPV = 8
         LIPV = 9
@@ -48,6 +47,8 @@ conda activate pyseg
 16) Run “crop_svc_ivc.py /heart_folder/segmentations”
 
 17) Run “create_myo.py /heart_folder/segmentations”
+
+CHECK THAT THERE IS CONTACT BETWEEN THE LA MYO AND RA MYO
 
 18) Select a seed point for the Ao_wall_tip and PArt_wall_tip
 19) Run “create_valve_planes.py /heart_folder/segmentations”
