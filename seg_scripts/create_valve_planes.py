@@ -513,6 +513,8 @@ seg_s4i_array = add_masks_replace_only(seg_s4i_array,SVC_ring_array,SVC_ring_lab
 seg_s4i_array = add_masks_replace_only(seg_s4i_array,SVC_ring_array,SVC_ring_label,LA_myo_label)
 seg_s4i_array = add_masks_replace_only(seg_s4i_array,SVC_ring_array,SVC_ring_label,RPV1_ring_label)
 seg_s4i_array = add_masks_replace_only(seg_s4i_array,SVC_ring_array,SVC_ring_label,RPV1_label)
+seg_s4i_array = add_masks_replace_only(seg_s4i_array,SVC_ring_array,SVC_ring_label,RPV2_ring_label)
+seg_s4i_array = add_masks_replace_only(seg_s4i_array,SVC_ring_array,SVC_ring_label,RPV2_label)
 
 SVC_ring_array = and_filter(seg_s4i_array,RA_myo_thresh_array,SVC_ring_label,SVC_ring_label)
 seg_s4j_array = add_masks_replace(seg_s4j_array,SVC_ring_array,SVC_ring_label)
