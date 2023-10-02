@@ -18,4 +18,5 @@ os.system("cp /data/Dropbox/scripts_cemrgapp/meshing/heart_mesh_data_file "+fold
 os.system("cp /data/Dropbox/scripts_cemrgapp/meshing/generate_heart_mesh_Cesare.sh "+folder+"/meshing/generate_heart_mesh_Cesare.sh")
 # os.system("cp "+folder+"/segmentations/seg_final_smooth.inr "+folder+"/meshing/myocardium.inr")
 os.system("cp "+folder+"/segmentations/seg_final_smooth.nrrd "+folder+"/meshing/myocardium.nrrd")
-os.system("segconvert "+folder+"/meshing/myocardium.nrrd "+folder+"/meshing/myocardium.inr")
+# os.system("segconvert "+folder+"/meshing/myocardium.nrrd "+folder+"/meshing/myocardium.inr")
+os.system("/home/rb21/Software/segtools/bin/segconvert "+folder+"/meshing/myocardium.nrrd "+folder+"/meshing/myocardium.inr")
