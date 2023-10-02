@@ -45,20 +45,22 @@ conda activate py4ch
 
 (hard-coded tags replaced by .json files in CemrgApp implementation)
 
-7) From seg_scripts,\
-    'python find_origin_and_spacing.py [/heart_folder/segmentations]'
-8) Copy origin and spacing into “origin_spacing.txt” file - MAKE SURE THERE ARE NO COMMAS/QUOTE MARKS/ETC
+7) From seg_scripts,
+   '''
+   python find_origin_and_spacing.py [/heart_folder/segmentations]
+   '''
+9) Copy origin and spacing into “origin_spacing.txt” file - MAKE SURE THERE ARE NO COMMAS/QUOTE MARKS/ETC
 
-9) Select 3 points for SVC and IVC cylinders (pixel) and save in “points.txt”
-10) Select 3 points for Ao_slicer and for PArt_slicer and save in “points.txt”
+10) Select 3 points for SVC and IVC cylinders (pixel) and save in “points.txt”
+11) Select 3 points for Ao_slicer and for PArt_slicer and save in “points.txt”
     a. Note: be careful not to crop the PArt too close to the RV_BP
-11) From seg_scripts,
+12) From seg_scripts,
     'python create_cylinders.py [/heart_folder/segmentations]'
 
-12) From seg_scripts,
+13) From seg_scripts,
     'python create_svc_ivc.py [/heart_folder/segmentations]'
 
-13) Select:
+14) Select:
     3 points for SVC_slicer 
     1 point for SVC_tip
     3 points for IVC_slicer
@@ -70,20 +72,20 @@ conda activate py4ch
     
     a. Note: SVC/IVC tips are used for removing sections protruding from wrong side of RA
 
-14) From seg_scripts,
+15) From seg_scripts,
     'python create_slicers.py [/heart_folder/segmentations]'
 
-15) From seg_scripts,
+16) From seg_scripts,
     'python crop_svc_ivc.py [/heart_folder/segmentations]'
 
-16) From seg_scripts.
+17) From seg_scripts.
     'python create_myo.py [/heart_folder/segmentations]'
 
-17) Select a seed point for the Ao_wall_tip and PArt_wall_tip
-18) From seg_scripts,
+18) Select a seed point for the Ao_wall_tip and PArt_wall_tip
+19) From seg_scripts,
     'python create_valve_planes.py [/heart_folder/segmentations]'
 
-19) Load the most recent .nrrd and inspect the segmentation. From the clean_seg.py scripts, leave uncommented those modifications that would improve your segmentation (it is best that the rest stay commented out).
+20) Load the most recent .nrrd and inspect the segmentation. From the clean_seg.py scripts, leave uncommented those modifications that would improve your segmentation (it is best that the rest stay commented out).
 
 From seg_scripts,
     'python clean_seg.py [/heart_folder/segmentations]'
