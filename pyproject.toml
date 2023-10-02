@@ -1,0 +1,19 @@
+[project]
+name = "scripts_cemrgapp"
+version = "0.0.1"
+requires-python = "~=3.8"
+
+dependencies = ["numpy~=1.23.0",
+				"scipy~=1.10.1",
+				"meshio~=5.3.4",
+				"trimesh~=3.22.1"]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+exclude = [
+    "./README.md",
+    "./.git"
+]
