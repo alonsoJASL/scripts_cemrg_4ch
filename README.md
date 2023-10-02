@@ -55,10 +55,13 @@ conda activate py4ch
 11) Select 3 points for Ao_slicer and for PArt_slicer and save in “points.txt”
     a. Note: be careful not to crop the PArt too close to the RV_BP
 12) From seg_scripts,
-    'python create_cylinders.py [/heart_folder/segmentations]'
-
+    ```
+    python create_cylinders.py [/heart_folder/segmentations]
+    ```
 13) From seg_scripts,
-    'python create_svc_ivc.py [/heart_folder/segmentations]'
+    ```
+    python create_svc_ivc.py [/heart_folder/segmentations]
+    ```
 
 14) Select:
     3 points for SVC_slicer 
@@ -76,25 +79,35 @@ conda activate py4ch
     'python create_slicers.py [/heart_folder/segmentations]'
 
 16) From seg_scripts,
-    'python crop_svc_ivc.py [/heart_folder/segmentations]'
+    ```
+    python crop_svc_ivc.py [/heart_folder/segmentations]
+    ```
 
 17) From seg_scripts.
-    'python create_myo.py [/heart_folder/segmentations]'
+    ```
+    python create_myo.py [/heart_folder/segmentations]
+    ```
 
 18) Select a seed point for the Ao_wall_tip and PArt_wall_tip
 19) From seg_scripts,
-    'python create_valve_planes.py [/heart_folder/segmentations]'
+    ```
+    python create_valve_planes.py [/heart_folder/segmentations]
+    ```
 
 20) Load the most recent .nrrd and inspect the segmentation. From the clean_seg.py scripts, leave uncommented those modifications that would improve your segmentation (it is best that the rest stay commented out).
 
-From seg_scripts,
-    'python clean_seg.py [/heart_folder/segmentations]'
+    From seg_scripts,
+    ```
+    python clean_seg.py [/heart_folder/segmentations]
+    ```
 
 20) Load the most recent .nrrd file and inspect the segmentation. Any final manual corrects can be completed at this point. 
 21) Export segmentation as “seg_final.nrrd”
 
 22) From seg_scripts,
-    'bash segSmoothing.sh [/heart_folder/segmentations]'
+    ```
+    bash segSmoothing.sh [/heart_folder/segmentations]
+    ```
 
 **Meshing**
 
