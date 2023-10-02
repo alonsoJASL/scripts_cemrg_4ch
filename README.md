@@ -2,13 +2,9 @@
 
 *This first half of the pipeline takes the segmentation as an input and performs a series of post-processing steps, including creating the myocardium, valve planes and vein rings*
 
-=========================================================================================================
 Instructions for using four-chamber mesh generation pipeline
-=========================================================================================================
 
-=========================================================================================================
-Set-up
-=========================================================================================================
+**Set-up**
 
 To set up conda environment to run scripts:
 
@@ -26,9 +22,8 @@ pip install:
 conda deactivate
 conda activate py4ch
 
-=========================================================================================================
-Segmentation
-=========================================================================================================
+**Segmentation**
+
 1) Make folder (e.g. heart_folder_) then make folder “segmentations” inside
 2) From /scripts_cemrgapp/h_template/segmentations, copy “points.txt”, “labels.txt”, “origin_spacing.txt” and “origin_spacing_labels.txt” templates into "segmentations" folder
 3) Move end-diastolic image CT image into heart_folder/segmentations folder and call that directory "ct"
@@ -99,9 +94,8 @@ From seg_scripts,
 22) From seg_scripts,
     'bash segSmoothing.sh [/heart_folder/segmentations]'
 
-=========================================================================================================
-Meshing
-=========================================================================================================
+**Meshing**
+
 1) Run “meshing.py /heart_folder”
 
 2) cd into the meshing folder (inside heart folder)
