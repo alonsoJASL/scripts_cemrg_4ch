@@ -11,13 +11,13 @@ To set up conda environment to run scripts:
 conda create -n py4ch python=3.9
 
 pip install:    
-        numpy~=1.23.0
-        meshio~=5.3.4
-        vtk~=9.2.6
-        tqdm~=4.65.0
-        pyvista~=0.39.1
-        trimesh~=3.22.1
-        scipy~=1.10.1
+        numpy~=1.23.0 /
+        meshio~=5.3.4 /
+        vtk~=9.2.6 /
+        tqdm~=4.65.0 /
+        pyvista~=0.39.1 /
+        trimesh~=3.22.1 /
+        scipy~=1.10.1  /
 
 conda deactivate
 conda activate py4ch
