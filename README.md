@@ -123,6 +123,7 @@ conda activate py4ch
    ```
    bash mesh_post.sh [/heart_folder]
    ```
+   
    **watch out mesh tool path currently hard-coded **
 
 
