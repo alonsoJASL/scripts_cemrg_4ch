@@ -111,12 +111,18 @@ conda activate py4ch
 
 **Meshing**
 
-1) Run “meshing.py /heart_folder”
+1) From meshing,
+   ```
+   meshing.py [/heart_folder]
+   ```
 
-2) cd into the meshing folder (inside heart folder)
-3) Run “bash generate_heart_mesh_Cesare.sh”
+2) ```cd [/heart_folder/meshing/]```
+3) ```bash generate_heart_mesh_Cesare.sh```
 
-4) Run “bash mesh_post.sh /heart_folder” ## watch out mesh tool path currently hard-coded ##
+5) From meshing,
+   ```bash mesh_post.sh [/heart_folder]
+   ```
+   **watch out mesh tool path currently hard-coded **
 
 
 
