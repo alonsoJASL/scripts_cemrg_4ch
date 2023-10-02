@@ -46,9 +46,9 @@ conda activate py4ch
 (hard-coded tags replaced by .json files in CemrgApp implementation)
 
 7) From seg_scripts,
-   '''
+   ```
    python find_origin_and_spacing.py [/heart_folder/segmentations]
-   '''
+   ```
 9) Copy origin and spacing into “origin_spacing.txt” file - MAKE SURE THERE ARE NO COMMAS/QUOTE MARKS/ETC
 
 10) Select 3 points for SVC and IVC cylinders (pixel) and save in “points.txt”
