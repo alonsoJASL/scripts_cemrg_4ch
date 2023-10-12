@@ -42,13 +42,13 @@ os.system("mkdir "+path2points+"/tmp")
 # sf = 1/0.39844 # scale factor
 sf = np.ceil(1.0/spacings[0]) # scale factor
 
-LV_neck_WT = sf*2.00;
-RV_WT = sf*3.50;
-LA_WT = sf*2.00;
-RA_WT = sf*2.00;
-Ao_WT = sf*2.00;
-PArt_WT = sf*3.50;
-svc_ivc_pad = sf*2.00;
+LV_neck_WT = sf*2.00
+RV_WT = sf*3.50
+LA_WT = sf*2.00
+RA_WT = sf*2.00
+Ao_WT = sf*2.00
+PArt_WT = sf*3.50
+svc_ivc_pad = sf*2.00
 
 LV_BP_label = 1
 LV_myo_label = 2
