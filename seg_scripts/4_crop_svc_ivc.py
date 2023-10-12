@@ -176,4 +176,4 @@ seg_s2f_array = np.swapaxes(seg_s2f_array,0,2)
 # save_itk(seg_s2f_array, origin, spacings, path2points+'/seg_s2f.nrrd')
 save_itk_keeping_header(new_image=seg_s2f_array, original_image=seg_array_good_header, filename=path2points+'/seg_s2f.nrrd')
 
-print("Things to check: The SVC and IVC are cropped, the part of the LA that used to be the SVC/IVC is not too big, aorta and PA are sliced.")
+print("Things to check: The SVC and IVC are cropped, the part of the RA that used to be the SVC/IVC is not too big, aorta and PA are sliced.")
