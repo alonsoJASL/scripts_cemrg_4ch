@@ -47,7 +47,7 @@ RV_WT = sf*3.50;
 LA_WT = sf*2.00;
 RA_WT = sf*2.00;
 Ao_WT = sf*2.00;
-PArt_WT = sf*2.00;
+PArt_WT = sf*3.50;
 svc_ivc_pad = sf*2.00;
 
 LV_BP_label = 1
