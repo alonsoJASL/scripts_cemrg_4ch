@@ -12,27 +12,27 @@ import multiprocessing as mp
 import json
 import argparse
 
-from txt_2_json import txt2json
 from create_cylinders import cylinder
+from common import parse_txt_to_json, get_json_data
+
 
 def main(args) : 
 	path2points = args.path_to_points
-	points_json = f'{os.path.join(path2points,"points.json")}'
-	origin_spacing_json = f'{os.path.join(path2points,"origin_spacing.json")}'
+	path2ptsjson = args.points_json
+	path2originjson = args.origin_spacing_json
+	
+	points_output_file = parse_txt_to_json(path2points, path2ptsjson, "points", "labels")
+	points_data = get_json_data(points_output_file)
 
-	txt2json(os.path.join(path2points,"points.txt"), os.path.join(path2points,"labels.txt"), points_json)
-	txt2json(os.path.join(path2points,"origin_spacing.txt"), os.path.join(path2points,"origin_spacing_labels.txt"), origin_spacing_json)
-
-	with open(points_json) as f :
-		points_data = json.load(f)
-
-	with open(origin_spacing_json) as f :
-		origin_data = json.load(f)
+	origin_spacing_output_file = parse_txt_to_json(path2points, path2originjson, "origin_spacing", "origin_spacing_labels")
+	origin_data = get_json_data(origin_spacing_output_file)
 
 	origin = origin_data["origin"]
 	spacing = origin_data["spacing"]
 
-	seg_name = os.path.join(path2points, "seg_s2a.nrrd")
+	DIR = lambda x: os.path.join(path2points, x)
+
+	seg_name = DIR("seg_s2a.nrrd")
 
 	# SVC slicer
 	pts1 = points_data['SVC_slicer_1']
@@ -42,7 +42,7 @@ def main(args) :
 
 	slicer_radius = 30
 	slicer_height = 2
-	cylinder(seg_name,points,path2points+"/SVC_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
+	cylinder(seg_name,points,DIR("SVC_slicer.nrrd"),slicer_radius, slicer_height,origin,spacing)
 
 	# IVC slicer
 	pts1 = points_data['IVC_slicer_1']
@@ -52,11 +52,13 @@ def main(args) :
 
 	slicer_radius = 30
 	slicer_height = 2
-	cylinder(seg_name,points,path2points+"/IVC_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
+	cylinder(seg_name,points,DIR("IVC_slicer.nrrd"),slicer_radius, slicer_height,origin,spacing)
 
 if __name__ == '__main__' :
 
 	parser = argparse.ArgumentParser(description='To run: python3 create_cylinders.py [path_to_points]')
 	parser.add_argument("path_to_points")
+	parser.add_argument("--points-json", "-pts", type=str, required=False, default="", help="Name of the json file containing the points")
+	parser.add_argument("--origin-spacing-json", "-origin-spacing", type=str, required=False, default="", help="Name of the json file containing the origin and spacing")
 	args = parser.parse_args()
 	main(args)

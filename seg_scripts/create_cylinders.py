@@ -12,8 +12,6 @@ import multiprocessing as mp
 import json
 import argparse
 
-from txt_2_json import txt2json
-
 def cylinder(seg_nrrd,points,plane_name,slicer_radius, slicer_height,origin,spacing):
 	
 	seg_array, header = nrrd.read(seg_nrrd)
@@ -104,35 +102,11 @@ def main(args) :
 	path2ptsjson = args.points_json
 	path2originjson = args.origin_spacing_json
 
-	if path2ptsjson == "" :
-		points_file = f'{path2points}/points.txt'
-		labels_file = f'{path2points}/labels.txt'
-		points_output_file = f'{path2points}/points.json'
-		txt2json(points_file, labels_file, points_output_file)
-	else : 
-		points_output_file = os.path.join(path2points, path2ptsjson)
+	points_output_file = parse_txt_to_json(path2points, path2ptsjson, "points", "labels")
+	points_data = get_json_data(points_output_file)
 
-	if path2originjson == "" :
-		origin_spacing_file = f'{path2points}/origin_spacing.txt'
-		origin_spacing_labels_file = f'{path2points}/origin_spacing_labels.txt'
-		origin_spacing_output_file = f'{path2points}/origin_spacing.json'
-		txt2json(origin_spacing_file, origin_spacing_labels_file, origin_spacing_output_file)
-	else :
-		origin_spacing_output_file = os.path.join(path2points, path2originjson)
-	
-	if not os.path.exists(points_output_file):
-		print("ERROR: points.json file does not exist. Please run txt_2_json.py first.")
-		return
-	
-	if not os.path.exists(origin_spacing_output_file):
-		print("ERROR: origin_spacing.json file does not exist. Please run txt_2_json.py first.")
-		return
-
-	with open(points_output_file) as file:
-		points_data = json.load(file)
-
-	with open(origin_spacing_output_file) as file:
-		origin_data = json.load(file)
+	origin_spacing_output_file = parse_txt_to_json(path2points, path2originjson, "origin_spacing", "origin_spacing_labels")
+	origin_data = get_json_data(origin_spacing_output_file)
 
 	origin = origin_data["origin"]
 	spacing = origin_data["spacing"]
@@ -141,6 +115,10 @@ def main(args) :
 	if not os.path.exists(seg_name):
 		print("seg_corrected.nrrd file does not exist. Attempting using .nii.")
 		seg_name = f'{path2points}/seg_corrected.nii'
+		if os.path.exists(seg_name): 
+			print("Found seg_corrected.nii file. Converting to .nrrd.")
+			seg_name = img.convert_to_nrrd(path2points, "seg_corrected.nii")
+			
 
 	# SVC
 	pts1 = points_data['SVC_1']
@@ -186,7 +164,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='To run: python3 create_cylinders.py [path_to_points]')
 	parser.add_argument("path_to_points")
 	parser.add_argument("--points-json", "-pts", type=str, required=False, default="", help="Name of the json file containing the points")
-	parser.add_argument("--origin-spacing-json", "-os", type=str, required=False, default="", help="Name of the json file containing the origin and spacing")	
+	parser.add_argument("--origin-spacing-json", "-origin-spacing", type=str, required=False, default="", help="Name of the json file containing the origin and spacing")
 	args = parser.parse_args()
 	
 	main(args)

@@ -10,6 +10,20 @@ import time
 import multiprocessing as mp
 
 # from scipy import ndimage
+def convert_to_nrrd(base_directory: str, filename: str):
+  strt = 4
+  if 'nii.gz' in filename:
+    strt = 7
+  elif 'nii' not in filename:
+    filename += '.nii'
+
+  path_to_nii = os.path.join(base_directory, filename)
+  path_to_save = os.path.join(base_directory, f'{filename[:-strt]}.nrrd')
+  im = sitk.ReadImage(path_to_nii)
+  sitk.WriteImage(im, path_to_save)
+
+  return path_to_save
+  
 
 def pad_image(img_array):
   padded_img_array = np.pad(img_array, ((10,10),(10,10),(10,10)), 'constant', constant_values=((0,0),(0,0),(0,0)))
@@ -81,12 +95,7 @@ def remove_filter(imga_array,imgb_array,label_remove):
 
 def threshold_filter_nrrd(img_nrrd,lower,upper):
   img_itk = sitk.ReadImage(img_nrrd)
-  thresh = sitk.ThresholdImageFilter()
-  thresh.SetLower(lower)
-  thresh.SetUpper(upper)
-  thresh.SetOutsideValue(0)
-  thresh_img = thresh.Execute(img_itk)
-  return thresh_img
+  return threshold_filter(img_itk,lower,upper)
 
 def threshold_filter(img_itk,lower,upper):
   thresh = sitk.ThresholdImageFilter()

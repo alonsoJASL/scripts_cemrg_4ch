@@ -67,6 +67,7 @@ def main(args) :
     path2points = args.path_to_points
     path2ptsjson = args.points_json
     path2originjson = args.origin_spacing_json
+
     output_path = os.path.join(path2points, 'seg_s2a.nrrd') if args.output_path == "" else args.output_path
 
     if path2ptsjson == "" :

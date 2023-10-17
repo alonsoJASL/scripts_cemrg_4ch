@@ -1,17 +1,5 @@
-from img import mask_plane_creator
-from img import add_masks
-from img import add_masks_replace
-from img import add_masks_replace_only
-from img import add_masks_replace_except
-from img import add_masks_replace_except_2
-from img import save_itk
-from img import connected_component
-from img import distance_map
-from img import threshold_filter
-from img import threshold_filter_nrrd
-from img import push_inside
-from img import remove_filter
-from img import and_filter
+
+from img import save_itk, push_inside
 import SimpleITK as sitk
 
 import numpy as np
@@ -21,42 +9,22 @@ import json
 import argparse
 import os
 
-# ----------------------------------------------------------------------------------------------
-# Load points.json
-# ----------------------------------------------------------------------------------------------
-parser = argparse.ArgumentParser(description='To run: python3 clean_seg.py [path_to_points]')
-parser.add_argument("path_to_points")
-args = parser.parse_args()
-path2points = args.path_to_points
-
-points_file = open(path2points+'/points.json')
-points_data = json.load(points_file)
+from common import parse_txt_to_json, get_json_data, mycp
 
 # ----------------------------------------------------------------------------------------------
-# Find the origin and spacing
+# Constants
 # ----------------------------------------------------------------------------------------------
-# NOTE - We save the origin and spacings because the "save_itk" function used in
-# the next step makes the format of the header difficult to work with.
-# ----------------------------------------------------------------------------------------------
-origin_spacing_file = open(path2points+'/origin_spacing.json')
-origin_spacing_data = json.load(origin_spacing_file)
-origin = origin_spacing_data['origin']
-spacings = origin_spacing_data['spacing']
+SCALE_FACTOR = 1/0.39844 # scale factor
 
-# ----------------------------------------------------------------------------------------------
-# Define the wall thickness
-# ----------------------------------------------------------------------------------------------
-sf = 1/0.39844 # scale factor
+valve_WT = SCALE_FACTOR*2.5
+ring_thickness = SCALE_FACTOR*4
 
-valve_WT = sf*2.5
-ring_thickness = sf*4
-
-LV_WT = sf*2.00;
-RV_WT = sf*3.50;
-LA_WT = sf*2.00;
-RA_WT = sf*2.00;
-Ao_WT = sf*2.00;
-PArt_WT = sf*2.00;
+LV_WT = SCALE_FACTOR*2.00
+RV_WT = SCALE_FACTOR*3.50
+LA_WT = SCALE_FACTOR*2.00
+RA_WT = SCALE_FACTOR*2.00
+Ao_WT = SCALE_FACTOR*2.00
+PArt_WT = SCALE_FACTOR*2.00
 
 LV_BP_label = 1
 LV_myo_label = 2
@@ -100,67 +68,82 @@ LAA_ring_label = 225
 SVC_ring_label = 226
 IVC_ring_label = 227
 
-# REMINDER ON HOW TO USE PUSH_INSIDE FUNCTION
-# Pushing A_ring with B_ring
-# seg_s5_array = push_inside(path2points,path2points+'seg_s5.nrrd',B_ring_label,A_ring_label,A_label,ring_thickness)
+def correct_rings(base_dir, img_file, origin, spacings, pusher_wall_lab,pushed_wall_lab,pushed_BP_lab,pushed_WT, output_path=""): 
+    if output_path == "":
+        output_path = img_file
+    seg_array = push_inside(base_dir, img_file, pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT)
+    seg_array = np.swapaxes(seg_array,0,2)
+    save_itk(seg_array, origin, spacings, output_path)
+    print(" ## Correcting rings: Formatted and saved segmentation ## \n")
 
-# ----------------------------------------------------------------------------------------------
-# Create seg_s5
-# ----------------------------------------------------------------------------------------------
-print(' ## Creating seg_s5 ## \n')
-os.system("cp "+path2points+"/seg_s4k.nrrd "+path2points+"/seg_s5.nrrd")
+def main(args):
+    # ----------------------------------------------------------------------------------------------
+    # Load points.json
+    # ----------------------------------------------------------------------------------------------
+    path2points = args.path_to_points
+    path2originjson = args.origin_spacing_json
 
-# ----------------------------------------------------------------------------------------------
-# RPV2_ring is pushed by RPV1_ring
-# ----------------------------------------------------------------------------------------------
-print(' ## Correcting rings: Pushing RPV2_ring with RPV1_ring ## \n')
-seg_s5_array = push_inside(path2points,path2points+'seg_s5.nrrd',RPV1_ring_label,RPV2_ring_label,RPV2_label,ring_thickness)
-seg_s5_array = np.swapaxes(seg_s5_array,0,2)
-save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
-print(" ## Correcting rings: Formatted and saved segmentation ## \n")
+    origin_spacing_output_file = parse_txt_to_json(path2points, path2originjson, "origin_spacing", "origin_spacing_labels")
+    origin_data = get_json_data(origin_spacing_output_file)
 
-# ----------------------------------------------------------------------------------------------
-# LPV2_ring is pushed by LPV1_ring
-# ----------------------------------------------------------------------------------------------
-print(' ## Correcting rings: Pushing LPV2_ring with LPV1_ring ## \n')
-seg_s5_array = push_inside(path2points,path2points+'seg_s5.nrrd',LPV1_ring_label,LPV2_ring_label,LPV2_label,ring_thickness)
-seg_s5_array = np.swapaxes(seg_s5_array,0,2)
-save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
-print(" ## Correcting rings: Formatted and saved segmentation ## \n")
+    origin = origin_data['origin']
+    spacings = origin_data['spacing']
 
-# ----------------------------------------------------------------------------------------------
-# LAA_ring is pushed by LPV1_ring
-# ----------------------------------------------------------------------------------------------
-print(' ## Correcting rings: Pushing LAA_ring with LPV1_ring ## \n')
-seg_s5_array = push_inside(path2points,path2points+'seg_s5.nrrd',LPV1_ring_label,LAA_ring_label,LAA_label,ring_thickness)
-seg_s5_array = np.swapaxes(seg_s5_array,0,2)
-save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
-print(" ## Correcting rings: Formatted and saved segmentation ## \n")
+    DIR = lambda x: os.path.join(path2points, x)
 
-# # ----------------------------------------------------------------------------------------------
-# # Ao_wall is pushed by SVC_ring
-# # ----------------------------------------------------------------------------------------------
-# print(' ## Pushing Ao wall with SVC_ring ## \n')
-# seg_s5_array = push_inside(path2points,path2points+'seg_s5.nrrd',SVC_ring_label,Ao_wall_label,Ao_BP_label,Ao_WT)
-# seg_s5_array = np.swapaxes(seg_s5_array,0,2)
-# save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
-# print(" ## Correcting rings: Formatted and saved segmentation ## \n")
+    # REMINDER ON HOW TO USE PUSH_INSIDE FUNCTION
+    # Pushing A_ring with B_ring
+    # seg_s5_array = push_inside(path2points,path2points+'seg_s5.nrrd',B_ring_label,A_ring_label,A_label,ring_thickness)
 
-# ----------------------------------------------------------------------------------------------
-# Ao_wall is pushed by RV_myo
-# ----------------------------------------------------------------------------------------------
-print(' ## Pushing Ao wall with RV_myo ## \n')
-seg_s5_array = push_inside(path2points,path2points+'seg_s5.nrrd',RV_myo_label,Ao_wall_label,Ao_BP_label,Ao_WT)
-seg_s5_array = np.swapaxes(seg_s5_array,0,2)
-save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
-print(" ## Correcting rings: Formatted and saved segmentation ## \n")
+    # ----------------------------------------------------------------------------------------------
+    # Create seg_s5
+    # ----------------------------------------------------------------------------------------------
+    print(' ## Creating seg_s5 ## \n')
+    mycp(DIR('seg_s4k.nrrd'), DIR('seg_s5.nrrd'))
 
-# ----------------------------------------------------------------------------------------------
-# LA_myo is pushed by SVC_ring
-# ----------------------------------------------------------------------------------------------
-print(' ## Pushing LA_myo with SVC_ring ## \n')
-seg_s5_array = push_inside(path2points,path2points+'seg_s5.nrrd',SVC_ring_label,LA_myo_label,LA_BP_label,LA_WT)
-seg_s5_array = np.swapaxes(seg_s5_array,0,2)
-save_itk(seg_s5_array, origin, spacings, path2points+'/seg_s5.nrrd')
-print(" ## Correcting rings: Formatted and saved segmentation ## \n")
+    # ----------------------------------------------------------------------------------------------
+    # RPV2_ring is pushed by RPV1_ring
+    # ----------------------------------------------------------------------------------------------
+    print(' ## Correcting rings: Pushing RPV2_ring with RPV1_ring ## \n')
+    correct_rings(path2points,DIR('seg_s5.nrrd'),origin,spacings,RPV1_ring_label,RPV2_ring_label,RPV2_label,ring_thickness)
 
+    # ----------------------------------------------------------------------------------------------
+    # LPV2_ring is pushed by LPV1_ring
+    # ----------------------------------------------------------------------------------------------
+    print(' ## Correcting rings: Pushing LPV2_ring with LPV1_ring ## \n')
+    correct_rings(path2points,DIR('seg_s5.nrrd'),origin,spacings,LPV1_ring_label,LPV2_ring_label,LPV2_label,ring_thickness)
+
+    # ----------------------------------------------------------------------------------------------
+    # LAA_ring is pushed by LPV1_ring
+    # ----------------------------------------------------------------------------------------------
+    print(' ## Correcting rings: Pushing LAA_ring with LPV1_ring ## \n')
+    correct_rings(path2points,DIR('seg_s5.nrrd'),origin,spacings,LPV1_ring_label,LAA_ring_label,LAA_label,ring_thickness)
+    seg_s5_array = push_inside(path2points,DIR('seg_s5.nrrd'),LPV1_ring_label,LAA_ring_label,LAA_label,ring_thickness)
+
+    # # ----------------------------------------------------------------------------------------------
+    # # Ao_wall is pushed by SVC_ring
+    # # ----------------------------------------------------------------------------------------------
+    # print(' ## Pushing Ao wall with SVC_ring ## \n')
+    # seg_s5_array = push_inside(path2points,DIR('seg_s5.nrrd'),SVC_ring_label,Ao_wall_label,Ao_BP_label,Ao_WT)
+    # seg_s5_array = np.swapaxes(seg_s5_array,0,2)
+    # save_itk(seg_s5_array, origin, spacings, DIR('seg_s5.nrrd'))
+    # print(" ## Correcting rings: Formatted and saved segmentation ## \n")
+
+    # ----------------------------------------------------------------------------------------------
+    # Ao_wall is pushed by RV_myo
+    # ----------------------------------------------------------------------------------------------
+    print(' ## Pushing Ao wall with RV_myo ## \n')
+    correct_rings(path2points,DIR('seg_s5.nrrd'),origin,spacings,RV_myo_label,Ao_wall_label,Ao_BP_label,Ao_WT)
+   
+    # ----------------------------------------------------------------------------------------------
+    # LA_myo is pushed by SVC_ring
+    # ----------------------------------------------------------------------------------------------
+    print(' ## Pushing LA_myo with SVC_ring ## \n')
+    correct_rings(path2points,DIR('seg_s5.nrrd'),origin,spacings,SVC_ring_label,LA_myo_label,LA_BP_label,LA_WT)
+
+if __name__ == '__main__' :
+    parser = argparse.ArgumentParser(description='To run: python3 clean_seg.py [path_to_points]')
+    parser.add_argument("path_to_points")
+    parser.add_argument("--origin-spacing-json", "-origin-spacing", type=str, required=False, default="", help="Name of the json file containing the origin and spacing")
+    args = parser.parse_args()
+    main(args)
