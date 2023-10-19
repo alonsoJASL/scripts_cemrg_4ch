@@ -8,6 +8,48 @@ import string
 import subprocess
 import time
 import multiprocessing as mp
+import pydicom as dicom 
+
+def get_origin_from_dicom(list_of_files: list) -> np.ndarray :
+  """
+  Returns the origin of the image as a numpy array.
+  Args:
+      list_of_files (list): A list of file paths representing DICOM files.
+  Returns:
+      np.ndarray: A numpy array representing the origin of the image.
+  """
+  
+  ds = dicom.dcmread(list_of_files[0])
+  image_origin_option_A = np.array(ds[0x0020, 0x0032].value,dtype=float)
+  ds = dicom.dcmread(list_of_files[-1])
+  image_origin_option_B = np.array(ds[0x0020, 0x0032].value,dtype=float)
+
+  if image_origin_option_A[2] < image_origin_option_B[2]:
+    image_origin = image_origin_option_A
+  else:
+    image_origin = image_origin_option_B
+
+  return image_origin
+
+def get_image_spacing(path_to_seg:str) :
+  seg_array, header = nrrd.read(path_to_seg)
+  
+  try : 
+    img_spacing = header['spacings']
+  
+  except Exception :
+    img_spacing = header['space directions']
+    img_spacing = [img_spacing[0,0],img_spacing[1,1],img_spacing[2,2]]
+  
+  return img_spacing
+
+  # try:
+  # 	imgSpa = header['spacings']
+  #   print(imgSpa)
+  # except Exception:
+  # imgSpa = header['space directions']
+  #   imgSpa = [imgSpa[0,0],imgSpa[1,1],imgSpa[2,2]]
+  #   print(imgSpa)
 
 # from scipy import ndimage
 def convert_to_nrrd(base_directory: str, filename: str):

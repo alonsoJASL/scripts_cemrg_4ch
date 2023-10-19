@@ -12,34 +12,32 @@ import SimpleITK as sitk
 import numpy as np
 import pydicom as dicom
 
-parser = argparse.ArgumentParser(description='To run: python3 find_origin_and_spacing.py [path_to_points]')
-parser.add_argument("path_to_points")
-args = parser.parse_args()
-path2points=args.path_to_points
-seg_nrrd = path2points+'/seg_corrected.nrrd'
+from common import configure_logging
+logger = configure_logging(log_name=__name__)
 
-dir_name = path2points+'/ct/'
-list_of_files = sorted(filter(os.path.isfile, glob.glob(dir_name + '*') ) )
+from process_handler import get_origin_and_spacing
+def main(args):
+	"""
+	Find origin and spacing of the file. 
+	Needs a segmentation for spacing and dicom for origin.
 
-ds = dicom.dcmread(list_of_files[0])
-image_origin_option_A = np.array(ds[0x0020, 0x0032].value,dtype=float)
-ds = dicom.dcmread(list_of_files[-1])
-image_origin_option_B = np.array(ds[0x0020, 0x0032].value,dtype=float)
+	USAGE:
+	python3 find_origin_and_spacing.py [path_to_points] [--seg-name [seg_name]] [--dicom-dir [dicom_dir]] [--output-file [output_file]]
+	
+	"""
+	path2points=args.path_to_points
+	seg_name="seg_corrected.nrrd"
+	dicom_dir=args.dicom_dir
+	output_file=args.output_file
 
-if image_origin_option_A[2] < image_origin_option_B[2]:
-	image_origin = image_origin_option_A
-else:
-	image_origin = image_origin_option_B
+	get_origin_and_spacing(path2points, seg_name, dicom_dir, output_file)
 
-print(image_origin)
-
-
-seg_array, header = nrrd.read(seg_nrrd)
-
-try:
-	imgSpa = header['spacings']
-	print(imgSpa)
-except Exception:
-	imgSpa = header['space directions']
-	imgSpa = [imgSpa[0,0],imgSpa[1,1],imgSpa[2,2]]
-	print(imgSpa)
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser(description='To run: python3 find_origin_and_spacing.py [path_to_points]', 
+								  usage=main.__doc__)
+	parser.add_argument("path_to_points")
+	parser.add_argument("--seg-name", "-seg-name", type=str, default="seg_corrected.nrrd")
+	parser.add_argument("--dicom-dir", "-dicom-dir", type=str, default="ct")
+	parser.add_argument("--output-file", "-output-file", type=str, default="")
+	args = parser.parse_args()
+	main(args)
