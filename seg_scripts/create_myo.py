@@ -86,6 +86,7 @@ def main(args) :
     seg_s2f_array, header = nrrd.read(DIR('seg_s2f.nrrd'))
     LV_neck_array = img.add_masks_replace(LV_neck_array,LV_neck_array,LV_neck_label)
     seg_s3a_array = img.add_masks(seg_s2f_array,LV_neck_array,2)
+    # change here!
 
     # ----------------------------------------------------------------------------------------------
     # Format and save the segmentation

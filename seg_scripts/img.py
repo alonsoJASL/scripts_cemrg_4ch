@@ -216,8 +216,9 @@ def connected_component_keep(imga_nrrd,seed,layer,path2points):
   imga_array = remove_filter(imga_array,imga_array,layer)
   imgb_array = add_masks_replace(imga_array, CC_array, layer)
   return imgb_array
+# change here!
 
-def add_mask_to_segmentation(imga, imgb, newmask, operation_mode, forbid_changes=None):
+def process_mask(imga, imgb, newmask, operation_mode, forbid_changes=None):
     imga_new = copy.deepcopy(imga)
     newmask_ind = loc_mask(imgb)
     newmask_ind_trans = np.transpose(newmask_ind)

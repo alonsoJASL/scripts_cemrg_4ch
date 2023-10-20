@@ -169,3 +169,5 @@ def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, la
     TMP = lambda x: os.path.join(path2points, "tmp", x)
 
     C = Labels(filename=labels_file)
+
+    # advimg.create_mask_from_distance_map(path2points, )

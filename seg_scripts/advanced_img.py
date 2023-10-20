@@ -220,5 +220,16 @@ def create_mask_from_distance_map(path2points, input_name, output_name, labels:d
 	sitk.WriteImage(thresholded_mask,TMP(thresh_name),True)
 	thresholded_array, _ = nrrd.read(TMP(thresh_name))
 	input_array, _ = nrrd.read(DIR(input_name)) 
+
+	mode, newmask, forbid_list = add_mask_list[0]
+	thresholded_array = img.process_mask(thresholded_array, thresholded_array, newmask, mode, forbid_changes=forbid_list)
+
+	mode, newmask, forbid_list = add_mask_list[1]
+	output_array = img.process_mask(input_array, thresholded_array, newmask, mode, forbid_changes=forbid_list)
+
+	if len(add_mask_list)>2:
+		mode, newmask, forbid_list = add_mask_list[2]
+		output_array = img.process_mask(output_array, thresholded_array, newmask, mode, forbid_changes=forbid_list)
 	
-    # thresholded_array = img.add_mask_to_segmentation(thresholded_array, thresholded_array,)
+	output_array = np.swapaxes(output_array, 0, 2)
+	img.save_itk(output_array, origin, spacings, DIR(output_name))
