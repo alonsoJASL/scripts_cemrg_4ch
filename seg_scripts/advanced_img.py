@@ -2,7 +2,9 @@ import nrrd
 import copy
 import os
 import numpy as np
+import SimpleITK as sitk
 import img
+from img import MaskOperationMode as mom
 
 from common import configure_logging, big_print
 logger = configure_logging(log_name=__name__)
@@ -181,3 +183,42 @@ def flatten_vessel_base(input_name, output_name, seed, label, path2points, tmp_n
     seg_array = np.swapaxes(seg_array, 0, 2)
     img.save_itk(seg_array, origin, spacings, output_filename) 
 	
+def create_mask_from_distance_map(path2points, input_name, output_name, labels:dict, tmp_dict:dict, origin_spacing:dict, add_mask_list) : 
+	"""
+	Creates a mask from a distance map and adds it to the segmentation. 
+	The add_mask_list is a list of tuples with the following information: 
+	For example: 
+	 [ 
+		(MaskOperationMode.REPLACE, newmask, forbid_changes_list ), 
+		(MaskOperationMode.NO_OVERRIDE, newmask, []) 
+	 ]
+	 
+	tmp_dict contains the names of the distance map and the thresholded mask.
+	tmp_dict = {
+        'distance_map': 'LV_DistMap.nrrd',
+        'threshold': 'LV_neck.nrrd'
+	}
+	
+	labels = { # get these from Labels
+        'distance_map': LV_BP_label,
+        'threshold': LV_neck_WT
+	} 
+	"""
+	DIR = lambda x: os.path.join(path2points, x)
+	TMP = lambda x: os.path.join(path2points, "tmp", x)
+	origin = origin_spacing['origin']
+	spacings = origin_spacing['spacing']
+	
+	dmap_name = tmp_dict['distance_map'][0]
+	thresh_name = tmp_dict['threshold'][0]
+	
+	
+	distance_map = img.distance_map(DIR(input_name), labels['distance_map'])
+	sitk.WriteImage(distance_map,TMP(dmap_name),True)
+	
+	thresholded_mask = img.threshold_filter_nrrd(TMP(dmap_name),0,labels['threshold'])
+	sitk.WriteImage(thresholded_mask,TMP(thresh_name),True)
+	thresholded_array, _ = nrrd.read(TMP(thresh_name))
+	input_array, _ = nrrd.read(DIR(input_name)) 
+	
+    # thresholded_array = img.add_mask_to_segmentation(thresholded_array, thresholded_array,)

@@ -7,6 +7,7 @@ from common import configure_logging, add_file_handler
 from common import parse_txt_to_json, get_json_data, make_tmp
 
 import img
+from img import MaskOperationMode as mom
 import advanced_img as advimg
 import Labels
 
@@ -156,6 +157,15 @@ def crop_svc_ivc(path2points:str, path2ptsjson:str, path2originjson:str, labels_
     advimg.flatten_vessel_base('seg_s2d.nrrd', 'seg_s2e.nrrd', SVC_seed, C.SVC_label, path2points, 'tmp', origin_data, C)
     advimg.flatten_vessel_base('seg_s2e.nrrd', 'seg_s2f.nrrd', IVC_seed, C.IVC_label, path2points, 'tmp', origin_data, C)
 
+def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None) :
+    points_output_file = parse_txt_to_json(path2points, path2ptsjson, "points", "labels")
+    points_data = get_json_data(points_output_file)
 
-    
+    origin_spacing_output_file = parse_txt_to_json(path2points, path2originjson, "origin_spacing", "origin_spacing_labels")
+    origin_data = get_json_data(origin_spacing_output_file)
 
+    make_tmp(path2points)
+    DIR = lambda x: os.path.join(path2points, x)
+    TMP = lambda x: os.path.join(path2points, "tmp", x)
+
+    C = Labels(filename=labels_file)

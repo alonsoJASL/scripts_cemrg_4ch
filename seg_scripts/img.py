@@ -9,6 +9,13 @@ import subprocess
 import time
 import multiprocessing as mp
 import pydicom as dicom 
+from enum import Enum
+
+class MaskOperationMode(Enum):
+  REPLACE_EXCEPT = 1
+  REPLACE_ONLY = 2
+  REPLACE = 3
+  ADD = 4
 
 def get_origin_from_dicom(list_of_files: list) -> np.ndarray :
   """
@@ -209,6 +216,25 @@ def connected_component_keep(imga_nrrd,seed,layer,path2points):
   imga_array = remove_filter(imga_array,imga_array,layer)
   imgb_array = add_masks_replace(imga_array, CC_array, layer)
   return imgb_array
+
+def add_mask_to_segmentation(imga, imgb, newmask, operation_mode, forbid_changes=None):
+    imga_new = copy.deepcopy(imga)
+    newmask_ind = loc_mask(imgb)
+    newmask_ind_trans = np.transpose(newmask_ind)
+
+    for i, n in enumerate(newmask_ind_trans):
+        A = imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
+
+        if operation_mode == MaskOperationMode.REPLACE_EXCEPT and A not in forbid_changes:
+            imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]] = newmask
+        elif operation_mode == MaskOperationMode.REPLACE_ONLY and A in forbid_changes:
+            imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]] = newmask
+        elif operation_mode == MaskOperationMode.REPLACE:
+            imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]] = newmask
+        elif operation_mode == MaskOperationMode.NO_OVERRIDE and A == 0:
+            imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]] = newmask
+
+    return imga_new
 
 def add_masks_replace_except(imga, imgb, newmask, forbid_change):
   # overrides all pixels except those belonging to a given mask
