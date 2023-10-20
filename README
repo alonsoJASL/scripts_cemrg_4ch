@@ -22,7 +22,7 @@ Segmentation
 conda deactivate
 conda activate pyseg
 
-7) Run “find_origin_and_spacing.py /heart_folder/segmentations”
+7) Run “find_origin_and_spacing.py /heart_folder/segmentations” - NOT WORKING, select it manually in itksnap
 8) Copy origin and spacing into “.txt” file (origin_spacing.txt) - MAKE SURE THERE ARE NO COMMAS/QUOTE MARKS/ETC
 
 9) Select 3 points for SVC and IVC cylinders (pixel) and save in “points.txt”
