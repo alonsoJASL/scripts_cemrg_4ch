@@ -3,7 +3,6 @@ import SimpleITK as sitk
 
 import numpy as np
 import nrrd
-# import pylab
 import json
 import os
 import argparse
