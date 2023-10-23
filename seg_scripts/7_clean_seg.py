@@ -45,6 +45,7 @@ sf = np.ceil(1.0/spacings[0]) # scale factor
 
 ring_thickness = sf*thickness_data["rings"]
 Ao_WT = sf*thickness_data["aorta"]
+LA_WT = sf*thickness_data["LA"]
 
 LV_BP_label = 1
 LV_myo_label = 2
