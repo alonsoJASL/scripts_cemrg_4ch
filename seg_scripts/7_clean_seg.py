@@ -1,23 +1,8 @@
-from img import mask_plane_creator
-from img import add_masks
-from img import add_masks_replace
-from img import add_masks_replace_only
-from img import add_masks_replace_except
-from img import add_masks_replace_except_2
-from img import save_itk
-from img import connected_component
-from img import distance_map
-from img import threshold_filter
-from img import threshold_filter_nrrd
 from img import push_inside
-from img import remove_filter
-from img import and_filter
 from img import save_itk_keeping_header
 import SimpleITK as sitk
 
 import numpy as np
-import nrrd
-# import pylab
 import json
 import argparse
 import os
@@ -32,6 +17,9 @@ path2points = args.path_to_points
 
 points_file = open(path2points+'/points.json')
 points_data = json.load(points_file)
+
+thickness_file = open(f"{path2points}/thickness.json")
+thickness_data = json.load(thickness_file)
 
 # ----------------------------------------------------------------------------------------------
 # Find the origin and spacing
@@ -55,15 +43,8 @@ seg_array_good_header = sitk.ReadImage(path2points+'/seg_s2a.nrrd')
 # sf = 1/0.39844 # scale factor
 sf = np.ceil(1.0/spacings[0]) # scale factor
 
-valve_WT = sf*2.5
-ring_thickness = sf*4
-
-LV_WT = sf*2.00;
-RV_WT = sf*3.50;
-LA_WT = sf*2.00;
-RA_WT = sf*2.00;
-Ao_WT = sf*2.00;
-PArt_WT = sf*2.00;
+ring_thickness = sf*thickness_data["rings"]
+Ao_WT = sf*thickness_data["aorta"]
 
 LV_BP_label = 1
 LV_myo_label = 2

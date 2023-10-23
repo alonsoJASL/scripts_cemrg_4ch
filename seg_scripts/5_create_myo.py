@@ -7,9 +7,7 @@ import json
 import os
 import argparse
 
-# ----------------------------------------------------------------------------------------------
-# Remake and load points.json
-# ----------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------
 parser = argparse.ArgumentParser(description='To run: python3 create_myo.py [path_to_points]')
 parser.add_argument("path_to_points")
 args = parser.parse_args()
@@ -19,6 +17,9 @@ os.system("python3 txt_2_json.py "+path2points+"/points.txt "+path2points+"/labe
 
 points_file = open(path2points+'/points.json')
 points_data = json.load(points_file)
+
+thickness_file = open(f"{path2points}/thickness.json")
+thickness_data = json.load(thickness_file)
 
 # ----------------------------------------------------------------------------------------------
 # Find the origin and spacing
@@ -41,13 +42,12 @@ os.system("mkdir "+path2points+"/tmp")
 # sf = 1/0.39844 # scale factor
 sf = np.ceil(1.0/spacings[0]) # scale factor
 
-LV_neck_WT = sf*2.00
-RV_WT = sf*3.50
-LA_WT = sf*2.00
-RA_WT = sf*2.00
-Ao_WT = sf*2.00
-PArt_WT = sf*3.50
-svc_ivc_pad = sf*2.00
+LV_neck_WT = sf*thickness_data["aorta"]
+RV_WT = sf*thickness_data["RV"]
+LA_WT = sf*thickness_data["LA"]
+RA_WT = sf*thickness_data["RA"]
+Ao_WT = sf*thickness_data["aorta"]
+PArt_WT = sf*thickness_data["RV"]
 
 LV_BP_label = 1
 LV_myo_label = 2

@@ -3,14 +3,11 @@ import SimpleITK as sitk
 
 import numpy as np
 import nrrd
-# import pylab
 import copy
 import json
 import os
 import argparse
 
-# ----------------------------------------------------------------------------------------------
-# Remake and load points.json
 # ----------------------------------------------------------------------------------------------
 parser = argparse.ArgumentParser(description='To run: python3 create_myo.py [path_to_points]')
 parser.add_argument("path_to_points")
@@ -22,6 +19,8 @@ os.system("python3 txt_2_json.py "+path2points+"/points.txt "+path2points+"/labe
 points_file = open(path2points+'/points.json')
 points_data = json.load(points_file)
 
+thickness_file = open(f"{path2points}/thickness.json")
+thickness_data = json.load(thickness_file)
 # ----------------------------------------------------------------------------------------------
 # Find the origin and spacing
 # ----------------------------------------------------------------------------------------------
@@ -39,15 +38,14 @@ spacings = origin_spacing_data['spacing']
 # sf = 1/0.39844 # scale factor
 sf = np.ceil(1.0/spacings[0]) # scale factor
 
-valve_WT = sf*4
-valve_WT_svc_ivc = sf*4
-ring_thickness = sf*4
+valve_WT = sf*thickness_data["valves"]
+valve_WT_svc_ivc = sf*thickness_data["valves"]
+ring_thickness = sf*thickness_data["rings"]
 
-RV_WT = sf*3.50;
-LA_WT = sf*2.00;
-RA_WT = sf*2.00;
-Ao_WT = sf*2.00;
-PArt_WT = sf*3.50;
+LA_WT = sf*thickness_data["LA"]
+RA_WT = sf*thickness_data["RA"]
+Ao_WT = sf*thickness_data["aorta"]
+PArt_WT = sf*thickness_data["RV"]
 
 LV_BP_label = 1
 LV_myo_label = 2
