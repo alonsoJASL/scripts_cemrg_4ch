@@ -480,3 +480,5 @@ seg_s3p_array = np.swapaxes(seg_s3p_array,0,2)
 save_itk_keeping_header(new_image=seg_s3p_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3p.nrrd')
 
 print(" ## RV myo: Saved segmentation with right ventricle pushed by the aorta ## \n")
+
+print("Things to check: The aorta and the PA have only one piece each.")
