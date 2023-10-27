@@ -182,7 +182,12 @@ print(' ## Pulmonary artery wall: Adding pulmonary artery wall to segmentation #
 PArt_wall_array, header = nrrd.read(path2points+'/tmp/PArt_wall.nrrd')
 seg_s3b_array, header = nrrd.read(path2points+'seg_s3b.nrrd')
 PArt_wall_array = add_masks_replace(PArt_wall_array,PArt_wall_array,PArt_wall_label)
-seg_s3c_array = add_masks_replace_except_2(seg_s3b_array,PArt_wall_array,PArt_wall_label,3,Ao_wall_label)
+# The pulmonary artery doesn't modify the RV bloodpool, but can modify the aorta.
+seg_s3c_array = add_masks_replace_except(imga = seg_s3b_array,
+										 imgb = PArt_wall_array,
+										 newmask = PArt_wall_label,
+										 forbid_change = RV_BP_label)
+# seg_s3c_array = add_masks_replace_except_2(seg_s3b_array,PArt_wall_array,PArt_wall_label,3,Ao_wall_label)
 
 # ----------------------------------------------------------------------------------------------
 # Format and save the segmentation
@@ -197,8 +202,15 @@ print(" ## Pulmonary artery wall: Saved segmentation with pulmonary artery wall 
 # ----------------------------------------------------------------------------------------------
 # Push the pulmonary artery wall into the pulmonary artery blood pool
 # ----------------------------------------------------------------------------------------------
-print(' ## Pulmonary artery wall: Pushing the wall of the pulmonary artery ## \n')
-seg_s3d_array = push_inside(path2points,path2points+'seg_s3c.nrrd',Ao_wall_label,PArt_wall_label,PArt_BP_label,PArt_WT)
+# print(' ## Pulmonary artery wall: Pushing the wall of the pulmonary artery ## \n')
+# seg_s3d_array = push_inside(path2points,path2points+'seg_s3c.nrrd',Ao_wall_label,PArt_wall_label,PArt_BP_label,PArt_WT)
+
+print(' ## Pulmonary artery wall: Pushing the wall of the aorta ## \n')
+seg_s3d_array = push_inside(path2points = path2points,
+							img_nrrd = f"{path2points}/seg_s3c.nrrd",pusher_wall_lab = PArt_wall_label,
+							pushed_wall_lab = Ao_wall_label,
+							pushed_BP_lab = Ao_BP_label,
+							pushed_WT = Ao_WT)
 
 # ----------------------------------------------------------------------------------------------
 # Format and save the segmentation
