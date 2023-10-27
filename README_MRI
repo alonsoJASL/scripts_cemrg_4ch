@@ -16,7 +16,7 @@ Segmentation
         RSPV = 10
         RIPV = 11
         LAA = 12
- Resample to 0.5 mm isotropic
+ Resample to 0.3 mm isotropic
 
 7) Run select manually in itksnap the origin and spacing and add it to origin_spacing.txt
 
