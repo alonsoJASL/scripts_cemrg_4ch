@@ -21,7 +21,7 @@ Segmentation
     a. Note: be careful not to crop the PArt too close to the RV_BP
 11) Run “create_cylinders.py /heart_folder/segmentations”
 
-12) Run “create_svc_ivc.py /heart_folder/segmentations”
+12) Run “create_svc_ivc.py /heart_folder/segmentations”. At this point the segmentation should have the venae cavae incorporated.
 
 13) Select:
     3 points for SVC_slicer 
