@@ -2,12 +2,9 @@
 import nrrd
 import copy
 import numpy as np
-import os
 import SimpleITK as sitk
-import string
 import subprocess
-import time
-import multiprocessing as mp
+from scipy import ndimage
 
 # from scipy import ndimage
 
