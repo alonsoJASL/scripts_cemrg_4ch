@@ -52,17 +52,11 @@ IVC_label = 14
 seg_corrected_nrrd = path2points+'/seg_corrected.nrrd'
 
 # ----------------------------------------------------------------------------------------------
-# Give the paths to the SVC/IVC cylinders and the aorta/pulmonary artery slicers
+# Give the paths to the SVC/IVC cylinders slicers
 # Give the associated labels
 # ----------------------------------------------------------------------------------------------
 svc_nrrd = path2points+'/SVC.nrrd'
 ivc_nrrd = path2points+'/IVC.nrrd'
-
-aorta_slicer_nrrd = path2points+'/aorta_slicer.nrrd'
-aorta_slicer_label = 0
-
-PArt_slicer_nrrd = path2points+'/PArt_slicer.nrrd'
-PArt_slicer_label = 0
 
 # ----------------------------------------------------------------------------------------------
 # Convert all of the segmentations to arrays
@@ -72,8 +66,6 @@ seg_array = sitk.ReadImage(seg_corrected_nrrd)
 seg_s2_array, header1 = nrrd.read(seg_corrected_nrrd)
 svc_array, header2 = nrrd.read(svc_nrrd)
 ivc_array, header3 = nrrd.read(ivc_nrrd)
-aorta_slicer_array, header4 = nrrd.read(aorta_slicer_nrrd)
-PArt_slicer_array, header5 = nrrd.read(PArt_slicer_nrrd)
 
 # ----------------------------------------------------------------------------------------------
 # Add the SVC and IVC 
