@@ -191,6 +191,14 @@ def connected_component_keep(imga_nrrd,seed,layer,path2points):
   imgb_array = add_masks_replace(imga_array, CC_array, layer)
   return imgb_array
 
+def connected_component_keep_biggest(imga_nrrd,layer):
+  imga = sitk.ReadImage(imga_nrrd)
+  component_image = sitk.ConnectedComponent(imga)
+  sorted_component_image = sitk.RelabelComponent(component_image, sortByObjectSize=True)
+  largest_component_binary_image = sorted_component_image == 1
+  relabel_image = sitk.ChangeLabel(largest_component_binary_image, 1, layer)
+  return relabel_image
+
 # def add_masks_replace_except(imga, imgb, newmask, forbid_change):
 #   # overrides all pixels except those belonging to a given mask
 #   newmask_ind=loc_mask(imgb)
