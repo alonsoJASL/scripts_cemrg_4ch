@@ -165,12 +165,20 @@ seg_s3b_array = np.swapaxes(seg_s3b_array,0,2)
 save_itk_keeping_header(new_image=seg_s3b_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3b.nrrd')
 print(" ## Aortic wall: Saved segmentation with aortic wall added ## \n")
 
+# Sometimes the wall is over the slicer, so another connected appears with only myocardium, so we need to rerun the connected component.
+print(' ## Running connected component in the aorta wall## \n')
+seg_s3b_nrrd = f"{path2points}/seg_s3b.nrrd"
+seg_aorta_wall_cc_array = connected_component(seg_s3b_nrrd, Ao_tip_seed, Ao_wall_label,path2points)
+seg_aorta_wall_cc_array = np.swapaxes(seg_aorta_wall_cc_array,0,2)
+save_itk_keeping_header(new_image=seg_aorta_wall_cc_array, original_image=seg_array_good_header, filename=f"{path2points}/seg_aorta_wall_cc.nrrd")
+
+
 # ----------------------------------------------------------------------------------------------
 # Create the pulmonary artery wall
 # ----------------------------------------------------------------------------------------------
 print(' ## Step 3/10: Creating the pulmonary artery wall ## \n')
 print(' ## Pulmonary artery wall: Executing distance map ## \n')
-PArt_DistMap = distance_map(path2points+'seg_s3b.nrrd',PArt_BP_label)
+PArt_DistMap = distance_map(f"{path2points}/seg_aorta_wall_cc.nrrd",PArt_BP_label)
 print(' ## Pulmonary artery wall: Writing temporary image ## \n')
 sitk.WriteImage(PArt_DistMap,path2points+'/tmp/PArt_DistMap.nrrd',True)
 
@@ -180,10 +188,10 @@ sitk.WriteImage(PArt_wall,path2points+'/tmp/PArt_wall.nrrd',True)
 
 print(' ## Pulmonary artery wall: Adding pulmonary artery wall to segmentation ## \n')
 PArt_wall_array, header = nrrd.read(path2points+'/tmp/PArt_wall.nrrd')
-seg_s3b_array, header = nrrd.read(path2points+'seg_s3b.nrrd')
+seg_aorta_wall_cc_array, header = nrrd.read(f"{path2points}/seg_aorta_wall_cc.nrrd")
 PArt_wall_array = add_masks_replace(PArt_wall_array,PArt_wall_array,PArt_wall_label)
 # The pulmonary artery doesn't modify the RV bloodpool, but can modify the aorta.
-seg_s3c_array = add_masks_replace_except(imga = seg_s3b_array,
+seg_s3c_array = add_masks_replace_except(imga = seg_aorta_wall_cc_array,
 										 imgb = PArt_wall_array,
 										 newmask = PArt_wall_label,
 										 forbid_change = RV_BP_label)
@@ -199,6 +207,17 @@ save_itk_keeping_header(new_image=seg_s3c_array, original_image=seg_array_good_h
 
 print(" ## Pulmonary artery wall: Saved segmentation with pulmonary artery wall added ## \n")
 
+# Sometimes the wall is over the slicer, so another connected appears with only myocardium, so we need to rerun the connected component.
+
+print(' ## Running connected component in the pulmonary artery wall ## \n')
+seg_3c_nrrd = f"{path2points}/seg_s3c.nrrd"
+seg_PA_wall_cc_array = connected_component(seg_3c_nrrd, PArt_tip_seed, PArt_wall_label,path2points)
+seg_PA_wall_cc_array = np.swapaxes(seg_PA_wall_cc_array,0,2)
+
+save_itk_keeping_header(new_image=seg_PA_wall_cc_array, original_image=seg_array_good_header, filename=f"{path2points}/seg_PA_wall_cc.nrrd")
+
+
+
 # ----------------------------------------------------------------------------------------------
 # Push the pulmonary artery wall into the pulmonary artery blood pool
 # ----------------------------------------------------------------------------------------------
@@ -207,7 +226,7 @@ print(" ## Pulmonary artery wall: Saved segmentation with pulmonary artery wall 
 
 print(' ## Pulmonary artery wall: Pushing the wall of the aorta ## \n')
 seg_s3d_array = push_inside(path2points = path2points,
-							img_nrrd = f"{path2points}/seg_s3c.nrrd",pusher_wall_lab = PArt_wall_label,
+							img_nrrd = f"{path2points}/seg_PA_wall_cc.nrrd",pusher_wall_lab = PArt_wall_label,
 							pushed_wall_lab = Ao_wall_label,
 							pushed_BP_lab = Ao_BP_label,
 							pushed_WT = Ao_WT)
