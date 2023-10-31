@@ -40,7 +40,7 @@ Segmentation
 
 If you need to re-do the slicers of the aorta or pulmonary artery, you have to re run 1_create_cylinders.
 
-17) Run `create_myo.py /heart_folder/segmentations`
+17) Run `create_myo.py /heart_folder/segmentations`. After this, the aorta and the pulmonary artery should have one connected component each. If not and there's a thin layer or some lose voxels, you have to remove them by hand (maybe using `itksnap`). If it's a big piece, probably it is because you did not select the aorta/PA tip point correctly.
 
 19) Run `create_valve_planes.py /heart_folder/segmentations`
 
