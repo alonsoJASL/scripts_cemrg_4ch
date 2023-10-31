@@ -144,7 +144,7 @@ pts3 = points_data['PArt_3']
 points = np.row_stack((pts1,pts2,pts3))
 
 slicer_radius_mm = 9
-slicer_height_mm = 3
+slicer_height_mm = 1.5
 
 slicer_radius = int(np.ceil(np.min(spacing)*slicer_radius_mm))
 slicer_height = int(np.ceil(np.min(spacing)*slicer_height_mm))
