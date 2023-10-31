@@ -192,12 +192,30 @@ def connected_component_keep(imga_nrrd,seed,layer,path2points):
   return imgb_array
 
 def connected_component_keep_biggest(imga_nrrd,layer):
+
+  #Not tested
   imga = sitk.ReadImage(imga_nrrd)
   component_image = sitk.ConnectedComponent(imga)
   sorted_component_image = sitk.RelabelComponent(component_image, sortByObjectSize=True)
   largest_component_binary_image = sorted_component_image == 1
-  relabel_image = sitk.ChangeLabel(largest_component_binary_image, 1, layer)
-  return relabel_image
+  # relabel_image = sitk.ChangeLabel(largest_component_binary_image, 1, layer)
+  filter = sitk.ConnectedThresholdImageFilter()
+
+  # Set the range of values for the threshold
+  lower_threshold = 1
+  upper_threshold = 1
+
+  # Set the label to replace (1) with the desired layer label
+  replace_value = layer
+
+  # Configure the filter
+  filter.SetLower(lower_threshold)
+  filter.SetUpper(upper_threshold)
+  filter.SetReplaceValue(replace_value)
+
+  # Execute the filter on the input image without specifying a seed
+  result = filter.Execute(imga)
+  return result
 
 # def add_masks_replace_except(imga, imgb, newmask, forbid_change):
 #   # overrides all pixels except those belonging to a given mask

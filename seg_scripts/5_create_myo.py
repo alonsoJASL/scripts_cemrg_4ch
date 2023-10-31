@@ -255,29 +255,32 @@ seg_s3e_array = np.swapaxes(seg_s3e_array,0,2)
 save_itk_keeping_header(new_image=seg_s3e_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3e.nrrd')
 
 # Sometimes the wall is over the slicer, so another connected appears with only myocardium, so we need to rerun the connected component.
-print(' ## Running connected component in the aorta wall## \n')
-seg_s3e_nrrd = f"{path2points}/seg_s3e.nrrd"
-seg_aorta_wall_cc_array = connected_component(seg_s3e_nrrd, Ao_tip_seed, Ao_wall_label,path2points)
-seg_aorta_wall_cc_array = np.swapaxes(seg_aorta_wall_cc_array,0,2)
-save_itk_keeping_header(new_image=seg_aorta_wall_cc_array, original_image=seg_array_good_header, filename=f"{path2points}/seg_aorta_wall_cc.nrrd")
 
-seg_aorta_wall_biggest_cc = connected_component_keep_biggest(imga_nrrd=f"{path2points}/tmp/CC.nrd",
-															 layer=Ao_wall_label)
-seg_aorta_wall_biggest_cc = np.swapaxes(seg_aorta_wall_biggest_cc,0,2)
-save_itk_keeping_header(new_image=seg_aorta_wall_biggest_cc, original_image=seg_array_good_header, filename=f"{path2points}/seg_aorta_wall_biggest_cc.nrrd")
+## NOTE: run connected component keeping only the biggest.
 
-print(' ## Running connected component in the pulmonary artery wall ## \n')
-seg_aorta_wall_biggest_cc_nrrd = f"{path2points}/seg_aorta_wall_biggest_cc.nrrd"
-seg_PA_wall_cc_array = connected_component(seg_aorta_wall_biggest_cc_nrrd, PArt_tip_seed, PArt_wall_label,path2points)
-seg_PA_wall_cc_array = np.swapaxes(seg_PA_wall_cc_array,0,2)
+# print(' ## Running connected component in the aorta wall## \n')
+# seg_s3e_nrrd = f"{path2points}/seg_s3e.nrrd"
+# seg_aorta_wall_cc_array = connected_component(seg_s3e_nrrd, Ao_tip_seed, Ao_wall_label,path2points)
+# seg_aorta_wall_cc_array = np.swapaxes(seg_aorta_wall_cc_array,0,2)
+# save_itk_keeping_header(new_image=seg_aorta_wall_cc_array, original_image=seg_array_good_header, filename=f"{path2points}/seg_aorta_wall_cc.nrrd")
 
-save_itk_keeping_header(new_image=seg_PA_wall_cc_array, original_image=seg_array_good_header, filename=f"{path2points}/seg_PA_wall_cc.nrrd")
+# seg_aorta_wall_biggest_cc = connected_component_keep_biggest(imga_nrrd=f"{path2points}/tmp/CC.nrrd",
+# 															 layer=Ao_wall_label)
+# seg_aorta_wall_biggest_cc = np.swapaxes(seg_aorta_wall_biggest_cc,0,2)
+# save_itk_keeping_header(new_image=seg_aorta_wall_biggest_cc, original_image=seg_array_good_header, filename=f"{path2points}/seg_aorta_wall_biggest_cc.nrrd")
+
+# print(' ## Running connected component in the pulmonary artery wall ## \n')
+# seg_aorta_wall_biggest_cc_nrrd = f"{path2points}/seg_aorta_wall_biggest_cc.nrrd"
+# seg_PA_wall_cc_array = connected_component(seg_aorta_wall_biggest_cc_nrrd, PArt_tip_seed, PArt_wall_label,path2points)
+# seg_PA_wall_cc_array = np.swapaxes(seg_PA_wall_cc_array,0,2)
+
+# save_itk_keeping_header(new_image=seg_PA_wall_cc_array, original_image=seg_array_good_header, filename=f"{path2points}/seg_PA_wall_cc.nrrd")
 
 
-seg_PA_wall_biggest_cc = connected_component_keep_biggest(imga_nrrd=f"{path2points}/tmp/CC.nrd",
-															 layer=PArt_wall_label)
-seg_PA_wall_biggest_cc = np.swapaxes(seg_PA_wall_biggest_cc,0,2)
-save_itk_keeping_header(new_image=seg_PA_wall_biggest_cc, original_image=seg_array_good_header, filename=f"{path2points}/seg_PA_wall_biggest_cc.nrrd")
+# seg_PA_wall_biggest_cc = connected_component_keep_biggest(imga_nrrd=f"{path2points}/tmp/CC.nrrd",
+# 															 layer=PArt_wall_label)
+# seg_PA_wall_biggest_cc = np.swapaxes(seg_PA_wall_biggest_cc,0,2)
+# save_itk_keeping_header(new_image=seg_PA_wall_biggest_cc, original_image=seg_array_good_header, filename=f"{path2points}/seg_PA_wall_biggest_cc.nrrd")
 
 print(" ## Cropping major vessels: Saved segmentation with aorta and pulmonary artery sliced ## \n")
 """
@@ -316,7 +319,7 @@ save_itk_keeping_header(new_image=seg_s3f_array, original_image=seg_array_good_h
 # ----------------------------------------------------------------------------------------------
 print(' ## Step 5/10: Creating the right ventricular myocardium: ## \n')
 print(' ## RV myo: Executing distance map ## \n')
-RV_BP_DistMap = distance_map(path2points+'seg_PA_wall_biggest_cc.nrrd',RV_BP_label)
+RV_BP_DistMap = distance_map(path2points+'seg_3e.nrrd',RV_BP_label)
 print(' ## RV myo: Writing temporary image ## \n')
 sitk.WriteImage(RV_BP_DistMap,path2points+'/tmp/RV_BP_DistMap.nrrd',True)
 
@@ -326,9 +329,9 @@ sitk.WriteImage(RV_myo,path2points+'/tmp/RV_myo.nrrd',True)
 
 print(' ## RV myo: Adding right ventricular myocardium to segmentation ## \n')
 RV_myo_array, header = nrrd.read(path2points+'/tmp/RV_myo.nrrd')
-seg_PA_wall_biggest_cc_array, header = nrrd.read(path2points+'seg_PA_wall_biggest_cc.nrrd')
+seg_s3e_array, header = nrrd.read(path2points+'seg_3e.nrrd')
 RV_myo_array = add_masks_replace(RV_myo_array,RV_myo_array,RV_myo_label)
-seg_s3g_array = add_masks_replace_only(seg_PA_wall_biggest_cc_array,RV_myo_array,RV_myo_label,Ao_wall_label) 
+seg_s3g_array = add_masks_replace_only(seg_s3e_array,RV_myo_array,RV_myo_label,Ao_wall_label) 
 
 # ----------------------------------------------------------------------------------------------
 # Format and save the segmentation
