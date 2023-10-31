@@ -5,6 +5,7 @@ import numpy as np
 import SimpleITK as sitk
 import subprocess
 from scipy import ndimage
+from tqdm import tqdm
 
 # from scipy import ndimage
 
@@ -48,33 +49,67 @@ def push_ring_inside(path2points,img_nrrd,pusher_wall_lab,pushed_wall_lab,pushed
 
   return img_array
 
-def and_filter(imga_array,imgb_array,label_a,new_label):
-  # looks at everywhere in image_a and image_b that has label_a and replaces with new_label
-  newmask_ind=loc_mask(imgb_array)
-  newmask_ind_trans=np.transpose(newmask_ind)
+# def and_filter(imga_array,imgb_array,label_a,new_label):
+#   # looks at everywhere in image_a and image_b that has label_a and replaces with new_label
+#   newmask_ind=loc_mask(imgb_array)
+#   newmask_ind_trans=np.transpose(newmask_ind)
 
-  imgb_array_new = copy.deepcopy(imgb_array)
+#   imgb_array_new = copy.deepcopy(imgb_array)
 
-  for i,n in enumerate(newmask_ind_trans):
-    A = imga_array[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
-    if A == label_a :
-      imgb_array_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]] = new_label
-    else:
-      imgb_array_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]] = 0
-  return imgb_array_new 
+#   for i,n in enumerate(newmask_ind_trans):
+#     A = imga_array[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
+#     if A == label_a :
+#       imgb_array_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]] = new_label
+#     else:
+#       imgb_array_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]] = 0
+#   return imgb_array_new 
 
-def remove_filter(imga_array,imgb_array,label_remove):
-  # imga = seg, imgb = mask
-  imga_array_new = copy.deepcopy(imga_array)
+def and_filter(imga_array, imgb_array, label_a, new_label):
+    newmask_ind = loc_mask(imgb_array)
 
-  newmask_ind=loc_mask(imgb_array)
-  newmask_ind_trans=np.transpose(newmask_ind)
-  # set the new mask values
-  for i,n in enumerate(newmask_ind_trans):
-    A = imga_array_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
-    if A == label_remove:
-      imga_array_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= 0;
-  return imga_array_new
+    imgb_array_new = np.copy(imgb_array)  # Use numpy's copy for efficiency
+
+    # Use tqdm to create a progress bar
+    with tqdm(total=newmask_ind.shape[0], desc="Filtering") as pbar:
+        for index in np.transpose(newmask_ind):
+            x, y, z = index
+            if imga_array[x, y, z] == label_a:
+                imgb_array_new[x, y, z] = new_label
+            else:
+                imgb_array_new[x, y, z] = 0
+            pbar.update(1)  # Update the progress bar
+
+    return imgb_array_new
+
+# def remove_filter(imga_array,imgb_array,label_remove):
+#   # imga = seg, imgb = mask
+#   imga_array_new = copy.deepcopy(imga_array)
+
+#   newmask_ind=loc_mask(imgb_array)
+#   newmask_ind_trans=np.transpose(newmask_ind)
+#   # set the new mask values
+#   for i,n in enumerate(newmask_ind_trans):
+#     A = imga_array_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
+#     if A == label_remove:
+#       imga_array_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= 0;
+#   return imga_array_new
+
+def remove_filter(imga_array, imgb_array, label_remove):
+    # Create a copy of imga_array
+    imga_array_new = np.copy(imga_array)
+
+    # Find the mask for imgb_array
+    newmask_ind = loc_mask(imgb_array)
+
+    # Use tqdm to create a progress bar
+    with tqdm(total=newmask_ind.shape[0], desc="Filtering") as pbar:
+        for index in np.transpose(newmask_ind):
+            x, y, z = index
+            if imga_array_new[x, y, z] == label_remove:
+                imga_array_new[x, y, z] = 0
+            pbar.update(1)  # Update the progress bar
+
+    return imga_array_new
 
 def threshold_filter_nrrd(img_nrrd,lower,upper):
   img_itk = sitk.ReadImage(img_nrrd)
@@ -156,85 +191,164 @@ def connected_component_keep(imga_nrrd,seed,layer,path2points):
   imgb_array = add_masks_replace(imga_array, CC_array, layer)
   return imgb_array
 
+# def add_masks_replace_except(imga, imgb, newmask, forbid_change):
+#   # overrides all pixels except those belonging to a given mask
+#   newmask_ind=loc_mask(imgb)
+#   newmask_ind_trans=np.transpose(newmask_ind)
+#   # set the new mask values
+#   for i,n in enumerate(newmask_ind_trans):
+#     A = imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
+#     if A == forbid_change:
+#       pass
+#     else:
+#       imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
+#   return imga
+
 def add_masks_replace_except(imga, imgb, newmask, forbid_change):
-  # overrides all pixels except those belonging to a given mask
-  newmask_ind=loc_mask(imgb)
-  newmask_ind_trans=np.transpose(newmask_ind)
-  # set the new mask values
-  for i,n in enumerate(newmask_ind_trans):
-    A = imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
-    if A == forbid_change:
-      pass
-    else:
-      imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
-  return imga
+    # Find the mask for imgb
+    newmask_ind = loc_mask(imgb)
+
+    # Use tqdm to create a progress bar
+    with tqdm(total=newmask_ind.shape[0], desc="Processing") as pbar:
+        for index in np.transpose(newmask_ind):
+            x, y, z = index
+            A = imga[x, y, z]
+            if A != forbid_change:
+                imga[x, y, z] = newmask
+            pbar.update(1)  # Update the progress bar
+
+    return imga
+
+# def add_masks_replace_except_2(imga, imgb, newmask, forbid_change1, forbid_change2):
+#   # overrides all pixels except those belonging to a given mask
+#   newmask_ind=loc_mask(imgb)
+#   newmask_ind_trans=np.transpose(newmask_ind)
+#   # set the new mask values
+#   for i,n in enumerate(newmask_ind_trans):
+#     A = imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
+#     if A == forbid_change1:
+#       pass
+#     elif A == forbid_change2:
+#       pass
+#     else:
+#       imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
+#   return imga
 
 def add_masks_replace_except_2(imga, imgb, newmask, forbid_change1, forbid_change2):
-  # overrides all pixels except those belonging to a given mask
-  newmask_ind=loc_mask(imgb)
-  newmask_ind_trans=np.transpose(newmask_ind)
-  # set the new mask values
-  for i,n in enumerate(newmask_ind_trans):
-    A = imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
-    if A == forbid_change1:
-      pass
-    elif A == forbid_change2:
-      pass
-    else:
-      imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
-  return imga
+    # Find the mask for imgb
+    newmask_ind = loc_mask(imgb)
+
+    # Use tqdm to create a progress bar
+    with tqdm(total=newmask_ind.shape[0], desc="Processing") as pbar:
+        for index in np.transpose(newmask_ind):
+            x, y, z = index
+            A = imga[x, y, z]
+            if A != forbid_change1 and A != forbid_change2:
+                imga[x, y, z] = newmask
+            pbar.update(1)  # Update the progress bar
+
+    return imga
+
+# def add_masks_replace_except_3(imga, imgb, newmask, forbid_change1, forbid_change2, forbid_change3):
+#   # overrides all pixels except those belonging to a given mask
+#   newmask_ind=loc_mask(imgb)
+#   newmask_ind_trans=np.transpose(newmask_ind)
+#   # set the new mask values
+#   for i,n in enumerate(newmask_ind_trans):
+#     A = imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
+#     if A == forbid_change1:
+#       pass
+#     elif A == forbid_change2:
+#       pass
+#     elif A == forbid_change3:
+#       pass
+#     else:
+#       imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
+#   return imga
 
 def add_masks_replace_except_3(imga, imgb, newmask, forbid_change1, forbid_change2, forbid_change3):
-  # overrides all pixels except those belonging to a given mask
-  newmask_ind=loc_mask(imgb)
-  newmask_ind_trans=np.transpose(newmask_ind)
-  # set the new mask values
-  for i,n in enumerate(newmask_ind_trans):
-    A = imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
-    if A == forbid_change1:
-      pass
-    elif A == forbid_change2:
-      pass
-    elif A == forbid_change3:
-      pass
-    else:
-      imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
-  return imga
+    # Find the mask for imgb
+    newmask_ind = loc_mask(imgb)
+
+    # Use tqdm to create a progress bar
+    with tqdm(total=newmask_ind.shape[0], desc="Processing") as pbar:
+        for index in np.transpose(newmask_ind):
+            x, y, z = index
+            A = imga[x, y, z]
+            if A != forbid_change1 and A != forbid_change2 and A != forbid_change3:
+                imga[x, y, z] = newmask
+            pbar.update(1)  # Update the progress bar
+
+    return imga
+
+# def add_masks_replace_except_4(imga, imgb, newmask, forbid_change1, forbid_change2, forbid_change3, forbid_change4):
+#   # overrides all pixels except those belonging to a given mask
+#   newmask_ind=loc_mask(imgb)
+#   newmask_ind_trans=np.transpose(newmask_ind)
+#   # set the new mask values
+#   for i,n in enumerate(newmask_ind_trans):
+#     A = imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
+#     if A == forbid_change1:
+#       pass
+#     elif A == forbid_change2:
+#       pass
+#     elif A == forbid_change3:
+#       pass
+#     elif A == forbid_change4:
+#       pass
+#     else:
+#       imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
+#   return imga
+
 
 def add_masks_replace_except_4(imga, imgb, newmask, forbid_change1, forbid_change2, forbid_change3, forbid_change4):
-  # overrides all pixels except those belonging to a given mask
-  newmask_ind=loc_mask(imgb)
-  newmask_ind_trans=np.transpose(newmask_ind)
-  # set the new mask values
-  for i,n in enumerate(newmask_ind_trans):
-    A = imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
-    if A == forbid_change1:
-      pass
-    elif A == forbid_change2:
-      pass
-    elif A == forbid_change3:
-      pass
-    elif A == forbid_change4:
-      pass
-    else:
-      imga[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
-  return imga
+    # Find the mask for imgb
+    newmask_ind = loc_mask(imgb)
+
+    # Use tqdm to create a progress bar
+    with tqdm(total=newmask_ind.shape[0], desc="Processing") as pbar:
+        for index in np.transpose(newmask_ind):
+            x, y, z = index
+            A = imga[x, y, z]
+            if A != forbid_change1 and A != forbid_change2 and A != forbid_change3 and A != forbid_change4:
+                imga[x, y, z] = newmask
+            pbar.update(1)  # Update the progress bar
+
+    return imga
+
+# def add_masks_replace_only(imga, imgb, newmask, change_only):
+#   # only overrides pixels that already belong to a specific mask
+
+#   imga_new = copy.deepcopy(imga)
+
+#   newmask_ind=loc_mask(imgb)
+#   newmask_ind_trans=np.transpose(newmask_ind)
+#   # set the new mask values
+#   for i,n in enumerate(newmask_ind_trans):
+#     A = imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
+#     if A == 0:
+#       imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
+#     elif A == change_only:
+#       imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
+#   return imga_new
 
 def add_masks_replace_only(imga, imgb, newmask, change_only):
-  # only overrides pixels that already belong to a specific mask
+    # Create a copy of imga
+    imga_new = np.copy(imga)
 
-  imga_new = copy.deepcopy(imga)
+    # Find the mask for imgb
+    newmask_ind = loc_mask(imgb)
 
-  newmask_ind=loc_mask(imgb)
-  newmask_ind_trans=np.transpose(newmask_ind)
-  # set the new mask values
-  for i,n in enumerate(newmask_ind_trans):
-    A = imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
-    if A == 0:
-      imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
-    elif A == change_only:
-      imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
-  return imga_new
+    # Use tqdm to create a progress bar
+    with tqdm(total=newmask_ind.shape[0], desc="Processing") as pbar:
+        for index in np.transpose(newmask_ind):
+            x, y, z = index
+            A = imga_new[x, y, z]
+            if A == 0 or A == change_only:
+                imga_new[x, y, z] = newmask
+            pbar.update(1)  # Update the progress bar
+
+    return imga_new
 
 def add_masks_replace(imga, imgb, newmask):
   # overrides any pixels that already belong to a mask
@@ -246,19 +360,37 @@ def add_masks_replace(imga, imgb, newmask):
   imga_new[newmask_ind[0], newmask_ind[1], newmask_ind[2]]= newmask;
   return imga_new
 
+# def add_masks(imga, imgb, newmask):
+#   # does not override any pixels that already belong to a mask
+
+#   imga_new = copy.deepcopy(imga)
+
+#   newmask_ind=loc_mask(imgb)
+#   newmask_ind_trans=np.transpose(newmask_ind)
+#   # set the new mask values
+#   for i,n in enumerate(newmask_ind_trans):
+#     A = imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
+#     if A == 0:
+#       imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
+#   return imga_new
+
 def add_masks(imga, imgb, newmask):
-  # does not override any pixels that already belong to a mask
+    # Create a copy of imga
+    imga_new = np.copy(imga)
 
-  imga_new = copy.deepcopy(imga)
+    # Find the mask for imgb
+    newmask_ind = loc_mask(imgb)
 
-  newmask_ind=loc_mask(imgb)
-  newmask_ind_trans=np.transpose(newmask_ind)
-  # set the new mask values
-  for i,n in enumerate(newmask_ind_trans):
-    A = imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
-    if A == 0:
-      imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]= newmask;
-  return imga_new
+    # Use tqdm to create a progress bar
+    with tqdm(total=newmask_ind.shape[0], desc="Processing") as pbar:
+        for index in np.transpose(newmask_ind):
+            x, y, z = index
+            A = imga_new[x, y, z]
+            if A == 0:
+                imga_new[x, y, z] = newmask
+            pbar.update(1)  # Update the progress bar
+
+    return imga_new
 
 def loc_mask(image_array): 
   mask_ind=np.array(image_array.nonzero())
