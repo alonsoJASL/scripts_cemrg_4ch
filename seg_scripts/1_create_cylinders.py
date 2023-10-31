@@ -95,8 +95,14 @@ pts2 = points_data['SVC_2']
 pts3 = points_data['SVC_3']
 points = np.row_stack((pts1,pts2,pts3))
 
-slicer_radius = 10
-slicer_height = 30
+slicer_radius_mm = 3
+slicer_height_mm = 9
+
+slicer_radius = int(np.ceil(np.min(spacing)*slicer_radius_mm))
+slicer_height = int(np.ceil(np.min(spacing)*slicer_height_mm))
+
+# slicer_radius = 10
+# slicer_height = 30
 cylinder(seg_name,points,path2points+"/SVC.nrrd",slicer_radius, slicer_height,origin,spacing)
 
 # IVC
@@ -105,8 +111,14 @@ pts2 = points_data['IVC_2']
 pts3 = points_data['IVC_3']
 points = np.row_stack((pts1,pts2,pts3))
 
-slicer_radius = 10
-slicer_height = 30
+slicer_radius_mm = 3
+slicer_height_mm = 9
+
+slicer_radius = int(np.ceil(np.min(spacing)*slicer_radius_mm))
+slicer_height = int(np.ceil(np.min(spacing)*slicer_height_mm))
+
+# slicer_radius = 10
+# slicer_height = 30
 cylinder(seg_name,points,path2points+"/IVC.nrrd",slicer_radius, slicer_height,origin,spacing)
 
 # Aorta slicer
@@ -115,8 +127,14 @@ pts2 = points_data['Ao_2']
 pts3 = points_data['Ao_3']
 points = np.row_stack((pts1,pts2,pts3))
 
-slicer_radius = 30
-slicer_height = 2
+slicer_radius_mm = 9
+slicer_height_mm = 3
+
+slicer_radius = int(np.ceil(np.min(spacing)*slicer_radius_mm))
+slicer_height = int(np.ceil(np.min(spacing)*slicer_height_mm))
+
+# slicer_radius = 30
+# slicer_height = 5
 cylinder(seg_name,points,path2points+"/aorta_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
 
 # PArt slicer
@@ -125,8 +143,14 @@ pts2 = points_data['PArt_2']
 pts3 = points_data['PArt_3']
 points = np.row_stack((pts1,pts2,pts3))
 
-slicer_radius = 30
-slicer_height = 2
+slicer_radius_mm = 9
+slicer_height_mm = 3
+
+slicer_radius = int(np.ceil(np.min(spacing)*slicer_radius_mm))
+slicer_height = int(np.ceil(np.min(spacing)*slicer_height_mm))
+
+# slicer_radius = 30
+# slicer_height = 5
 cylinder(seg_name,points,path2points+"/PArt_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
 
 print("Note: the positions of the slicers are not reliable at this stage. Continue with the pipeline.")
