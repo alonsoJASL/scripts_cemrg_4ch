@@ -76,7 +76,7 @@ def cylinder(seg_nrrd, points, plane_name, slicer_radius, slicer_height, origin,
     seg_array_cylinder = np.swapaxes(seg_array_cylinder, 0, 2)
 
     print("Saving...")
-    save_itk_keeping_header(seg_array_cylinder, origin, spacing, plane_name)
+    save_itk(seg_array_cylinder, origin, spacing, plane_name)
 
 
 file = open(path2points+'/points.json')
