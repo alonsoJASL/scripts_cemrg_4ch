@@ -28,15 +28,15 @@ def main(args):
 
     labels_file = args.labels_file
     C = Labels(filename=labels_file)
-    C.RPV1_label = args.RPV1_label
-    C.SVC_label = args.SVC_label
-    C.IVC_label = args.IVC_label
-
     if labels_file is None :
         logger.info("Creating Labels file")
         labels_file = os.path.join(path2points, "custom_labels.json")
+        
+        C.RPV1_label = args.RPV1_label
+        C.SVC_label = args.SVC_label
+        C.IVC_label = args.IVC_label
     
-    C.save(filename=labels_file)
+        C.save(filename=labels_file)
 
     crop_svc_ivc(path2points, path2ptsjson, path2originjson, labels_file)
 

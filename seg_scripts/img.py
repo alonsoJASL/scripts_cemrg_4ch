@@ -9,6 +9,7 @@ import subprocess
 import time
 import multiprocessing as mp
 import pydicom as dicom 
+from scipy import ndimage
 from enum import Enum
 
 class MaskOperationMode(Enum):
@@ -58,7 +59,7 @@ def get_image_spacing(path_to_seg:str) :
   #   imgSpa = [imgSpa[0,0],imgSpa[1,1],imgSpa[2,2]]
   #   print(imgSpa)
 
-# from scipy import ndimage
+
 def convert_to_nrrd(base_directory: str, filename: str):
   strt = 4
   if 'nii.gz' in filename:
@@ -81,16 +82,17 @@ def pad_image(img_array):
 
 
 def push_inside(path2points,img_nrrd,pusher_wall_lab,pushed_wall_lab,pushed_BP_lab,pushed_WT):
+  output_path = os.path.join(path2points, 'tmp', 'pushed_wall.nrrd')
   # distance map of the pusher wall
   pusher_wall_DistMap = distance_map(img_nrrd,pusher_wall_lab)
 
   # threshold of the pusher wall
   new_pushed_wall = threshold_filter(pusher_wall_DistMap,0,pushed_WT)
-  sitk.WriteImage(new_pushed_wall,path2points+'/tmp/new_pushed_wall.nrrd',True)
+  sitk.WriteImage(new_pushed_wall,output_path,True)
   
   # arrays of the whole seg and the new wall section
-  img_array, header = nrrd.read(img_nrrd)
-  new_pushed_wall_array, header = nrrd.read(path2points+'/tmp/new_pushed_wall.nrrd')
+  img_array, _ = nrrd.read(img_nrrd)
+  new_pushed_wall_array, _ = nrrd.read(output_path)
 
   new_pushed_wall_array = and_filter(img_array,new_pushed_wall_array,pushed_BP_lab,pushed_wall_lab)
   img_array = add_masks_replace(img_array,new_pushed_wall_array,pushed_wall_lab)
@@ -98,16 +100,17 @@ def push_inside(path2points,img_nrrd,pusher_wall_lab,pushed_wall_lab,pushed_BP_l
   return img_array
 
 def push_ring_inside(path2points,img_nrrd,pusher_wall_lab,pushed_wall_lab,pushed_BP_lab,pushed_WT):
+  output_path = os.path.join(path2points, 'tmp', 'pushed_wall.nrrd')
   # distance map of the pusher wall
   pusher_wall_DistMap = distance_map(img_nrrd,pusher_wall_lab)
 
   # threshold of the pusher wall
   new_pushed_wall = threshold_filter(pusher_wall_DistMap,0,pushed_WT)
-  sitk.WriteImage(new_pushed_wall,path2points+'/tmp/new_pushed_wall.nrrd',True)
+  sitk.WriteImage(new_pushed_wall,output_path,True)
   
   # arrays of the whole seg and the new wall section
-  img_array, header = nrrd.read(img_nrrd)
-  new_pushed_wall_array, header = nrrd.read(path2points+'/tmp/new_pushed_wall.nrrd')
+  img_array, _ = nrrd.read(img_nrrd)
+  new_pushed_wall_array, _ = nrrd.read(output_path)
 
   new_pushed_wall_array = and_filter(img_array,new_pushed_wall_array,pushed_BP_lab,pushed_wall_lab)
   img_array = add_masks(img_array,new_pushed_wall_array,pushed_wall_lab)
@@ -195,47 +198,67 @@ def mask_plane_creator(seg_nrrd,points,plane_name,slicer_radius, slicer_height, 
     str(imgSpa[0]),str(imgSpa[1]),str(imgSpa[2]),\
     str(imgMin[0]),str(imgMin[1]),str(imgMin[2]),\
     plane_name,segPath,str(slicer_height),str(slicer_radius)])
-
-def connected_component(imga_nrrd,seed,layer,path2points):
+  
+def connected_component_full(imga_nrrd, seed, layer, path2points, to_keep=False) :
   imga = sitk.ReadImage(imga_nrrd)
+  CC_nrrd_path = os.path.join(path2points,'tmp','CC.nrrd')
+
   CC = sitk.ConnectedThreshold(imga, seedList=[(int(seed[0]),int(seed[1]),int(seed[2]))], lower=layer, upper=layer, replaceValue = layer+100)
-  sitk.WriteImage(CC,path2points+'/tmp/CC.nrrd',True)
-  CC_nrrd = path2points+'/tmp/CC.nrrd'
-  imga_array, header1 = nrrd.read(imga_nrrd)
-  CC_array, header2 = nrrd.read(CC_nrrd)
-  imgb = add_masks_replace(imga_array, CC_array, 0)
+  sitk.WriteImage(CC,CC_nrrd_path,True)
+  imga_array, _ = nrrd.read(imga_nrrd)
+  CC_array, _ = nrrd.read(CC_nrrd_path)
+
+  label_to_replace = 0
+  if to_keep :
+    imga_array = remove_filter(imga_array,imga_array,layer)
+    label_to_replace = layer
+
+  imgb = add_masks_replace(imga_array, CC_array, label_to_replace)
   return imgb
 
+def connected_component(imga_nrrd,seed,layer,path2points):
+  return connected_component_full(imga_nrrd,seed,layer,path2points,False)
+
 def connected_component_keep(imga_nrrd,seed,layer,path2points):
-  imga = sitk.ReadImage(imga_nrrd)
-  CC = sitk.ConnectedThreshold(imga, seedList=[(int(seed[0]),int(seed[1]),int(seed[2]))], lower=layer, upper=layer, replaceValue = layer+100)
-  sitk.WriteImage(CC,path2points+'/tmp/CC.nrrd',True)
-  CC_nrrd = path2points+'/tmp/CC.nrrd'
-  imga_array, header1 = nrrd.read(imga_nrrd)
-  CC_array, header2 = nrrd.read(CC_nrrd)
-  imga_array = remove_filter(imga_array,imga_array,layer)
-  imgb_array = add_masks_replace(imga_array, CC_array, layer)
-  return imgb_array
-# change here!
+  return connected_component_full(imga_nrrd,seed,layer,path2points,True)
 
-def process_mask(imga, imgb, newmask, operation_mode, forbid_changes=None):
-    imga_new = copy.deepcopy(imga)
-    newmask_ind = loc_mask(imgb)
-    newmask_ind_trans = np.transpose(newmask_ind)
+def process_mask(imga: np.ndarray, imgb: np.ndarray, newmask: int, operation_mode: MaskOperationMode, forbid_changes=None):
+  """
+  Process the mask on the given image based on the specified operation mode.
+  Args:
+      imga (numpy.ndarray): The original image.
+      imgb (numpy.ndarray): The mask image.
+      newmask (int): The new mask value.
+      operation_mode (MaskOperationMode): The operation mode for processing the mask.
+      forbid_changes (list, optional): The list of values that should not be changed. Defaults to None.
+  Returns:
+      numpy.ndarray: The processed image.
+  """
+  if imga.shape != imgb.shape:
+    raise ValueError("imga and imgb must have the same shape.")
+  
+  if forbid_changes is None:
+    forbid_changes = [] 
 
-    for i, n in enumerate(newmask_ind_trans):
-        A = imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]]
+  imga_new = imga.copy(deep=True)
+  newmask_ind = loc_mask(imgb)
+  newmask_ind_trans = np.transpose(newmask_ind)
 
-        if operation_mode == MaskOperationMode.REPLACE_EXCEPT and A not in forbid_changes:
-            imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]] = newmask
-        elif operation_mode == MaskOperationMode.REPLACE_ONLY and A in forbid_changes:
-            imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]] = newmask
-        elif operation_mode == MaskOperationMode.REPLACE:
-            imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]] = newmask
-        elif operation_mode == MaskOperationMode.NO_OVERRIDE and A == 0:
-            imga_new[newmask_ind_trans[i][0], newmask_ind_trans[i][1], newmask_ind_trans[i][2]] = newmask
+  for i, n in enumerate(newmask_ind_trans):
+    i_0 = newmask_ind_trans[i][0]
+    i_1 = newmask_ind_trans[i][1]
+    i_2 = newmask_ind_trans[i][2]
 
-    return imga_new
+    A = imga_new[i_0, i_1, i_2]
+    if operation_mode == MaskOperationMode.REPLACE_EXCEPT and A not in forbid_changes:
+        imga_new[i_0, i_1, i_2] = newmask
+    elif operation_mode == MaskOperationMode.REPLACE_ONLY and A in forbid_changes:
+        imga_new[i_0, i_1, i_2] = newmask
+    elif operation_mode == MaskOperationMode.REPLACE:
+        imga_new[i_0, i_1, i_2] = newmask
+    elif operation_mode == MaskOperationMode.NO_OVERRIDE and A == 0:
+        imga_new[i_0, i_1, i_2] = newmask
+  return imga_new
 
 def add_masks_replace_except(imga, imgb, newmask, forbid_change):
   # overrides all pixels except those belonging to a given mask

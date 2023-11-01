@@ -3,14 +3,19 @@ import json
 class Labels:
     def __init__(self, filename=None, scale_factor=1/0.39844):
         self.scale_factor = scale_factor
-        self.valve_WT = scale_factor * 4
-        self.valve_WT_svc_ivc = scale_factor * 4
-        self.ring_thickness = scale_factor * 4
-        self.RV_WT = scale_factor * 3.50
-        self.LA_WT = scale_factor * 2.00
-        self.RA_WT = scale_factor * 2.00
-        self.Ao_WT = scale_factor * 2.00
-        self.PArt_WT = scale_factor * 2.00
+        
+        self.valve_WT_multiplier = 4
+        self.valve_WT_svc_ivc_multiplier = 4
+        self.ring_thickness_multiplier = 4
+        self.LV_neck_WT_multiplier = 2.00
+        self.RV_WT_multiplier = 3.50
+        self.LA_WT_multiplier = 2.00
+        self.RA_WT_multiplier = 2.00
+        self.Ao_WT_multiplier = 2.00
+        self.PArt_WT_multiplier = 2.00
+
+        self.set_wt_params()
+
         self.LV_BP_label = 1
         self.LV_myo_label = 2
         self.RV_BP_label = 3
@@ -52,17 +57,31 @@ class Labels:
         if filename is not None:
             self.load(filename)
 
+    def set_wt_params(self) : 
+        self.valve_WT = self.scale_factor * self.valve_WT_multiplier
+        self.valve_WT_svc_ivc = self.scale_factor * self.valve_WT_svc_ivc_multiplier
+        self.ring_thickness = self.scale_factor * self.ring_thickness_multiplier
+        self.LV_neck_WT = self.scale_factor * self.LV_neck_WT_multiplier
+        self.RV_WT = self.scale_factor * self.RV_WT_multiplier
+        self.LA_WT = self.scale_factor * self.LA_WT_multiplier
+        self.RA_WT = self.scale_factor * self.RA_WT_multiplier
+        self.Ao_WT = self.scale_factor * self.Ao_WT_multiplier
+        self.PArt_WT = self.scale_factor * self.PArt_WT_multiplier
+
+
     def load(self, filename):
         with open(filename) as f:
             data = json.load(f)
         self.valve_WT = data.get('valve_WT', self.valve_WT)
         self.valve_WT_svc_ivc = data.get('valve_WT_svc_ivc', self.valve_WT_svc_ivc)
         self.ring_thickness = data.get('ring_thickness', self.ring_thickness)
+        self.LV_neck_WT = data.get('LV_neck_WT', self.LV_neck_WT)
         self.RV_WT = data.get('RV_WT', self.RV_WT)
         self.LA_WT = data.get('LA_WT', self.LA_WT)
         self.RA_WT = data.get('RA_WT', self.RA_WT)
         self.Ao_WT = data.get('Ao_WT', self.Ao_WT)
         self.PArt_WT = data.get('PArt_WT', self.PArt_WT)
+
         self.LV_BP_label = data.get('LV_BP_label', self.LV_BP_label)
         self.LV_myo_label = data.get('LV_myo_label', self.LV_myo_label)
         self.RV_BP_label = data.get('RV_BP_label', self.RV_BP_label)
@@ -102,12 +121,30 @@ class Labels:
         self.SVC_ring_label = data.get('SVC_ring_label', self.SVC_ring_label)
         self.IVC_ring_label = data.get('IVC_ring_label', self.IVC_ring_label)
 
+    def load_wt_params(self, filename_wt): 
+        with open(filename_wt, 'r') as f:
+            data = json.load(f)
+        self.scale_factor = data.get('scale_factor', self.scale_factor)
+
+        self.valve_WT_multiplier = data.get('valve_WT_multiplier', self.valve_WT_multiplier)
+        self.valve_WT_svc_ivc_multiplier = data.get('valve_WT_svc_ivc_multiplier', self.valve_WT_svc_ivc_multiplier)
+        self.ring_thickness_multiplier = data.get('ring_thickness_multiplier', self.ring_thickness_multiplier)
+        self.LV_neck_WT_multiplier = data.get('LV_neck_WT_multiplier', self.LV_neck_WT_multiplier)
+        self.RV_WT_multiplier = data.get('RV_WT_multiplier', self.RV_WT_multiplier)
+        self.LA_WT_multiplier = data.get('LA_WT_multiplier', self.LA_WT_multiplier)
+        self.RA_WT_multiplier = data.get('RA_WT_multiplier', self.RA_WT_multiplier)
+        self.Ao_WT_multiplier = data.get('Ao_WT_multiplier', self.Ao_WT_multiplier)
+        self.PArt_WT_multiplier = data.get('PArt_WT_multiplier', self.PArt_WT_multiplier)
+
+        self.set_wt_params() 
+
     def get_dictionary(self) :
         data = {
             'scale_factor': self.scale_factor,
             'valve_WT': self.valve_WT,
             'valve_WT_svc_ivc': self.valve_WT_svc_ivc,
             'ring_thickness': self.ring_thickness,
+            'LV_neck_WT': self.LV_neck_WT,
             'RV_WT': self.RV_WT,
             'LA_WT': self.LA_WT,
             'RA_WT': self.RA_WT,

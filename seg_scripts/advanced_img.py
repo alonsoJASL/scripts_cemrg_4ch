@@ -199,9 +199,9 @@ def create_mask_from_distance_map(path2points, input_name, output_name, labels:d
         'threshold': 'LV_neck.nrrd'
 	}
 	
-	labels = { # get these from Labels
-        'distance_map': LV_BP_label,
-        'threshold': LV_neck_WT
+	labels = { # get these from Labels.py
+        'distance_map': Labels.LV_BP_label,
+        'threshold': Labels.LV_neck_WT
 	} 
 	"""
 	DIR = lambda x: os.path.join(path2points, x)
@@ -233,3 +233,17 @@ def create_mask_from_distance_map(path2points, input_name, output_name, labels:d
 	
 	output_array = np.swapaxes(output_array, 0, 2)
 	img.save_itk(output_array, origin, spacings, DIR(output_name))
+
+
+def push_in_and_save(path2points, input_name, origin_spacing:dict, pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT, outname='')  :
+	DIR = lambda x: os.path.join(path2points, x)
+	origin = origin_spacing['origin']
+	spacings = origin_spacing['spacing']
+	outname = input_name if outname=='' else outname
+
+	seg_array = img.push_inside(path2points, DIR(input_name), pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT) 
+	seg_array = np.swapaxes(seg_array, 0, 2)
+	img.save_itk(seg_array, origin, spacings, DIR(outname))
+
+# def crop_something(path2points, input_name, cutter_name, cutter_label, cut_label) : 
+# 	seg_array, _ = nrrd.read(os.path.join(path2points, input_name))
