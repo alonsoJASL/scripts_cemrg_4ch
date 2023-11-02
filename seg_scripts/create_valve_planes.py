@@ -68,6 +68,10 @@ LAA_ring_label = 225
 SVC_ring_label = 226
 IVC_ring_label = 227
 
+# dmap_label = ('LA_BP', LA_BP_label)
+# thresh_label = ('LA_BP_thresh', valve_WT)
+# and_replace_label = [LV_BP_label, MV_label]
+# seg_s4a_array = extract_structure_w_distance_map(DIR('seg_s3s.nrrd'), dmap_label, thresh_label, and_replace_label, tmp_dir)
 def extract_structure_w_distance_map(image_path, dmap_label, thresh_label, and_replace_label, tmp_dir) : 
     TMP = lambda x: os.path.join(tmp_dir, x)
 

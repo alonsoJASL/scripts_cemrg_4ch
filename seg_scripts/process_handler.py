@@ -10,9 +10,25 @@ import img
 from img import MaskOperationMode as mom
 import advanced_img as advimg
 import Labels as L
-import FourChamberProcess 
+import FourChamberProcess as FOURCH
 
 logger = configure_logging(log_name=__name__)
+
+def parse_input_parameters(path2points:str, path2originjson:str, path2ptsjson:str = "", labels_file=None) :
+    
+    if path2ptsjson != "" :
+        points_output_file = parse_txt_to_json(path2points, path2ptsjson, "points", "labels")
+        points_data = get_json_data(points_output_file)
+    else :
+        points_data = None
+
+    origin_spacing_output_file = parse_txt_to_json(path2points, path2originjson, "origin_spacing", "origin_spacing_labels")
+    origin_data = get_json_data(origin_spacing_output_file)
+
+    C = L.Labels(filename=labels_file)
+    fcp = FOURCH.FourChamberProcess(path2points, origin_data, CONSTANTS=C)
+
+    return fcp, C, points_data
 
 def get_origin_and_spacing(path2points:str, segmentation_name = "seg_corrected.nrrd", dicom_dir = 'ct', output_file = "") :
     """
@@ -44,13 +60,8 @@ def get_origin_and_spacing(path2points:str, segmentation_name = "seg_corrected.n
             f.write(f'{image_spacing[0]} {image_spacing[1]} {image_spacing[2]}\n')
         
 def create_cylinders(path2points:str, path2ptsjson="", path2originjson="", segmentation_name="seg_corrected.nrrd") : 
-    points_output_file = parse_txt_to_json(path2points, path2ptsjson, "points", "labels")
-    points_data = get_json_data(points_output_file)
+    fcp, _, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=None)
 
-    origin_spacing_output_file = parse_txt_to_json(path2points, path2originjson, "origin_spacing", "origin_spacing_labels")
-    origin_data = get_json_data(origin_spacing_output_file)
-
-    fcp = FourChamberProcess(path2points, origin_data, CONSTANTS=L.Labels()) 
     if not fcp.check_nrrd(segmentation_name) :
         msg = f"Could not find {segmentation_name} file and conversion to .nii failed."
         logger.error(msg)
@@ -70,12 +81,8 @@ def create_cylinders(path2points:str, path2ptsjson="", path2originjson="", segme
         fcp.create_cylinder(segmentation_name, points, fcp.DIR(out_name), radius, height)
 
 def create_svc_ivc(path2points:str, path2originjson:str, segmentation_name="seg_corrected.nrrd", output_segname="seg_s2a.nrrd", labels_file=None) :
-    origin_spacing_output_file = parse_txt_to_json(path2points, path2originjson, "origin_spacing", "origin_spacing_labels")
-    origin_data = get_json_data(origin_spacing_output_file)
-
-    C = L(filename=labels_file)
-    fcp = FourChamberProcess(path2points, origin_data, CONSTANTS=C)
-
+    fcp, _, _ = parse_input_parameters(path2points, path2originjson, path2ptsjson="", labels_file=labels_file)
+   
     if not fcp.check_nrrd(segmentation_name) : 
         msg = f"Could not find {segmentation_name} file and conversion to .nii failed."
         logger.error(msg)
@@ -84,13 +91,8 @@ def create_svc_ivc(path2points:str, path2originjson:str, segmentation_name="seg_
     fcp.create_and_save_svc_ivc(segmentation_name, "SVC.nrrd", "IVC.nrrd", output_segname)
 
 def create_slicers(path2points:str, path2ptsjson="", path2originjson="", segmentation_name="seg_s2a.nrrd") : 
-    points_output_file = parse_txt_to_json(path2points, path2ptsjson, "points", "labels")
-    points_data = get_json_data(points_output_file)
+    fcp, _, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=None)
 
-    origin_spacing_output_file = parse_txt_to_json(path2points, path2originjson, "origin_spacing", "origin_spacing_labels")
-    origin_data = get_json_data(origin_spacing_output_file)
-
-    fcp = FourChamberProcess(path2points, origin_data, CONSTANTS=L.Labels())
     if not fcp.check_nrrd(segmentation_name) :
         msg = f"Could not find {segmentation_name} file and conversion to .nii failed."
         logger.error(msg)
@@ -109,17 +111,10 @@ def create_slicers(path2points:str, path2ptsjson="", path2originjson="", segment
 
 def crop_svc_ivc(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None) :
     logger.info("Cropping SVC and IVC") 
-    points_output_file = parse_txt_to_json(path2points, path2ptsjson, "points", "labels")
-    points_data = get_json_data(points_output_file)
-
-    origin_spacing_output_file = parse_txt_to_json(path2points, path2originjson, "origin_spacing", "origin_spacing_labels")
-    origin_data = get_json_data(origin_spacing_output_file)
+    fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file)
 
     SVC_seed = points_data['SVC_tip']
     IVC_seed = points_data['IVC_tip']
-
-    C = L(filename=labels_file)
-    fcp = FourChamberProcess(path2points, origin_data, CONSTANTS=C)
 
     fcp.remove_protruding_vessel(SVC_seed, C.SVC_label, 'seg_s2a.nrrd', 'seg_s2b.nrrd')
     fcp.remove_protruding_vessel(IVC_seed, C.IVC_label, 'seg_s2b.nrrd', 'seg_s2c.nrrd')
@@ -133,14 +128,7 @@ def crop_svc_ivc(path2points:str, path2ptsjson:str, path2originjson:str, labels_
 
 def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None) :
     logger.info("Creating myocardium")
-    points_output_file = parse_txt_to_json(path2points, path2ptsjson, "points", "labels")
-    points_data = get_json_data(points_output_file)
-
-    origin_spacing_output_file = parse_txt_to_json(path2points, path2originjson, "origin_spacing", "origin_spacing_labels")
-    origin_data = get_json_data(origin_spacing_output_file)
-
-    C = L(filename=labels_file)
-    fcp = FourChamberProcess(path2points, origin_data, CONSTANTS=C)
+    fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file)
     
     labelsd, thresd = fcp.get_distance_map_dictionaries('LV_BP_label', 'LV_DistMap.nrrd', 'LV_neck_WT', 'LV_neck.nrrd')
     maskt = fcp.get_distance_map_tuples(mom.REPLACE, C.LV_neck_label, [],  mom.NO_OVERRIDE, 2, [])
@@ -206,4 +194,89 @@ def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, la
 
     logger.info("<Step 10/10> RV myo: Pushing the right ventricle with the aorta") 
     fcp.push_in_and_save('seg_s3o.nrrd', C.Ao_wall_label,C.RV_myo_label,C.RV_BP_label,C.RV_WT, outname='seg_s3p.nrrd')
+
+def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None) :
+    logger.info("Creating valve planes")
+    fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file) 
+
+    logger.info("<Step 1/8> Cropping major vessels")
+    fcp.get_connected_component_and_save('seg_s3p.nrrd', 'seg_s3r.nrrd', points_data['Ao_WT_tip'], C.Ao_wall_label)
+    fcp.get_connected_component_and_save('seg_s3r.nrrd', 'seg_s3s.nrrd', points_data['PArt_WT_tip'], C.PArt_wall_label)
+
+    logger.info('<Step 2/8> Creating the mitral valve')
+    labelsd, thresd = fcp.get_distance_map_dictionaries('LA_BP_label', 'LA_BP_DistMap.nrrd', 'valve_WT', 'LA_BP_thresh.nrrd')
+    fcp.extract_structure_w_distance_map('seg_s3s.nrrd', 'seg_s4a.nrrd', labelsd, thresd, C.LV_BP_label, C.MV_label)
+
+    labelsd, thresd = fcp.get_distance_map_dictionaries('LV_myo_label', 'LV_myo_DistMap.nrrd', 'LA_WT', 'LV_myo_extra.nrrd')
+    fcp.extract_structure_w_distance_map('seg_s4a.nrrd', 'seg_s4b.nrrd', labelsd, thresd, C.LA_BP_label, C.LA_myo_label)
+
+    logger.info('<Step 3/8> Creating the tricuspid valve')
+    labelsd, thresd = fcp.get_distance_map_dictionaries('RA_BP_label', 'RA_BP_DistMap.nrrd', 'valve_WT', 'RA_BP_thresh.nrrd')
+    fcp.extract_structure_w_distance_map('seg_s4b.nrrd', 'seg_s4c.nrrd', labelsd, thresd, C.RV_BP_label, C.TV_label)
+
+    labelsd, thresd = fcp.get_distance_map_dictionaries('RV_myo_label', 'RV_myo_DistMap.nrrd', 'RA_WT', 'RV_myo_extra.nrrd')
+    fcp.extract_structure_w_distance_map('seg_s4c.nrrd', 'seg_s4d.nrrd', labelsd, thresd, C.RA_BP_label, C.RA_myo_label)
+
+    logger.info('<Step 4/8> Creating the aortic valve')
+    labelsd, thresd = fcp.get_distance_map_dictionaries('Ao_BP_label', 'Ao_BP_DistMap.nrrd', 'valve_WT', 'AV.nrrd')
+    fcp.extract_structure_w_distance_map('seg_s4d.nrrd', 'seg_s4e.nrrd', labelsd, thresd, C.LV_BP_label, C.AV_label)
+
+    # AV corrections
+    labelsd, thresd = fcp.get_distance_map_dictionaries('LV_myo_label', 'LV_myo_DistMap.nrrd', 'Ao_WT', 'Ao_wall_extra.nrrd')
+    fcp.extract_structure_w_distance_map('seg_s4e.nrrd', 'seg_s4f.nrrd', labelsd, thresd, C.Ao_BP_label, C.Ao_wall_label, skip_dmap=True)
+
+    labelsd, thresd = fcp.get_distance_map_dictionaries('AV_label', 'AV_DistMap.nrrd', 'valve_WT', 'AV_sep.nrrd')
+    thresd['threshold'] *= 2 # 2*valve_WT 
+    fcp.extract_structure_w_distance_map('seg_s4f.nrrd', 'seg_s4f.nrrd', labelsd, thresd, C.MV_label, C.LV_myo_label)
+
+    # MV corrections 
+    labelsd, thresd = fcp.get_distance_map_dictionaries('LV_myo_label', 'LV_myo_DistMap.nrrd', 'LA_WT', 'LV_myo_extra.nrrd')
+    fcp.extract_structure_w_distance_map('seg_s4f.nrrd', 'seg_s4ff.nrrd', labelsd, thresd, C.LA_BP_label, C.LA_myo_label)
+
+    logger.info('<Step 5/8> Creating the pulmonary valve')
+    labelsd, thresd = fcp.get_distance_map_dictionaries('PArt_BP_label', 'PArt_BP_DistMap.nrrd', 'valve_WT', 'PV.nrrd')
+    fcp.extract_structure_w_distance_map('seg_s4ff.nrrd', 'seg_s4g.nrrd', labelsd, thresd, C.RV_BP_label, C.PV_label)
+
+    # PV corrections
+    labelsd, thresd = fcp.get_distance_map_dictionaries('RV_myo_label', 'RV_myo_DistMap.nrrd', 'PArt_WT', 'PArt_wall_extra.nrrd')
+    fcp.extract_structure_w_distance_map('seg_s4g.nrrd', 'seg_s4h.nrrd', labelsd, thresd, C.PArt_BP_label, C.PArt_wall_label, skip_dmap=True)
+
+    logger.info('<Step 6/8> Create the distance maps needed to cut the vein rings')
+    list_of_rings = []
+    list_of_inputs = [('LA_myo_label', 'LA_myo_DistMap.nrrd', 'ring_thickness', 'LA_myo_thresh.nrrd'),
+                      ('RA_myo_label', 'RA_myo_DistMap.nrrd', 'ring_thickness', 'RA_myo_thresh.nrrd'),
+                      ('LPV1_label', 'LPV1_BP_DistMap.nrrd', 'ring_thickness', 'LPV1_ring.nrrd'),
+                      ('LPV2_label', 'LPV2_BP_DistMap.nrrd', 'ring_thickness', 'LPV2_ring.nrrd'),
+                      ('RPV1_label', 'RPV1_BP_DistMap.nrrd', 'ring_thickness', 'RPV1_ring.nrrd'),
+                      ('RPV2_label', 'RPV2_BP_DistMap.nrrd', 'ring_thickness', 'RPV2_ring.nrrd'),
+                      ('LAA_label', 'LAA_BP_DistMap.nrrd', 'ring_thickness', 'LAA_ring.nrrd'),
+                      ('SVC_label', 'SVC_BP_DistMap.nrrd', 'ring_thickness', 'SVC_ring.nrrd'),
+                      ('IVC_label', 'IVC_BP_DistMap.nrrd', 'ring_thickness', 'IVC_ring.nrrd')]
+    
+     
+    for label, dmap, wt, outname in list_of_inputs :
+        labelsd, thresd = fcp.get_distance_map_dictionaries(label, dmap, wt, outname)
+        aux_dict = fcp.threshold_distance_map('seg_s4h.nrrd', labelsd, thresd)
+        list_of_rings.append(aux_dict['threshold'])
+
+    logger.info('<Step 7/8> Creating the vein rings')
+    list_of_processes = [
+        ('LPV1_ring_label', mom.NO_OVERRIDE, ''),
+        ('LPV2_ring_label', mom.NO_OVERRIDE, ''),
+        ('RPV1_ring_label', mom.REPLACE_ONLY, 'SVC_label'),
+        ('RPV2_ring_label',  mom.NO_OVERRIDE, ''),
+        ('LAA_ring_label', mom.NO_OVERRIDE, ''),
+        ('SVC_ring_label', mom.REPLACE_ONLY, 'Ao_wall_label,LA_myo_label,RPV1_ring_label,RPV1_label'),
+        ('IVC_ring_label', mom.NO_OVERRIDE, '')
+    ]
+
+    fcp.create_vein_rings('seg_s4h.nrrd', 'seg_s4i.nrrd', 'seg_s4j.nrrd', list_of_rings, list_of_processes)
+
+    logger.info('<Step 8/8> Creating the valve planes')
+    fcp.threshold_and_save('RA_BP_DistMap.nrrd', 'RA_BP_thresh_2mm.nrrd', C.valve_WT_svc_ivc)
+    LA_BP_thresh_path = fcp.TMP('LA_BP_thresh.nrrd')
+    RA_BP_thresh_path = fcp.TMP('RA_BP_thresh_2mm.nrrd')
+
+    # START HERE
+
 

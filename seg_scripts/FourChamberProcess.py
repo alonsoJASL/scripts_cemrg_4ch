@@ -10,15 +10,23 @@ from common import configure_logging, big_print, make_tmp
 logger = configure_logging(log_name=__name__)
 
 import Labels
+
+DISTANCE_MAP_KEY = 'distance_map'
+THRESHOLD_KEY = 'threshold'
 class FourChamberProcess:
     def __init__(self, path2points: str, origin_spacing: dict, CONSTANTS:Labels):
         self._path2points = path2points
         self._origin_spacing = origin_spacing
         self.CONSTANTS = CONSTANTS
+        self._debug = False
 
     @property 
     def path2points(self):
         return self._path2points
+    
+    @property
+    def debug(self):
+        return self._debug
     
     def DIR(self, x):
         return os.path.join(self.path2points, x)
@@ -47,17 +55,6 @@ class FourChamberProcess:
                 img.convert_nii_nrrd(self.path2points, filename_nii)
 
         return os.path.exists(self.DIR(filename))
-
-    def get_distance_map_dictionaries(self, dist_label, dmap_name, th_label, th_name) :
-        CDIC = self.CONSTANTS.get_dictionary()
-        ld = {'distance_map': CDIC[dist_label], 'threshold':  CDIC[th_label]}
-        td = {'distance_map': dmap_name, 'threshold': th_name}
-        return ld, td
-    
-    def get_distance_map_tuples(self, mom1:MM, label1, arr1, mom2:MM, label2, arr2) : 
-        return [ (mom1, label1, arr1),  (mom2, label2, arr2) ]
-
-
 	
     def cylinder(self, segname, points, plane_name, slicer_radius, slicer_height):
         logger.info(f"Generating cylinder: {plane_name}")
@@ -244,33 +241,55 @@ class FourChamberProcess:
         seg_array = np.swapaxes(seg_array, 0, 2)
         img.save_itk(seg_array, origin, spacings, output_filename)
 
-    def dmap_and_threshold(self, input_name, labels:dict, tmp_dict:dict) -> dict: 
+    def get_distance_map_dictionaries(self, dist_label, dmap_name, th_label, th_name) :
+        CDIC = self.CONSTANTS.get_dictionary()
+        ld = {DISTANCE_MAP_KEY: CDIC[dist_label], THRESHOLD_KEY:  CDIC[th_label]}
+        td = {DISTANCE_MAP_KEY: dmap_name, THRESHOLD_KEY: th_name}
+        return ld, td
+    
+    def get_distance_map_tuples(self, mom1:MM, label1, arr1, mom2:MM, label2, arr2) : 
+        return self.get_distance_map_tuples_from_lists([mom1, mom2], [label1, label2], [arr1, arr2])
+    
+    def get_distance_map_tuples_from_lists(self, mom_list, label_list, arr_list) : 
+        return [ (mom, label, arr) for mom, label, arr in zip(mom_list, label_list, arr_list) ]
+
+    def distance_map_and_save(self, input_name, output_name, label) :
+        distance_map = img.distance_map(self.DIR(input_name), label)
+        sitk.WriteImage(distance_map,self.TMP(output_name),True)
+
+    def threshold_and_save(self, input_name, output_name, label) :
+        thresholded_mask = img.threshold_filter_nrrd(self.DIR(input_name),0, label)
+        sitk.WriteImage(thresholded_mask,self.TMP(output_name),True)
+    
+    def threshold_distance_map(self, input_name, labels:dict, tmp_dict:dict, skip_processed=False) -> dict: 
         """
         Creates a mask from a distance map and adds it to the segmentation. 
        
         tmp_dict contains the names of the distance map and the thresholded mask.
         tmp_dict = {
-            'distance_map': 'LV_DistMap.nrrd',
-            'threshold': 'LV_neck.nrrd'
+            DISTANCE_MAP_KEY: 'LV_DistMap.nrrd',
+            THRESHOLD_KEY: 'LV_neck.nrrd'
         }       
         labels = { # get these from Labels.py
-            'distance_map': Labels.LV_BP_label,
-            'threshold': Labels.LV_neck_WT
+            DISTANCE_MAP_KEY: Labels.LV_BP_label,
+            THRESHOLD_KEY: Labels.LV_neck_WT
         } 
+
+        skip_processed: if True, will skip the processing of the distance map calculation if exists
         """
-        
-        dmap_name = tmp_dict['distance_map'][0]
-        thresh_name = tmp_dict['threshold'][0]
+        dmap_name = tmp_dict[DISTANCE_MAP_KEY]
+        thresh_name = tmp_dict[THRESHOLD_KEY]
+
+        if skip_processed and os.path.exists(self.TMP(dmap_name)):
+            logger.info(f"Skipping distance map calculation for {dmap_name}")
+        else :
+            self.distance_map_and_save(input_name, dmap_name, labels[DISTANCE_MAP_KEY])
     
-        distance_map = img.distance_map(self.DIR(input_name), labels['distance_map'])
-        sitk.WriteImage(distance_map,self.TMP(dmap_name),True)
-    
-        thresholded_mask = img.threshold_filter_nrrd(self.TMP(dmap_name),0,labels['threshold'])
-        sitk.WriteImage(thresholded_mask,self.TMP(thresh_name),True)
+        self.threshold_and_save(dmap_name, thresh_name, labels[THRESHOLD_KEY])
 
         outputs_dic = {
-            'distance_map': self.TMP(dmap_name),
-            'threshold': self.TMP(thresh_name)
+            DISTANCE_MAP_KEY: self.TMP(dmap_name),
+            THRESHOLD_KEY: self.TMP(thresh_name)
         }
 
         return outputs_dic
@@ -287,34 +306,103 @@ class FourChamberProcess:
          ]      
         tmp_dict contains the names of the distance map and the thresholded mask.
         tmp_dict = {
-            'distance_map': 'LV_DistMap.nrrd',
-            'threshold': 'LV_neck.nrrd'
+            DISTANCE_MAP_KEY: 'LV_DistMap.nrrd',
+            THRESHOLD_KEY: 'LV_neck.nrrd'
         }       
         labels = { # get these from Labels.py
-            'distance_map': Labels.LV_BP_label,
-            'threshold': Labels.LV_neck_WT
+            DISTANCE_MAP_KEY: Labels.LV_BP_label,
+            THRESHOLD_KEY: Labels.LV_neck_WT
         } 
         """
         origin, spacings = self.get_origin_spacing()
         C=self.CONSTANTS
 
-        files_dic = self.dmap_and_threshold(input_name, labels, tmp_dict)
+        files_dic = self.threshold_distance_map(input_name, labels, tmp_dict)
 
-        thresholded_array, _ = nrrd.read(files_dic['threshold'])
+        thresholded_array, _ = nrrd.read(files_dic[THRESHOLD_KEY])
         input_array, _ = nrrd.read(self.DIR(input_name)) 
 
-        mode, newmask, forbid_list = add_mask_list[0]
-        thresholded_array = img.process_mask(thresholded_array, thresholded_array, newmask, mode, forbid_changes=forbid_list)
-
-        mode, newmask, forbid_list = add_mask_list[1]
-        output_array = img.process_mask(input_array, thresholded_array, newmask, mode, forbid_changes=forbid_list)
+        io_tuple_list = [
+            (thresholded_array, thresholded_array), 
+            (input_array, thresholded_array), 
+        ]
 
         if len(add_mask_list)>2:
-            mode, newmask, forbid_list = add_mask_list[2]
-            output_array = img.process_mask(output_array, thresholded_array, newmask, mode, forbid_changes=forbid_list)
+            io_tuple_list.append((None, thresholded_array))
+
+        output_array = np.empty(input_array.shape, np.uint8)
+        for imga, imgb, mode, newmask, forbid_list in zip(io_tuple_list, add_mask_list):
+            if imga is not None:           
+                output_array = img.process_mask(imga, imgb, newmask, mode, forbid_changes=forbid_list)
+            else:
+                output_array = img.process_mask(output_array, imgb, newmask, mode, forbid_changes=forbid_list)
     
         output_array = np.swapaxes(output_array, 0, 2)
         img.save_itk(output_array, origin, spacings, self.DIR(output_name))
+
+    def extract_structure_w_distance_map(self, image_name, output_name, labels:dict, tmp_dict:dict, label_a, new_label, skip_dmap=False) : 
+        """
+        tmp_dict contains the names of the distance map and the thresholded mask.
+        tmp_dict = {
+            DISTANCE_MAP_KEY: 'LV_DistMap.nrrd',
+            THRESHOLD_KEY: 'LV_neck.nrrd'
+        }       
+        labels = { # get these from Labels.py
+            DISTANCE_MAP_KEY: Labels.LV_BP_label,
+            THRESHOLD_KEY: Labels.LV_neck_WT
+        } 
+        """
+        origin, spacings = self.get_origin_spacing()
+        C=self.CONSTANTS
+
+        files_dic = self.threshold_distance_map(image_name, labels, tmp_dict, skip_processed=skip_dmap)
+
+        thresholded_array, _ = nrrd.read(files_dic[THRESHOLD_KEY])
+        input_array, _ = nrrd.read(self.DIR(image_name)) 
+
+        thresholded_array = img.and_filter(input_array,thresholded_array,label_a,new_label)
+        seg_array = img.process_mask(input_array, thresholded_array, new_label, MM.REPLACE_ONLY)
+
+        seg_array = np.swapaxes(seg_array, 0, 2)
+        img.save_itk(seg_array, origin, spacings, self.DIR(output_name))
+
+    def creating_vein_rings(self, image_name, output_name_i, output_name_j, list_of_rings, list_of_processes):
+
+        origin, spacings = self.get_origin_spacing()
+        C=self.CONSTANTS
+        CDIC = C.get_dictionary()
+        def convert_labels(labels_str) : 
+            if labels_str == '':
+                return []
+            else :
+                return [CDIC[x] for x in labels_str.split(',')]
+
+        LA_myo_thresh_array, _ = nrrd.read(list_of_rings.pop(0))
+        RA_myo_thresh_array, _ = nrrd.read(list_of_rings.pop(0))
+
+        input_array, _ = nrrd.read(self.DIR(image_name))
+        seg_i_array = copy.deepcopy(input_array)
+        seg_j_array = copy.deepcopy(input_array)
+        #('LPV1_ring_label', mom.NO_OVERRIDE, [], mom.REPLACE, []
+        for ring_path, ring_label_str, mode1, forbid_labels_str1 in zip(list_of_rings, list_of_processes):
+            ring_label = CDIC[ring_label_str]
+            ring_array, _ = nrrd.read(ring_path)
+            forbid_labels1 = convert_labels(forbid_labels_str1)
+            mode2 = MM.REPLACE
+
+            for fb_label in forbid_labels1 :
+                seg_i_array = img.process_mask(seg_i_array, ring_array, ring_label, mode1, forbid_changes=[fb_label])
+            ring_array = img.and_filter(seg_i_array, LA_myo_thresh_array, ring_label, ring_label)
+            seg_j_array = img.process_mask(seg_j_array, ring_array, ring_label, mode2, forbid_changes=[])
+        
+        seg_i_array = np.swapaxes(seg_i_array, 0, 2)
+        seg_j_array = np.swapaxes(seg_j_array, 0, 2)
+
+        img.save_itk(seg_i_array, origin, spacings, self.DIR(output_name_i))
+        img.save_itk(seg_j_array, origin, spacings, self.DIR(output_name_j))
+
+
+
 
     def push_in_and_save(self, input_name, pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT, outname='')  :
         origin, spacings = self.get_origin_spacing()
