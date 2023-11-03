@@ -4,7 +4,7 @@ import glob
 import numpy as np
 
 from common import configure_logging, add_file_handler
-from common import parse_txt_to_json, get_json_data, make_tmp
+from common import parse_txt_to_json, get_json_data, make_tmp, mycp
 
 import img
 from img import MaskOperationMode as mom
@@ -203,43 +203,29 @@ def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, 
     fcp.get_connected_component_and_save('seg_s3p.nrrd', 'seg_s3r.nrrd', points_data['Ao_WT_tip'], C.Ao_wall_label)
     fcp.get_connected_component_and_save('seg_s3r.nrrd', 'seg_s3s.nrrd', points_data['PArt_WT_tip'], C.PArt_wall_label)
 
-    logger.info('<Step 2/8> Creating the mitral valve')
-    labelsd, thresd = fcp.get_distance_map_dictionaries('LA_BP_label', 'LA_BP_DistMap.nrrd', 'valve_WT', 'LA_BP_thresh.nrrd')
-    fcp.extract_structure_w_distance_map('seg_s3s.nrrd', 'seg_s4a.nrrd', labelsd, thresd, C.LV_BP_label, C.MV_label)
+    list_to_extract = [
+        ('seg_s3s.nrrd', 'seg_s4a.nrrd', C.LV_BP_label, C.MV_label, 'LA_BP_label', 'LA_BP_DistMap.nrrd', 'valve_WT', 'LA_BP_thresh.nrrd', False, 1),
+        ('seg_s4a.nrrd', 'seg_s4b.nrrd', C.LA_BP_label, C.LA_myo_label, 'LV_myo_label', 'LV_myo_DistMap.nrrd', 'LA_WT', 'LV_myo_extra.nrrd', False, 1),
+        ('seg_s4b.nrrd', 'seg_s4c.nrrd', C.RV_BP_label, C.TV_label, 'RA_BP_label', 'RA_BP_DistMap.nrrd', 'valve_WT', 'RA_BP_thresh.nrrd', False, 1),
+        ('seg_s4c.nrrd', 'seg_s4d.nrrd', C.RA_BP_label, C.RA_myo_label, 'RV_myo_label', 'RV_myo_DistMap.nrrd', 'RA_WT', 'RV_myo_extra.nrrd', False, 1),
+        ('seg_s4d.nrrd', 'seg_s4e.nrrd', C.LV_BP_label, C.AV_label, 'Ao_BP_label', 'Ao_BP_DistMap.nrrd', 'valve_WT', 'AV.nrrd', False, 1),
+        ('seg_s4e.nrrd', 'seg_s4f.nrrd', C.Ao_BP_label, C.Ao_wall_label, 'LV_myo_label', 'LV_myo_DistMap.nrrd', 'Ao_WT', 'Ao_wall_extra.nrrd', True, 1),
+        ('seg_s4f.nrrd', 'seg_s4f.nrrd', C.MV_label, C.LV_myo_label, 'AV_label', 'AV_DistMap.nrrd', 'valve_WT', 'AV_sep.nrrd', False, 2),
+        ('seg_s4f.nrrd', 'seg_s4g.nrrd', C.RV_BP_label, C.PV_label, 'PArt_BP_label', 'PArt_BP_DistMap.nrrd', 'valve_WT', 'PV.nrrd', False, 1),
+        ('seg_s4g.nrrd', 'seg_s4h.nrrd', C.PArt_BP_label, C.PArt_wall_label, 'RV_myo_label', 'RV_myo_DistMap.nrrd', 'PArt_WT', 'PArt_wall_extra.nrrd', True, 1)
+    ]
 
-    labelsd, thresd = fcp.get_distance_map_dictionaries('LV_myo_label', 'LV_myo_DistMap.nrrd', 'LA_WT', 'LV_myo_extra.nrrd')
-    fcp.extract_structure_w_distance_map('seg_s4a.nrrd', 'seg_s4b.nrrd', labelsd, thresd, C.LA_BP_label, C.LA_myo_label)
+    msg_list = ['mitral valve', '', 'tricuspid valve', '', 'aortic valve', '', '', '', 'pulmonary valve']
 
-    logger.info('<Step 3/8> Creating the tricuspid valve')
-    labelsd, thresd = fcp.get_distance_map_dictionaries('RA_BP_label', 'RA_BP_DistMap.nrrd', 'valve_WT', 'RA_BP_thresh.nrrd')
-    fcp.extract_structure_w_distance_map('seg_s4b.nrrd', 'seg_s4c.nrrd', labelsd, thresd, C.RV_BP_label, C.TV_label)
+    count = 2
+    for msg, iname, oname, label, new_label, dmap_l, dmap_n, thresh, thresh_name, skip_dmap, mult in zip(msg_list, list_to_extract) :
+        if (msg != '') :
+            logger.info(f'<Step {count}/8> Creating {msg}')
+            count += 1
+        labelsd, thresd = fcp.get_distance_map_dictionaries(dmap_l, dmap_n, thresh, thresh_name)
+        thresd['threshold'] *= mult
+        fcp.extract_structure_w_distance_map(iname, oname, labelsd, thresd, label, new_label, skip_dmap=skip_dmap)
 
-    labelsd, thresd = fcp.get_distance_map_dictionaries('RV_myo_label', 'RV_myo_DistMap.nrrd', 'RA_WT', 'RV_myo_extra.nrrd')
-    fcp.extract_structure_w_distance_map('seg_s4c.nrrd', 'seg_s4d.nrrd', labelsd, thresd, C.RA_BP_label, C.RA_myo_label)
-
-    logger.info('<Step 4/8> Creating the aortic valve')
-    labelsd, thresd = fcp.get_distance_map_dictionaries('Ao_BP_label', 'Ao_BP_DistMap.nrrd', 'valve_WT', 'AV.nrrd')
-    fcp.extract_structure_w_distance_map('seg_s4d.nrrd', 'seg_s4e.nrrd', labelsd, thresd, C.LV_BP_label, C.AV_label)
-
-    # AV corrections
-    labelsd, thresd = fcp.get_distance_map_dictionaries('LV_myo_label', 'LV_myo_DistMap.nrrd', 'Ao_WT', 'Ao_wall_extra.nrrd')
-    fcp.extract_structure_w_distance_map('seg_s4e.nrrd', 'seg_s4f.nrrd', labelsd, thresd, C.Ao_BP_label, C.Ao_wall_label, skip_dmap=True)
-
-    labelsd, thresd = fcp.get_distance_map_dictionaries('AV_label', 'AV_DistMap.nrrd', 'valve_WT', 'AV_sep.nrrd')
-    thresd['threshold'] *= 2 # 2*valve_WT 
-    fcp.extract_structure_w_distance_map('seg_s4f.nrrd', 'seg_s4f.nrrd', labelsd, thresd, C.MV_label, C.LV_myo_label)
-
-    # MV corrections 
-    labelsd, thresd = fcp.get_distance_map_dictionaries('LV_myo_label', 'LV_myo_DistMap.nrrd', 'LA_WT', 'LV_myo_extra.nrrd')
-    fcp.extract_structure_w_distance_map('seg_s4f.nrrd', 'seg_s4ff.nrrd', labelsd, thresd, C.LA_BP_label, C.LA_myo_label)
-
-    logger.info('<Step 5/8> Creating the pulmonary valve')
-    labelsd, thresd = fcp.get_distance_map_dictionaries('PArt_BP_label', 'PArt_BP_DistMap.nrrd', 'valve_WT', 'PV.nrrd')
-    fcp.extract_structure_w_distance_map('seg_s4ff.nrrd', 'seg_s4g.nrrd', labelsd, thresd, C.RV_BP_label, C.PV_label)
-
-    # PV corrections
-    labelsd, thresd = fcp.get_distance_map_dictionaries('RV_myo_label', 'RV_myo_DistMap.nrrd', 'PArt_WT', 'PArt_wall_extra.nrrd')
-    fcp.extract_structure_w_distance_map('seg_s4g.nrrd', 'seg_s4h.nrrd', labelsd, thresd, C.PArt_BP_label, C.PArt_wall_label, skip_dmap=True)
 
     logger.info('<Step 6/8> Create the distance maps needed to cut the vein rings')
     list_of_rings = []
@@ -270,13 +256,42 @@ def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, 
         ('IVC_ring_label', mom.NO_OVERRIDE, '')
     ]
 
-    fcp.create_vein_rings('seg_s4h.nrrd', 'seg_s4i.nrrd', 'seg_s4j.nrrd', list_of_rings, list_of_processes)
+    fcp.creating_vein_rings('seg_s4h.nrrd', 'seg_s4i.nrrd', 'seg_s4j.nrrd', list_of_rings, list_of_processes)
 
     logger.info('<Step 8/8> Creating the valve planes')
     fcp.threshold_and_save('RA_BP_DistMap.nrrd', 'RA_BP_thresh_2mm.nrrd', C.valve_WT_svc_ivc)
-    LA_BP_thresh_path = fcp.TMP('LA_BP_thresh.nrrd')
-    RA_BP_thresh_path = fcp.TMP('RA_BP_thresh_2mm.nrrd')
+    LA_BP_thresh_path = 'LA_BP_thresh.nrrd'
+    RA_BP_thresh_path = 'RA_BP_thresh_2mm.nrrd'
 
-    # START HERE
+    list_of_la_labels = [
+        (C.LPV1_label,C.plane_LPV1_label), 
+        (C.LPV2_label,C.plane_LPV2_label),
+        (C.RPV1_label,C.plane_RPV1_label),
+        (C.RPV2_label,C.plane_RPV2_label),
+        (C.LAA_label,C.plane_LAA_label)
+    ]
+
+    list_of_ra_labels = [
+        (C.SVC_label,C.plane_SVC_label),
+        (C.IVC_label,C.plane_IVC_label)
+    ]
+
+    fcp.creating_valve_planes('seg_s4j.nrrd', LA_BP_thresh_path, RA_BP_thresh_path, 'seg_s4k.nrrd', list_of_la_labels, list_of_ra_labels)
+
+def clean_segmentation(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None) :
+    logger.info("Cleaning segmentation")
+    fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file)
+
+    mycp(fcp.DIR('seg_s4k.nrrd'), fcp.DIR('seg_s5.nrrd'))
+
+    list_of_corrections1 = [(C.RPV1_ring_label,C.RPV2_ring_label,C.RPV2_label,C.ring_thickness),
+                            (C.LPV1_ring_label,C.LPV2_ring_label,C.LPV2_label,C.ring_thickness),
+                            (C.LPV1_ring_label,C.LAA_ring_label,C.LAA_label,C.ring_thickness),
+                            (C.RV_myo_label,C.Ao_wall_label,C.Ao_BP_label,C.Ao_WT),
+                            (C.SVC_ring_label,C.LA_myo_label,C.LA_BP_label,C.LA_WT)]
+    
+    for iname, pusher_wall_lab,pushed_wall_lab,pushed_BP_lab, pushed_WT in list_of_corrections1 : 
+        fcp.push_in_and_save('seg_s5.nrrd', pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT)    
+    
 
 

@@ -401,6 +401,32 @@ class FourChamberProcess:
         img.save_itk(seg_i_array, origin, spacings, self.DIR(output_name_i))
         img.save_itk(seg_j_array, origin, spacings, self.DIR(output_name_j))
 
+    def creating_valve_planes(self, image_name, LA_BP_name, RA_BP_name, output_name, list_of_la_labels, list_of_ra_labels):
+        origin, spacings = self.get_origin_spacing()
+        C=self.CONSTANTS
+        CDIC = C.get_dictionary()
+
+        LA_BP_array, _ = nrrd.read(self.DIR(LA_BP_name))
+        RA_BP_array, _ = nrrd.read(self.DIR(RA_BP_name))
+
+        input_array, _ = nrrd.read(self.DIR(image_name))
+        seg_array = copy.deepcopy(input_array)
+
+        for label, plane_label in list_of_la_labels : 
+            plane_array = img.and_filter(seg_array, LA_BP_array, label, plane_label)
+            seg_array = img.process_mask(seg_array, plane_array, plane_label, MM.REPLACE)
+
+        for label, plane_label in list_of_ra_labels :
+            extra_processing = (label == C.SVC_label)
+            plane_array = img.and_filter(seg_array, RA_BP_array, label, plane_label)
+            if extra_processing : 
+                plane_extra_array = img.and_filter(seg_array, RA_BP_array, C.RPV1_ring_label, C.plane_label)
+            seg_array = img.process_mask(seg_array, plane_array, plane_label, MM.REPLACE)
+            if extra_processing : 
+                seg_array = img.process_mask(seg_array, plane_extra_array, plane_label, MM.REPLACE)
+
+        seg_array = np.swapaxes(seg_array, 0, 2)
+        img.save_itk(seg_array, origin, spacings, self.DIR(output_name))
 
 
 

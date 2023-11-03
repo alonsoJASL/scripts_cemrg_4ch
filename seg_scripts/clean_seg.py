@@ -147,3 +147,20 @@ if __name__ == '__main__' :
     parser.add_argument("--origin-spacing-json", "-origin-spacing", type=str, required=False, default="", help="Name of the json file containing the origin and spacing")
     args = parser.parse_args()
     main(args)
+# ring_thickness
+# LPV1_ring_label
+# LPV2_ring_label
+# RPV1_ring_label
+# RPV2_ring_label
+# LAA_ring_label
+# SVC_ring_label
+# LPV2_label
+# RPV2_label
+# LAA_label
+# RV_myo_label
+# LA_myo_label
+# LA_BP_label
+# Ao_BP_label
+# LA_WT
+# Ao_WT
+# Ao_wall_label
