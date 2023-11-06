@@ -46,17 +46,20 @@ If you need to re-do the slicers of the aorta or pulmonary artery, you have to r
 
 20) Run `clean_seg.py /heart_folder/segmentations`
 
-21) Load .nrrd and manually clean valve ring
+21) Load `.nrrd` and manually clean valve ring. Check for any lose voxels. Make sure all the chambers are closed by the valve planes.
 22) Export segmentation as `seg_final.nrrd`
 
 23) Run `segSmoothing.sh /heart_folder/segmentations`
 
+23) Check all the labels one last time. It is common that lose voxels appear, so run connected components in all the labels. Export it as `seg_final_smooth_corrected.nrrd`.
+24) Run `segsmooth /heart_folder/segmentations/seg_final_smooth_corrected.nrrd /heart_folder/segmentations/seg_final_smooth_corrected.inr`
 
 Meshing
 =========================================================================================================
 1) Run `meshing.py /heart_folder`
 
 2) cd into the meshing folder (inside heart folder)
+2) Modify `heart_mesh_data_file` to point to your segmentation and folder paths.
 3) Run `bash generate_heart_mesh_Cesare.sh`
 
 4) Run `bash mesh_post.sh /heart_folder` ## watch out mesh tool path currently hard-coded ##
