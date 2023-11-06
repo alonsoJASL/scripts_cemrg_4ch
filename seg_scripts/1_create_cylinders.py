@@ -95,8 +95,8 @@ pts2 = points_data['SVC_2']
 pts3 = points_data['SVC_3']
 points = np.row_stack((pts1,pts2,pts3))
 
-slicer_radius_mm = 3
-slicer_height_mm = 9
+slicer_radius_mm = 30
+slicer_height_mm = 100
 
 slicer_radius = int(np.ceil(np.min(spacing)*slicer_radius_mm))
 slicer_height = int(np.ceil(np.min(spacing)*slicer_height_mm))
@@ -111,8 +111,8 @@ pts2 = points_data['IVC_2']
 pts3 = points_data['IVC_3']
 points = np.row_stack((pts1,pts2,pts3))
 
-slicer_radius_mm = 3
-slicer_height_mm = 9
+slicer_radius_mm = 30
+slicer_height_mm = 100
 
 slicer_radius = int(np.ceil(np.min(spacing)*slicer_radius_mm))
 slicer_height = int(np.ceil(np.min(spacing)*slicer_height_mm))
@@ -127,8 +127,8 @@ pts2 = points_data['Ao_2']
 pts3 = points_data['Ao_3']
 points = np.row_stack((pts1,pts2,pts3))
 
-slicer_radius_mm = 9
-slicer_height_mm = 3
+slicer_radius_mm = 70
+slicer_height_mm = 10
 
 slicer_radius = int(np.ceil(np.min(spacing)*slicer_radius_mm))
 slicer_height = int(np.ceil(np.min(spacing)*slicer_height_mm))
@@ -143,8 +143,8 @@ pts2 = points_data['PArt_2']
 pts3 = points_data['PArt_3']
 points = np.row_stack((pts1,pts2,pts3))
 
-slicer_radius_mm = 9
-slicer_height_mm = 1.5
+slicer_radius_mm = 100
+slicer_height_mm = 10
 
 slicer_radius = int(np.ceil(np.min(spacing)*slicer_radius_mm))
 slicer_height = int(np.ceil(np.min(spacing)*slicer_height_mm))
