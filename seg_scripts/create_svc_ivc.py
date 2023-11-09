@@ -8,12 +8,14 @@ import json
 import argparse
 import os
 
-import Labels
+import Labels as L
 from common import parse_txt_to_json, get_json_data
 from common import configure_logging
 logger = configure_logging(log_name=__name__)
 
 from process_handler import create_svc_ivc
+
+CONSTANTS = L.Labels()
 
 def main(args) : 
     """
@@ -34,16 +36,17 @@ def main(args) :
     output_name = "seg_s2a.nrrd"
 
     labels_file = args.labels_file
-    C = Labels(filename=labels_file)
-    C.RPV1_label = args.RPV1_label
-    C.SVC_label = args.SVC_label
-    C.IVC_label = args.IVC_label
-
+    C = L.Labels(filename=labels_file)
     if labels_file is None :
-        logger.info("Creating Labels file")
+        logger.info("Creating labels file")
         labels_file = os.path.join(path2points, "custom_labels.json")
-    
-    C.save(filename=labels_file)
+
+        C.RPV1_label = args.RPV1_label
+        C.SVC_label = args.SVC_label
+        C.IVC_label = args.IVC_label
+
+        C.save(filename=labels_file)
+
     create_svc_ivc(path2points, path2originjson, seg_name, output_name, labels_file)
     
 if __name__ == '__main__':
@@ -54,9 +57,9 @@ if __name__ == '__main__':
     file_group.add_argument("--seg-name", "-seg-name", type=str, default="seg_corrected.nrrd")
     labels_group = parser.add_argument_group('labels_group', 'Labels that can be modified')
     labels_group.add_argument("--labels-file", "-labels-file", type=str, required=False, default=None, help="Name of the json file containing custom labels")
-    labels_group.add_argument("--RPV1_label", type=int, required=False, default=10, help="Label of the right pulmonary vein 1")
-    labels_group.add_argument("--SVC_label", type=int, required=False, default=13, help="Label of the Superior Vena Cava")
-    labels_group.add_argument("--IVC_label", type=int, required=False, default=14, help="Label of the Inferior Vena Cava")
+    labels_group.add_argument("--RPV1_label", type=int, required=False, default=CONSTANTS.RPV1_label, help="Label of the right pulmonary vein 1")
+    labels_group.add_argument("--SVC_label", type=int, required=False, default=CONSTANTS.SVC_label, help="Label of the Superior Vena Cava")
+    labels_group.add_argument("--IVC_label", type=int, required=False, default=CONSTANTS.IVC_label, help="Label of the Inferior Vena Cava")
     args = parser.parse_args()
     main(args)
 

@@ -121,6 +121,7 @@ if __name__ == '__main__' :
     wt_group.add_argument("--scale_factor", "-scale_factor", help="scale_factor", type=float, default=CONSTANTS.scale_factor)
     wt_group.add_argument("--LV_neck_WT_multiplier", "-LV_neck_WT_multiplier", help="LV_neck_WT_multiplier", type=float, default=CONSTANTS.LV_neck_WT_multiplier)
     wt_group.add_argument("--RV_WT_multiplier", "-RV_WT_multiplier", help="RV_WT_multiplier", type=float, default=CONSTANTS.RV_WT_multiplier)
+    wt_group.add_argument("--Ao_WT_multiplier", "-Ao_WT_multiplier", help="Ao_WT_multiplier", type=float, default=CONSTANTS.Ao_WT_multiplier)
     wt_group.add_argument("--PArt_WT_multiplier", "-PArt_WT_multiplier", help="PArt_WT_multiplier", type=float, default=CONSTANTS.PArt_WT_multiplier)
     wt_group.add_argument("--LA_WT_multiplier", "-LA_WT_multiplier", help="LA_WT_multiplier", type=float, default=CONSTANTS.LA_WT_multiplier)
     wt_group.add_argument("--RA_WT_multiplier", "-RA_WT_multiplier", help="RA_WT_multiplier", type=float, default=CONSTANTS.RA_WT_multiplier)

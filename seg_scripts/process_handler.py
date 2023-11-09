@@ -8,7 +8,6 @@ from common import parse_txt_to_json, get_json_data, make_tmp, mycp
 
 import img
 from img import MaskOperationMode as mom
-import advanced_img as advimg
 import Labels as L
 import FourChamberProcess as FOURCH
 
@@ -16,12 +15,9 @@ logger = configure_logging(log_name=__name__)
 
 def parse_input_parameters(path2points:str, path2originjson:str, path2ptsjson:str = "", labels_file=None) :
     
-    if path2ptsjson != "" :
-        points_output_file = parse_txt_to_json(path2points, path2ptsjson, "points", "labels")
-        points_data = get_json_data(points_output_file)
-    else :
-        points_data = None
-
+    points_output_file = parse_txt_to_json(path2points, path2ptsjson, "points", "labels")
+    points_data = get_json_data(points_output_file)
+    
     origin_spacing_output_file = parse_txt_to_json(path2points, path2originjson, "origin_spacing", "origin_spacing_labels")
     origin_data = get_json_data(origin_spacing_output_file)
 
@@ -41,23 +37,30 @@ def get_origin_and_spacing(path2points:str, segmentation_name = "seg_corrected.n
 
     output_file: name of the output file (optional, saved inside path2points)
     """
+    def get_vec_string(vec) :
+        return f'{vec[0]} {vec[1]} {vec[2]}'
+    
     logger.info("Finding origin and spacing")
     dir_name = os.path.join(path2points, dicom_dir)
 
-    list_of_files = sorted(filter(os.path.isfile, glob.glob(dir_name + '*') ) )
+    list_of_files = sorted(filter(os.path.isfile, glob.glob(os.path.join(dir_name, '*')) ) )
     image_origin = img.get_origin_from_dicom(list_of_files)
 
-    print(image_origin)
-
+    origin_string = get_vec_string(image_origin)
+    logger.info(f"Origin: {origin_string}")
+    
     seg_nrrd = os.path.join(path2points, segmentation_name)
     image_spacing = img.get_image_spacing(seg_nrrd)
 
-    print(image_spacing)
+    spacing_string = get_vec_string(image_spacing)    
+    logger.info(f"Spacing: {spacing_string}")
 
     if output_file != "" :    
-        with open(output_file, 'w') as f:
-            f.write(f'{image_origin[0]} {image_origin[1]} {image_origin[2]}\n')
-            f.write(f'{image_spacing[0]} {image_spacing[1]} {image_spacing[2]}\n')
+        logger.info(f"Saving origin and spacing to {path2points}/{output_file}")
+        output_path = os.path.join(path2points, output_file)
+        with open(output_path, 'w') as f:
+            f.write(f'{origin_string}\n')
+            f.write(f'{spacing_string}\n')
         
 def create_cylinders(path2points:str, path2ptsjson="", path2originjson="", segmentation_name="seg_corrected.nrrd") : 
     fcp, _, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=None)
@@ -78,7 +81,7 @@ def create_cylinders(path2points:str, path2ptsjson="", path2originjson="", segme
         logger.info(f"Generating cylinder: {name}")
         # points = np.row_stack([points_data[pt] for pt in idx])
         points = np.row_stack((points_data[idx[0]], points_data[idx[1]], points_data[idx[2]]))
-        fcp.create_cylinder(segmentation_name, points, fcp.DIR(out_name), radius, height)
+        fcp.cylinder(segmentation_name, points, fcp.DIR(out_name), radius, height)
 
 def create_svc_ivc(path2points:str, path2originjson:str, segmentation_name="seg_corrected.nrrd", output_segname="seg_s2a.nrrd", labels_file=None) :
     fcp, _, _ = parse_input_parameters(path2points, path2originjson, path2ptsjson="", labels_file=labels_file)
@@ -107,7 +110,7 @@ def create_slicers(path2points:str, path2ptsjson="", path2originjson="", segment
         logger.info(f"Generating cylinder: {name}")
         # points = np.row_stack([points_data[pt] for pt in idx])
         points = np.row_stack((points_data[idx[0]], points_data[idx[1]], points_data[idx[2]]))
-        fcp.cylinder(segmentation_name, points, out_name, radius, height)
+        fcp.cylinder(segmentation_name, points, fcp.DIR(out_name), radius, height)
 
 def crop_svc_ivc(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None) :
     logger.info("Cropping SVC and IVC") 
@@ -115,6 +118,8 @@ def crop_svc_ivc(path2points:str, path2ptsjson:str, path2originjson:str, labels_
 
     SVC_seed = points_data['SVC_tip']
     IVC_seed = points_data['IVC_tip']
+
+    fcp.make_tmp()
 
     fcp.remove_protruding_vessel(SVC_seed, C.SVC_label, 'seg_s2a.nrrd', 'seg_s2b.nrrd')
     fcp.remove_protruding_vessel(IVC_seed, C.IVC_label, 'seg_s2b.nrrd', 'seg_s2c.nrrd')
@@ -280,7 +285,7 @@ def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, 
 
 def clean_segmentation(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None) :
     logger.info("Cleaning segmentation")
-    fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file)
+    fcp, C, _ = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file)
 
     mycp(fcp.DIR('seg_s4k.nrrd'), fcp.DIR('seg_s5.nrrd'))
 

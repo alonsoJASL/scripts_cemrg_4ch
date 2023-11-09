@@ -17,6 +17,7 @@ class MaskOperationMode(Enum):
   REPLACE_ONLY = 2
   REPLACE = 3
   ADD = 4
+  NO_OVERRIDE = 5
 
 def get_origin_from_dicom(list_of_files: list) -> np.ndarray :
   """

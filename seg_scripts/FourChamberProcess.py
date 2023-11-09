@@ -34,8 +34,8 @@ class FourChamberProcess:
     def TMP(self, x):
         return os.path.join(self.path2points, "tmp", x)
     
-    def make_tmp(self, x):
-        return make_tmp(self.path2points, x)
+    def make_tmp(self):
+        return make_tmp(self.path2points)
 
     def get_origin_spacing(self):
         origin = self._origin_spacing["origin"]
@@ -117,14 +117,16 @@ class FourChamberProcess:
 
         big_print(f"Generating cylinder of height {slicer_height}, and radius {slicer_radius}... ")
 
-        x_grid, y_grid, z_grid = np.meshgrid(x_cube_coord, y_cube_coord, z_cube_coord, indexing='ij')
-        test_pts = origin + spacing * np.array([x_grid, y_grid, z_grid])
-        v1 = test_pts - p1
-        v2 = test_pts - p2
-        valid_indices = (np.dot(v1, n) >= 0) & (np.dot(v2, n) <= 0)
-        test_radius = np.linalg.norm(np.cross(test_pts - p1, n / np.linalg.norm(n)), axis=-1)
-        valid_radius = test_radius <= slicer_radius
-        seg_array_cylinder[x_grid[valid_indices], y_grid[valid_indices], z_grid[valid_indices]] += valid_radius
+        for i in x_cube_coord:
+            for j in y_cube_coord:
+                for k in z_cube_coord:
+                    test_pts = origin+spacing*np.array([i,j,k])
+                    v1 = test_pts-p1
+                    v2 = test_pts-p2
+                    if np.dot(v1,n)>=0 and np.dot(v2,n)<=0:
+                        test_radius = np.linalg.norm(np.cross(test_pts-p1,n/np.linalg.norm(n)))
+                        if test_radius<=slicer_radius:
+                            seg_array_cylinder[i,j,k] = seg_array_cylinder[i,j,k]+1
 
         seg_array_cylinder = np.swapaxes(seg_array_cylinder, 0, 2)
 

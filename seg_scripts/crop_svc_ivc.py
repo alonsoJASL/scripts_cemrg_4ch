@@ -6,7 +6,7 @@ from common import parse_txt_to_json, get_json_data, make_tmp
 from common import configure_logging
 logger = configure_logging(log_name=__name__)
 
-from common import Labels
+import Labels as L
 from process_handler import crop_svc_ivc
 
 def main(args):
@@ -27,12 +27,12 @@ def main(args):
     path2originjson = args.origin_spacing_json
 
     labels_file = args.labels_file
-    C = Labels(filename=labels_file)
+    C = L.Labels(filename=labels_file)
     if labels_file is None :
         logger.info("Creating Labels file")
         labels_file = os.path.join(path2points, "custom_labels.json")
         
-        C.RPV1_label = args.RPV1_label
+        C.RA_BP_label = args.RA_BP_label    
         C.SVC_label = args.SVC_label
         C.IVC_label = args.IVC_label
     
