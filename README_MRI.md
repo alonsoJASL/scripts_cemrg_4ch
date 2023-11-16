@@ -14,7 +14,7 @@ Segmentation
         LAA = 12
  Resample to 0.3 mm isotropic using the `img.py` script.
 
-7) Run select manually in itksnap the origin and spacing and add it to origin_spacing.txt
+7) Select manually in itksnap the origin and spacing and add it to origin_spacing.txt
 
 9) Select 3 points for SVC and IVC cylinders (pixel) and save in `points.txt`
 10) Select 3 points for Ao_slicer and for PArt_slicer and save in `points.txt`
