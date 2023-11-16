@@ -22,7 +22,7 @@ meshtool extract mesh -msh=${MSHFOLDER}/heart_mesh -tags=2,103,104,105,106,107,2
 
 ${MESHTOOL_PATH}/simplify_tag_topology -msh=${MSHFOLDER}/myocardium_coarse -outmsh=${MSHFOLDER}/myocardium_clean -neigh=50 -ifmt=carp_txt -ofmt=carp_txt
 
-meshtool smooth mesh -msh=${MSHFOLDER}/myocardium -tags=2,103,104,105,106,107,201,202,203,204,205,206,207,208,209,210,211,221,222,223,224,225,226,227 -smth=0.15 -outmsh=${MSHFOLDER}/myocardium_smooth -ifmt=carp_txt -ofmt=carp_txt
+meshtool smooth mesh -msh=${MSHFOLDER}/myocardium_clean -tags=2,103,104,105,106,107,201,202,203,204,205,206,207,208,209,210,211,221,222,223,224,225,226,227 -smth=0.15 -outmsh=${MSHFOLDER}/myocardium_smooth -ifmt=carp_txt -ofmt=carp_txt
 # meshtool smooth mesh -msh=${MSHFOLDER}/myocardium_clean -tags=2,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37 -smth=0.15 -outmsh=${MSHFOLDER}/myocardium_smooth -ifmt=carp_txt -ofmt=carp_txt
 
 cp ${MSHFOLDER}/myocardium_smooth.elem ${MSHFOLDER}/myocardium.elem
