@@ -260,7 +260,7 @@ class FourChamberProcess:
         sitk.WriteImage(distance_map,self.TMP(output_name),True)
 
     def threshold_and_save(self, input_name, output_name, label) :
-        thresholded_mask = img.threshold_filter_nrrd(self.DIR(input_name),0, label)
+        thresholded_mask = img.threshold_filter_nrrd(self.TMP(input_name),0, label)
         sitk.WriteImage(thresholded_mask,self.TMP(output_name),True)
     
     def threshold_distance_map(self, input_name, labels:dict, tmp_dict:dict, skip_processed=False) -> dict: 
@@ -333,11 +333,14 @@ class FourChamberProcess:
             io_tuple_list.append((None, thresholded_array))
 
         output_array = np.empty(input_array.shape, np.uint8)
-        for imga, imgb, mode, newmask, forbid_list in zip(io_tuple_list, add_mask_list):
+
+        for ix, images in enumerate(io_tuple_list): 
+            imga, imgb = images
+            mode, newmask, forbid_list = add_mask_list[ix]
             if imga is not None:           
                 output_array = img.process_mask(imga, imgb, newmask, mode, forbid_changes=forbid_list)
             else:
-                output_array = img.process_mask(output_array, imgb, newmask, mode, forbid_changes=forbid_list)
+                output_array = img.process_mask(output_array, imgb, newmask, mode, forbid_changes=forbid_list)            
     
         output_array = np.swapaxes(output_array, 0, 2)
         img.save_itk(output_array, origin, spacings, self.DIR(output_name))
@@ -386,7 +389,8 @@ class FourChamberProcess:
         seg_i_array = copy.deepcopy(input_array)
         seg_j_array = copy.deepcopy(input_array)
         #('LPV1_ring_label', mom.NO_OVERRIDE, [], mom.REPLACE, []
-        for ring_path, ring_label_str, mode1, forbid_labels_str1 in zip(list_of_rings, list_of_processes):
+        for ring_path, processable in zip(list_of_rings, list_of_processes):
+            ring_label_str, mode1, forbid_labels_str1 = processable
             ring_label = CDIC[ring_label_str]
             ring_array, _ = nrrd.read(ring_path)
             forbid_labels1 = convert_labels(forbid_labels_str1)
@@ -408,8 +412,8 @@ class FourChamberProcess:
         C=self.CONSTANTS
         CDIC = C.get_dictionary()
 
-        LA_BP_array, _ = nrrd.read(self.DIR(LA_BP_name))
-        RA_BP_array, _ = nrrd.read(self.DIR(RA_BP_name))
+        LA_BP_array, _ = nrrd.read(self.TMP(LA_BP_name))
+        RA_BP_array, _ = nrrd.read(self.TMP(RA_BP_name))
 
         input_array, _ = nrrd.read(self.DIR(image_name))
         seg_array = copy.deepcopy(input_array)
@@ -422,7 +426,7 @@ class FourChamberProcess:
             extra_processing = (label == C.SVC_label)
             plane_array = img.and_filter(seg_array, RA_BP_array, label, plane_label)
             if extra_processing : 
-                plane_extra_array = img.and_filter(seg_array, RA_BP_array, C.RPV1_ring_label, C.plane_label)
+                plane_extra_array = img.and_filter(seg_array, RA_BP_array, C.RPV1_ring_label, plane_label)
             seg_array = img.process_mask(seg_array, plane_array, plane_label, MM.REPLACE)
             if extra_processing : 
                 seg_array = img.process_mask(seg_array, plane_extra_array, plane_label, MM.REPLACE)
@@ -440,7 +444,7 @@ class FourChamberProcess:
         seg_array = np.swapaxes(seg_array, 0, 2)
         img.save_itk(seg_array, origin, spacings, self.DIR(outname))
 
-    def crop_major_vessels(self, input_name, slicer_tuple_list, output_name) :
+    def cropping_veins(self, input_name, slicer_tuple_list, output_name) :
         """
         Cropping veins
         slicer_tuple_list is a list of tuples that contain the following information:

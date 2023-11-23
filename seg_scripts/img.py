@@ -241,7 +241,7 @@ def process_mask(imga: np.ndarray, imgb: np.ndarray, newmask: int, operation_mod
   if forbid_changes is None:
     forbid_changes = [] 
 
-  imga_new = imga.copy(deep=True)
+  imga_new = copy.deepcopy(imga)
   newmask_ind = loc_mask(imgb)
   newmask_ind_trans = np.transpose(newmask_ind)
 

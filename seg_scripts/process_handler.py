@@ -137,7 +137,7 @@ def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, la
     
     labelsd, thresd = fcp.get_distance_map_dictionaries('LV_BP_label', 'LV_DistMap.nrrd', 'LV_neck_WT', 'LV_neck.nrrd')
     maskt = fcp.get_distance_map_tuples(mom.REPLACE, C.LV_neck_label, [],  mom.NO_OVERRIDE, 2, [])
-    
+
     logger.info("<Step 1/10> Creating myocardium for the LV outflow tract")
     
     fcp.create_mask_from_distance_map('seg_s2f.nrrd', 'seg_s3a.nrrd', labelsd, thresd, maskt)
@@ -166,7 +166,7 @@ def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, la
     inputs_tuple_list = [ ('seg_s3d.nrrd', points_data['Ao_tip'], C.Ao_BP_label, 'seg_s3f.nrrd'), 
                            ('seg_s3f.nrrd', points_data['PArt_tip'], C.PArt_BP_label, 'seg_s3f.nrrd')]
     for inputname, seed, label, outname in inputs_tuple_list :
-        fcp.get_connected_component_and_save(inputname, outname, seed, label)
+        fcp.get_connected_component_and_save(inputname, seed, label, output_name=outname)
 
     logger.info("<Step 5/10> Creating the right ventricular myocardium") 
     labelsd, thresd = fcp.get_distance_map_dictionaries('RV_BP_label', 'RV_DistMap.nrrd', 'RV_WT', 'RV_myo.nrrd')
@@ -205,8 +205,8 @@ def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, 
     fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file) 
 
     logger.info("<Step 1/8> Cropping major vessels")
-    fcp.get_connected_component_and_save('seg_s3p.nrrd', 'seg_s3r.nrrd', points_data['Ao_WT_tip'], C.Ao_wall_label)
-    fcp.get_connected_component_and_save('seg_s3r.nrrd', 'seg_s3s.nrrd', points_data['PArt_WT_tip'], C.PArt_wall_label)
+    fcp.get_connected_component_and_save('seg_s3p.nrrd', points_data['Ao_WT_tip'], C.Ao_wall_label, 'seg_s3r.nrrd')
+    fcp.get_connected_component_and_save('seg_s3r.nrrd', points_data['PArt_WT_tip'], C.PArt_wall_label, 'seg_s3s.nrrd')
 
     list_to_extract = [
         ('seg_s3s.nrrd', 'seg_s4a.nrrd', C.LV_BP_label, C.MV_label, 'LA_BP_label', 'LA_BP_DistMap.nrrd', 'valve_WT', 'LA_BP_thresh.nrrd', False, 1),
@@ -223,7 +223,8 @@ def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, 
     msg_list = ['mitral valve', '', 'tricuspid valve', '', 'aortic valve', '', '', '', 'pulmonary valve']
 
     count = 2
-    for msg, iname, oname, label, new_label, dmap_l, dmap_n, thresh, thresh_name, skip_dmap, mult in zip(msg_list, list_to_extract) :
+    for msg, extractables in zip(msg_list, list_to_extract) :
+        iname, oname, label, new_label, dmap_l, dmap_n, thresh, thresh_name, skip_dmap, mult = extractables
         if (msg != '') :
             logger.info(f'<Step {count}/8> Creating {msg}')
             count += 1

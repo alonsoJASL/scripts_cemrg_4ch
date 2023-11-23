@@ -75,7 +75,7 @@ def main(args):
 
         C.save(filename=labels_file)
     
-    clean_segmentation(path2points, path2originjson, path2ptsjson="", labels_file=labels_file)
+    clean_segmentation(path2points, path2ptsjson="", path2originjson=path2originjson, labels_file=labels_file)
 
     
 
