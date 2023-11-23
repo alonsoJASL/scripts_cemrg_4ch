@@ -134,28 +134,24 @@ def crop_svc_ivc(path2points:str, path2ptsjson:str, path2originjson:str, labels_
 def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None) :
     logger.info("Creating myocardium")
     fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file)
-    
-    labelsd, thresd = fcp.get_distance_map_dictionaries('LV_BP_label', 'LV_DistMap.nrrd', 'LV_neck_WT', 'LV_neck.nrrd')
-    maskt = fcp.get_distance_map_tuples(mom.REPLACE, C.LV_neck_label, [],  mom.NO_OVERRIDE, 2, [])
 
     logger.info("<Step 1/10> Creating myocardium for the LV outflow tract")
-    
+    labelsd, thresd = fcp.get_distance_map_dictionaries('LV_BP_label', 'LV_DistMap.nrrd', 'LV_neck_WT', 'LV_neck.nrrd')
+    maskt = fcp.get_distance_map_tuples(mom.REPLACE, C.LV_neck_label, [],  mom.NO_OVERRIDE, 2, [])
     fcp.create_mask_from_distance_map('seg_s2f.nrrd', 'seg_s3a.nrrd', labelsd, thresd, maskt)
+
     fcp.push_in_and_save('seg_s3a.nrrd', C.RV_BP_label, C.LV_myo_label, C.LV_BP_label, C.LV_neck_WT)
 
+    logger.info("<Step 2/10> Creating the aortic wall")
     labelsd, thresd = fcp.get_distance_map_dictionaries('Ao_BP_label', 'Ao_DistMap.nrrd', 'Ao_WT', 'Ao_wall.nrrd')
     maskt = fcp.get_distance_map_tuples(mom.REPLACE, C.Ao_wall_label, [], mom.REPLACE_EXCEPT, C.Ao_wall_label, [C.LV_BP_label, C.LV_myo_label])
-    
-    logger.info("<Step 2/10> Creating the aortic wall")
-    
     fcp.create_mask_from_distance_map('seg_s3a.nrrd', 'seg_s3b.nrrd', labelsd, thresd, maskt)
-
-    labelsd, thresd= fcp.get_distance_map_dictionaries('PArt_BP_label', 'PArt_DistMap.nrrd','PArt_WT', 'PArt_wall.nrrd')
-    maskt = fcp.get_distance_map_tuples(mom.REPLACE, C.PArt_wall_label, [], mom.REPLACE_EXCEPT, C.PArt_wall_label, [3,C.Ao_wall_label])
     
     logger.info("<Step 3/10> Creating the pulmonary artery wall")
-    
+    labelsd, thresd= fcp.get_distance_map_dictionaries('PArt_BP_label', 'PArt_DistMap.nrrd','PArt_WT', 'PArt_wall.nrrd')
+    maskt = fcp.get_distance_map_tuples(mom.REPLACE, C.PArt_wall_label, [], mom.REPLACE_EXCEPT, C.PArt_wall_label, [3,C.Ao_wall_label])
     fcp.create_mask_from_distance_map('seg_s3b.nrrd', 'seg_s3c.nrrd', labelsd, thresd, maskt)
+    
     fcp.push_in_and_save('seg_s3c.nrrd', C.Ao_wall_label,C.PArt_wall_label,C.PArt_BP_label,C.PArt_WT, outname='seg_s3d.nrrd')
 
     logger.info("<Step 4/10> Cropping veins")
@@ -296,7 +292,7 @@ def clean_segmentation(path2points:str, path2ptsjson:str, path2originjson:str, l
                             (C.RV_myo_label,C.Ao_wall_label,C.Ao_BP_label,C.Ao_WT),
                             (C.SVC_ring_label,C.LA_myo_label,C.LA_BP_label,C.LA_WT)]
     
-    for iname, pusher_wall_lab,pushed_wall_lab,pushed_BP_lab, pushed_WT in list_of_corrections1 : 
+    for pusher_wall_lab,pushed_wall_lab,pushed_BP_lab, pushed_WT in list_of_corrections1 : 
         fcp.push_in_and_save('seg_s5.nrrd', pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT)    
     
 
