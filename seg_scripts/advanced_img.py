@@ -4,12 +4,12 @@ import os
 import numpy as np
 import SimpleITK as sitk
 import img
-from img import MaskOperationMode as mom
+from seg_scripts.img import MaskOperationMode as mom
 
-from common import configure_logging, big_print
+from seg_scripts.common import configure_logging, big_print
 logger = configure_logging(log_name=__name__)
 
-import Labels
+import seg_scripts.Labels
 
 def cylinder(seg_nrrd,points,plane_name,slicer_radius, slicer_height,origin,spacing):
 	

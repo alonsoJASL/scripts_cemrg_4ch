@@ -8,10 +8,10 @@ import json
 import os
 import argparse
 
-from common import configure_logging, parse_txt_to_json, get_json_data, make_tmp
+from seg_scripts.common import configure_logging, parse_txt_to_json, get_json_data, make_tmp
 logger = configure_logging(log_name=__name__)
 
-from common import Labels
+from seg_scripts.common import seg_scripts.Labels
 
 def main(args) :
     """

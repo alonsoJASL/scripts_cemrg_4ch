@@ -1,5 +1,5 @@
 
-from img import save_itk, push_inside
+from seg_scripts.img import save_itk, push_inside
 import SimpleITK as sitk
 
 import numpy as np
@@ -9,7 +9,7 @@ import json
 import argparse
 import os
 
-from common import parse_txt_to_json, get_json_data, mycp
+from seg_scripts.common import parse_txt_to_json, get_json_data, mycp
 
 # ----------------------------------------------------------------------------------------------
 # Constants

@@ -3,7 +3,7 @@ import json
 import platform
 import logging
 
-from txt_2_json import txt2json
+from seg_scripts.txt_2_json import txt2json
 
 
 def configure_logging(log_name: str, log_level=logging.INFO, log_format='[%(funcName)s] %(message)s'):

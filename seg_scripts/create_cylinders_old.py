@@ -5,7 +5,7 @@ import json
 import string
 import argparse
 
-from img import *
+from seg_scripts.img import *
 import SimpleITK as sitk
 
 import numpy as np

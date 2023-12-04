@@ -11,7 +11,7 @@ import nrrd
 import pylab
 
 
-from img import save_itk
+from seg_scripts.img import save_itk
 import SimpleITK as sitk
 
 parser = argparse.ArgumentParser(description='To run: python3 nrrd_change_origin.py [path_to_nrrd]')

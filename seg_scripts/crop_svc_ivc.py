@@ -2,11 +2,11 @@
 import os
 import argparse
 
-from common import parse_txt_to_json, get_json_data, make_tmp
-from common import configure_logging
+from seg_scripts.common import parse_txt_to_json, get_json_data, make_tmp
+from seg_scripts.common import configure_logging
 logger = configure_logging(log_name=__name__)
 
-import Labels as L
+import seg_scripts.Labels as L
 from process_handler import crop_svc_ivc
 
 def main(args):

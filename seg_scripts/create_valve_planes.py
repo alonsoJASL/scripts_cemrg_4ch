@@ -9,10 +9,10 @@ import json
 import os
 import argparse
 
-from common import configure_logging
+from seg_scripts.common import configure_logging
 logger = configure_logging(log_name=__name__)
 
-import Labels as L
+import seg_scripts.Labels as L
 from process_handler import create_valve_planes
 # ----------------------------------------------------------------------------------------------
 # Define the wall thickness

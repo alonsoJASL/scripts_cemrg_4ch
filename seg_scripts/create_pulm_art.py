@@ -2,16 +2,16 @@
 # from /data/Dropbox/etc so change if appropriate
 scriptsPath = "/data/Dropbox/scripts_cemrgapp/seg_scripts/"
 
-from img import mask_plane_creator
-from img import mask_plane_creator_alternative
-from img import add_masks
-from img import add_masks_replace
+from seg_scripts.img import mask_plane_creator
+from seg_scripts.img import mask_plane_creator_alternative
+from seg_scripts.img import add_masks
+from seg_scripts.img import add_masks_replace
 
-from img import add_masks_replace_only
-from img import save_itk
-from img import connected_component
-from img import connected_component_keep
-from img import remove_filter
+from seg_scripts.img import add_masks_replace_only
+from seg_scripts.img import save_itk
+from seg_scripts.img import connected_component
+from seg_scripts.img import connected_component_keep
+from seg_scripts.img import remove_filter
 import SimpleITK as sitk
 
 import numpy as np

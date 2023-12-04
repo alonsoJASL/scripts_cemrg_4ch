@@ -8,9 +8,9 @@ import json
 import argparse
 import os
 
-import Labels as L
-from common import parse_txt_to_json, get_json_data
-from common import configure_logging
+import seg_scripts.Labels as L
+from seg_scripts.common import parse_txt_to_json, get_json_data
+from seg_scripts.common import configure_logging
 logger = configure_logging(log_name=__name__)
 
 from process_handler import create_svc_ivc

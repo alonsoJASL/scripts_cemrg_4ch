@@ -12,8 +12,8 @@ import multiprocessing as mp
 import json
 import argparse
 
-from common import parse_txt_to_json, get_json_data
-from common import configure_logging
+from seg_scripts.common import parse_txt_to_json, get_json_data
+from seg_scripts.common import configure_logging
 logger = configure_logging(log_name=__name__)
 
 from process_handler import create_cylinders

@@ -12,7 +12,7 @@ import SimpleITK as sitk
 import numpy as np
 import pydicom as dicom
 
-from common import configure_logging
+from seg_scripts.common import configure_logging
 logger = configure_logging(log_name=__name__)
 
 from process_handler import get_origin_and_spacing

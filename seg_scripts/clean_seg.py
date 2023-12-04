@@ -1,5 +1,5 @@
 
-from img import save_itk, push_inside
+from seg_scripts.img import save_itk, push_inside
 import SimpleITK as sitk
 
 import numpy as np
@@ -9,10 +9,10 @@ import json
 import argparse
 import os
 
-from common import configure_logging
+from seg_scripts.common import configure_logging
 logger = configure_logging(log_name=__name__)
 
-import Labels as L
+import seg_scripts.Labels as L
 from process_handler import clean_segmentation
 # ----------------------------------------------------------------------------------------------
 # Define the wall thickness

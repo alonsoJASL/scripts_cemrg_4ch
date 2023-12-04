@@ -5,7 +5,7 @@ import numpy as np
 import os
 import SimpleITK as sitk
 import string
-from img import *
+from seg_scripts.img import *
 import subprocess
 import time
 import multiprocessing as mp

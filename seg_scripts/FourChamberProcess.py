@@ -3,13 +3,13 @@ import numpy as np
 import copy
 import os
 import SimpleITK as sitk
-import img
-from img import MaskOperationMode as MM
+import seg_scripts.img as img
+from seg_scripts.img import MaskOperationMode as MM
 
-from common import configure_logging, big_print, make_tmp
+from seg_scripts.common import configure_logging, big_print, make_tmp
 logger = configure_logging(log_name=__name__)
 
-import Labels
+import seg_scripts.Labels as Labels
 
 DISTANCE_MAP_KEY = 'distance_map'
 THRESHOLD_KEY = 'threshold'
@@ -17,6 +17,7 @@ class FourChamberProcess:
     def __init__(self, path2points: str, origin_spacing: dict, CONSTANTS:Labels):
         self._path2points = path2points
         self._origin_spacing = origin_spacing
+        self._is_mri = False
         self.CONSTANTS = CONSTANTS
         self._debug = False
 
@@ -27,6 +28,10 @@ class FourChamberProcess:
     @property
     def debug(self):
         return self._debug
+    
+    @property 
+    def is_mri(self):
+        return self._is_mri
     
     def DIR(self, x):
         return os.path.join(self.path2points, x)

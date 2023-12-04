@@ -3,13 +3,13 @@ import sys
 import glob
 import numpy as np
 
-from common import configure_logging, add_file_handler
-from common import parse_txt_to_json, get_json_data, make_tmp, mycp
+from seg_scripts.common import configure_logging, add_file_handler
+from seg_scripts.common import parse_txt_to_json, get_json_data, make_tmp, mycp
 
-import img
-from img import MaskOperationMode as mom
-import Labels as L
-import FourChamberProcess as FOURCH
+import seg_scripts.img as img
+from seg_scripts.img import MaskOperationMode as mom
+import seg_scripts.Labels as L
+import seg_scripts.FourChamberProcess as FOURCH
 
 logger = configure_logging(log_name=__name__)
 
@@ -42,6 +42,7 @@ def get_origin_and_spacing(path2points:str, segmentation_name = "seg_corrected.n
     
     logger.info("Finding origin and spacing")
     dir_name = os.path.join(path2points, dicom_dir)
+    print(dir_name)
 
     list_of_files = sorted(filter(os.path.isfile, glob.glob(os.path.join(dir_name, '*')) ) )
     image_origin = img.get_origin_from_dicom(list_of_files)
@@ -57,10 +58,18 @@ def get_origin_and_spacing(path2points:str, segmentation_name = "seg_corrected.n
 
     if output_file != "" :    
         logger.info(f"Saving origin and spacing to {path2points}/{output_file}")
+
+        # adding _labels to the name of the file
+        output_file_labels = output_file.split('.')[0] + '_labels.txt'
         output_path = os.path.join(path2points, output_file)
         with open(output_path, 'w') as f:
             f.write(f'{origin_string}\n')
             f.write(f'{spacing_string}\n')
+        
+        output_path_labels = os.path.join(path2points, output_file_labels)
+        with open(output_path_labels, 'w') as f:
+            f.write(f'origin\n')
+            f.write(f'spacing\n')
         
 def create_cylinders(path2points:str, path2ptsjson="", path2originjson="", segmentation_name="seg_corrected.nrrd") : 
     fcp, _, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=None)

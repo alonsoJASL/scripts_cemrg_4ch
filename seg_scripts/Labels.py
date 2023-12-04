@@ -191,6 +191,66 @@ class Labels:
         }
         return data
     
+    def print(self) :
+        data = self.get_dictionary()
+        for k, v in data.items() :
+            print(f"{k}: {v}")
+    
+    def print_label_explanation(self) :
+        data = self.get_dictionary()
+        print("LABELS:")
+        expl= ["Wall thickness Scale factor",
+            "Valve wall thickness",
+            "Valve wall thickness SVC/IVC",
+            "Ring thickness",
+            "LV neck wall thickness",
+            "RV wall thickness",
+            "LA wall thickness",
+            "RA wall thickness",
+            "Ao wall thickness",
+            "PArt wall thickness",
+            "LV blood pool",
+            "LV myocardium",
+            "RV blood pool",
+            "LA blood pool",
+            "RA blood pool",
+            "Ao blood pool",
+            "PArt blood pool",
+            "LPV1",
+            "LPV2",
+            "RPV1",
+            "RPV2",
+            "LAA",
+            "SVC",
+            "IVC",
+            "LV neck",
+            "RV myocardium",
+            "LA myocardium",
+            "RA myocardium",
+            "Ao wall",
+            "PArt wall",
+            "MV",
+            "TV",
+            "AV",
+            "PV",
+            "plane LPV1",
+            "plane LPV2",
+            "plane RPV1",
+            "plane RPV2",
+            "plane LAA",
+            "plane SVC",
+            "plane IVC",
+            "LPV1 ring",
+            "LPV2 ring",
+            "RPV1 ring",
+            "RPV2 ring",
+            "LAA ring",
+            "SVC ring",
+            "IVC ring"]
+        
+        for ix, k in enumerate(data.keys()) :
+            print(f"{k}: {expl[ix]}")
+
     def save(self, filename):
         data = self.get_dictionary()
         with open(filename, 'w') as f:

@@ -9,8 +9,8 @@ import json
 import os
 import argparse
 
-from common import parse_txt_to_json, get_json_data, make_tmp
-import Labels as L
+from seg_scripts.common import parse_txt_to_json, get_json_data, make_tmp
+import seg_scripts.Labels as L
 
 # ----------------------------------------------------------------------------------------------
 # Define the wall thickness
