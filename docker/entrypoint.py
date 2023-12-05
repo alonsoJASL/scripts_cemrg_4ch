@@ -87,14 +87,14 @@ def docker_create_svc_ivc(args, help=False) :
     """
     from seg_scripts.process_handler import create_svc_ivc
     if(help) : 
-        print(__doc__)
+        print(docker_create_svc_ivc.__doc__)
         return
 
     _, labels_file = manage_labels_file(args)
 
     path2points = args.base_dir
     path2originjson = args.origin_spacing_json
-    seg_name = args.seg_name if args.seg_name != "" else "seg_s2a.nrrd"
+    seg_name = args.seg_name if args.seg_name != "" else "seg_corrected.nrrd"
 
     create_svc_ivc(path2points, path2originjson, seg_name, "seg_s2a.nrrd", labels_file)
 
@@ -126,10 +126,10 @@ def docker_create_slicers(args, help=False) :
 
 def docker_crop_svc_ivc(args, help=False) :
     """
-    Crop SVC and IVC. You can call this through 'crop_svc_ivc' mode.
+    Crop SVC and IVC. You can call this through 'crop' mode.
 
     USAGE: 
-        docker run --rm --volume=[path2points]:/data cermg/seg-4ch crop_svc_ivc --points-json [points_json] --origin-spacing-json [origin_spacing_json]
+        docker run --rm --volume=[path2points]:/data cermg/seg-4ch crop --points-json [points_json] --origin-spacing-json [origin_spacing_json]
     
     ARGUMENTS:
         path2points: path to the main directory
@@ -243,7 +243,7 @@ def main(args):
         - cylinders
         - svc_ivc
         - slicers
-        - crop_svc_ivc
+        - crop
         - myo
         - valve_planes
         - clean_seg
@@ -262,7 +262,7 @@ def main(args):
         docker_create_svc_ivc(args, help=myhelp)
     elif args.mode == 'slicers':
         docker_create_slicers(args, help=myhelp)
-    elif args.mode == 'crop_svc_ivc':
+    elif args.mode == 'crop':
         docker_crop_svc_ivc(args, help=myhelp)
     elif args.mode == 'myo':
         docker_create_myo(args, help=myhelp)
@@ -274,7 +274,7 @@ def main(args):
         CONSTANTS.print_label_explanation()
 
 if __name__ == '__main__' :
-    my_choices = ['origin', 'spacing', 'cylinders', 'svc_ivc', 'slicers', 'crop_svc_ivc', 'myo', 'valve_planes', 'clean_seg', 'labels']
+    my_choices = ['origin', 'spacing', 'cylinders', 'svc_ivc', 'slicers', 'crop', 'myo', 'valve_planes', 'clean_seg', 'labels']
 
     parser = argparse.ArgumentParser(description='Docker entrypoint', usage=main.__doc__)
     parser.add_argument("mode", choices=my_choices, help="Mode of operation")
