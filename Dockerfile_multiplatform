@@ -1,27 +1,29 @@
-FROM python:3.9-slim-bullseye 
-LABEL maintainer="jsolislemus <j.solis-lemus@imperial.ac.uk>"
+# Common Stage
+FROM python:3.9-slim-bullseye AS common_stage
 
+# ... Install common dependencies ...
 RUN apt-get update --fix-missing && \
     apt-get install -y --no-install-recommends \
     git libsm6 libxext6 libxrender-dev libgl1-mesa-glx ffmpeg \
     build-essential cmake libopenmpi-dev mesa-common-dev mesa-utils freeglut3-dev \
     ninja-build && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /code /data
 
 ENV VIRTUAL_ENV=/opt/venv \
     PATH="$VIRTUAL_ENV/bin:$PATH" \
     PYTHONPATH="${PYTHONPATH}:/code"
 
-# Clone VTK source code
-WORKDIR /code
 RUN python3 -m venv $VIRTUAL_ENV && \
-    /opt/venv/bin/python3 -m pip install --upgrade pip && \
-    mkdir -p /code /data && \
-    git clone --branch v9.2.6 --depth 1 https://gitlab.kitware.com/vtk/vtk.git && \
+    /opt/venv/bin/python3 -m pip install --upgrade pip
+# ARM64 Stage
+FROM common_stage AS arm64_stage
+
+WORKDIR /code
+RUN git clone --branch v9.2.6 --depth 1 https://gitlab.kitware.com/vtk/vtk.git && \
     mkdir -p /code/vtk/build
 
-# Build VTK
 WORKDIR /code/vtk/build
 RUN cmake \
     -DCMAKE_BUILD_TYPE:STRING=Release \
@@ -52,15 +54,31 @@ RUN cmake \
     -DVTK_USE_SYSTEM_FFMPEG:BOOL=ON \
     -DVTK_USE_SYSTEM_OSMESA:BOOL=ON \
     ..
-# -DVTK_INSTALL_PYTHON_MODULE_DIR:PATH=/opt/venv/lib/python3.10/site-packages \
 
-RUN ninja && /opt/venv/bin/python3 -m pip install wheel && \
-    /opt/venv/bin/python3 setup.py bdist_wheel 
+RUN ninja && \
+    /opt/venv/bin/python3 -m pip install wheel && \
+    /opt/venv/bin/python3 setup.py bdist_wheel
+
+# AMD64 Stage
+FROM common_stage AS amd64_stage
+
+# Use pre-built VTK for AMD64
+RUN /opt/venv/bin/python3 -m pip install vtk==9.2.6
+
+# Final Stage
+FROM arm64_stage AS final_arm64
 
 # Install the wheel
 WORKDIR /code/vtk/build/dist
 RUN /opt/venv/bin/python3 -m pip install vtk*.whl
 
+# AMD64-specific steps
+FROM amd64_stage AS final_amd64 
+
+# Choose the final stage based on the target platform
+# Use 'docker buildx' with --platform flag to specify the target platform
+
+# Common Final Steps
 COPY reqs.txt /code/
 RUN /opt/venv/bin/python3 -m pip install -r /code/reqs.txt 
 
@@ -70,3 +88,14 @@ COPY ./docker /code/docker
 
 # Specify the command to run on container start
 ENTRYPOINT ["/opt/venv/bin/python3", "/code/docker/entrypoint.py"]
+
+
+# to create the latest tag, compatible with any architechture
+# DOCKER_BUILDKIT=1 docker build --no-cache -f Dockerfile_multiplatform --target final_amd64 -t cemrg/seg-4ch:amd64 . --push
+# DOCKER_BUILDKIT=1 docker build --no-cache -f Dockerfile_multiplatform --target final_arm64 -t cemrg/seg-4ch:arm64 . --push
+#
+# Go to linux machine and run:
+# 
+# docker pull cemrg/seg-4ch:amd64
+# docker pull cemrg/seg-4ch:arm64
+# docker manifest create cemrg/seg-4ch:latest cemrg/seg-4ch:amd64 cemrg/seg-4ch:arm64
