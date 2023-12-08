@@ -1,0 +1,31 @@
+FROM python:3.9-slim-bullseye 
+LABEL maintainer="jsolislemus <j.solis-lemus@imperial.ac.uk>"
+
+RUN apt-get update --fix-missing && \
+    apt-get install -y --no-install-recommends \
+    git libsm6 libxext6 libxrender-dev libgl1-mesa-glx ffmpeg \
+    libopenmpi-dev mesa-common-dev mesa-utils freeglut3-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV VIRTUAL_ENV=/opt/venv \
+    PATH="$VIRTUAL_ENV/bin:$PATH" \
+    PYTHONPATH="${PYTHONPATH}:/code"
+
+# Clone VTK source code
+WORKDIR /code
+RUN python3 -m venv $VIRTUAL_ENV && \
+    /opt/venv/bin/python3 -m pip install --upgrade pip && \
+    mkdir -p /code /data
+
+RUN /opt/venv/bin/python3 -m pip install vtk==9.2.6 
+
+COPY reqs.txt /code/
+RUN /opt/venv/bin/python3 -m pip install -r /code/reqs.txt 
+
+# Copy the rest of the application code
+COPY ./seg_scripts/ /code/seg_scripts
+COPY ./docker /code/docker
+
+# Specify the command to run on container start
+ENTRYPOINT ["/opt/venv/bin/python3", "/code/docker/entrypoint.py"]
