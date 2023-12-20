@@ -15,8 +15,11 @@ logger = configure_logging(log_name=__name__)
 
 def parse_input_parameters(path2points:str, path2originjson:str, path2ptsjson:str = "", labels_file=None) :
     
-    points_output_file = parse_txt_to_json(path2points, path2ptsjson, "points", "labels")
-    points_data = get_json_data(points_output_file)
+    if path2ptsjson == None : 
+        points_output_file = parse_txt_to_json(path2points, path2ptsjson, "points", "labels")
+        points_data = get_json_data(points_output_file)
+    else :
+        points_data = None
     
     origin_spacing_output_file = parse_txt_to_json(path2points, path2originjson, "origin_spacing", "origin_spacing_labels")
     origin_data = get_json_data(origin_spacing_output_file)
@@ -93,7 +96,7 @@ def create_cylinders(path2points:str, path2ptsjson="", path2originjson="", segme
         fcp.cylinder(segmentation_name, points, fcp.DIR(out_name), radius, height)
 
 def create_svc_ivc(path2points:str, path2originjson:str, segmentation_name="seg_corrected.nrrd", output_segname="seg_s2a.nrrd", labels_file=None) :
-    fcp, _, _ = parse_input_parameters(path2points, path2originjson, path2ptsjson="", labels_file=labels_file)
+    fcp, _, _ = parse_input_parameters(path2points, path2originjson, path2ptsjson=None, labels_file=labels_file)
    
     if not fcp.check_nrrd(segmentation_name) : 
         msg = f"Could not find {segmentation_name} file and conversion to .nii failed."
