@@ -14,12 +14,13 @@ import seg_scripts.FourChamberProcess as FOURCH
 logger = configure_logging(log_name=__name__)
 
 def parse_input_parameters(path2points:str, path2originjson:str, path2ptsjson:str = "", labels_file=None) :
-    
-    if path2ptsjson == None : 
+
+    points_data = None     
+    if path2ptsjson == "": 
         points_output_file = parse_txt_to_json(path2points, path2ptsjson, "points", "labels")
         points_data = get_json_data(points_output_file)
     else :
-        points_data = None
+        points_data = get_json_data(path2ptsjson)
     
     origin_spacing_output_file = parse_txt_to_json(path2points, path2originjson, "origin_spacing", "origin_spacing_labels")
     origin_data = get_json_data(origin_spacing_output_file)
