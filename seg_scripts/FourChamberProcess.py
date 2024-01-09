@@ -57,7 +57,7 @@ class FourChamberProcess:
             filename_nii = filename.replace('.nrrd','.nii')
             if os.path.exists(self.DIR(filename_nii)):
                 logger.info(f'{filename_nii} file exists. Converting to .nrrd')
-                img.convert_nii_nrrd(self.path2points, filename_nii)
+                img.convert_to_nrrd(self.path2points, filename_nii)
 
         return os.path.exists(self.DIR(filename))
 	

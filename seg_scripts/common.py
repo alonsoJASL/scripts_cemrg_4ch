@@ -42,16 +42,21 @@ def make_tmp(path):
 	tmp_folder = os.path.join(path, "tmp")
 	mymkdir(tmp_folder)
 	
+def smart_join(path1, path2):
+    common_prefix = os.path.commonprefix([path1, path2])
+    remaining_path = os.path.relpath(path2, common_prefix)
+    return os.path.join(path1, remaining_path)
+
 def parse_txt_to_json(path2points, path2file, pts_name, labels_name, out_name=""): 
 	if out_name == "":
 		out_name = pts_name
 	if path2file == "":
-		points_file = f'{path2points}/{pts_name}.txt'
-		labels_file = f'{path2points}/{labels_name}.txt'
-		output_file = f'{path2points}/{out_name}.json'
+		points_file = smart_join(path2points,f'{pts_name}.txt')
+		labels_file = smart_join(path2points, f'f{labels_name}.txt')
+		output_file = smart_join(path2points, f'{out_name}.json')
 		txt2json(points_file, labels_file, output_file)
 	else:
-		output_file = os.path.join(path2points, path2file)
+		output_file = smart_join(path2points, path2file)
 	
 	return output_file
 

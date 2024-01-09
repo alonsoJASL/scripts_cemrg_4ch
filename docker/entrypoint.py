@@ -3,7 +3,7 @@
 import argparse
 import os
 
-from seg_scripts.common import configure_logging
+from seg_scripts.common import configure_logging, add_file_handler
 logger = configure_logging(log_name=__name__)
 
 import seg_scripts.Labels as L
