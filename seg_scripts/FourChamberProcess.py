@@ -52,6 +52,9 @@ class FourChamberProcess:
         Checks if a file.nrrd exists in the path2points directory, and if not, 
         checks if the .nii version exists and converts it to nrrd.
         """
+        if not filename.endswith('.nrrd'):
+            filename = filename + '.nrrd'
+
         if not os.path.exists(self.DIR(filename)):
             logger.info(f'{filename} file does not exist. Attempting using .nii')
             filename_nii = filename.replace('.nrrd','.nii')

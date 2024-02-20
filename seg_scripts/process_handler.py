@@ -77,6 +77,10 @@ def get_origin_and_spacing(path2points:str, segmentation_name = "seg_corrected.n
 def create_cylinders(path2points:str, path2ptsjson="", path2originjson="", segmentation_name="seg_corrected.nrrd") : 
     fcp, _, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=None)
 
+    if segmentation_name.endswith('.nii'):
+        logger.info(f"Converting {segmentation_name} to .nrrd")
+        segmentation_name = segmentation_name.replace('.nii','.nrrd')
+
     if not fcp.check_nrrd(segmentation_name) :
         msg = f"Could not find {segmentation_name} file and conversion to .nii failed."
         logger.error(msg)
@@ -97,6 +101,10 @@ def create_cylinders(path2points:str, path2ptsjson="", path2originjson="", segme
 
 def create_svc_ivc(path2points:str, path2originjson:str, segmentation_name="seg_corrected.nrrd", output_segname="seg_s2a.nrrd", labels_file=None) :
     fcp, _, _ = parse_input_parameters(path2points, path2originjson, path2ptsjson=None, labels_file=labels_file)
+
+    if segmentation_name.endswith('.nii'):
+        logger.info(f"Converting {segmentation_name} to .nrrd")
+        segmentation_name = segmentation_name.replace('.nii','.nrrd')
    
     if not fcp.check_nrrd(segmentation_name) : 
         msg = f"Could not find {segmentation_name} file and conversion to .nii failed."
@@ -107,6 +115,10 @@ def create_svc_ivc(path2points:str, path2originjson:str, segmentation_name="seg_
 
 def create_slicers(path2points:str, path2ptsjson="", path2originjson="", segmentation_name="seg_s2a.nrrd") : 
     fcp, _, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=None)
+
+    if segmentation_name.endswith('.nii'):
+        logger.info(f"Converting {segmentation_name} to .nrrd")
+        segmentation_name = segmentation_name.replace('.nii','.nrrd')
 
     if not fcp.check_nrrd(segmentation_name) :
         msg = f"Could not find {segmentation_name} file and conversion to .nii failed."
