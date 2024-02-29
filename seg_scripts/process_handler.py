@@ -189,7 +189,7 @@ def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, la
         fcp.get_connected_component_and_save(inputname, seed, label, output_name=outname)
 
     logger.info("<Step 5/10> Creating the right ventricular myocardium") 
-    labelsd, thresd = fcp.get_distance_map_dictionaries('RV_BP_label', 'RV_DistMap.nrrd', 'RV_WT', 'RV_myo.nrrd')
+    labelsd, thresd = fcp.get_distance_map_dictionaries('RV_BP_label', 'RV_BP_DistMap.nrrd', 'RV_WT', 'RV_myo.nrrd')
     maskt = fcp.get_distance_map_tuples(mom.REPLACE, C.RV_myo_label, [], mom.REPLACE_ONLY, C.RV_myo_label, [C.Ao_wall_label])
 
     fcp.create_mask_from_distance_map('seg_s3e.nrrd', 'seg_s3g.nrrd', labelsd, thresd, maskt)
