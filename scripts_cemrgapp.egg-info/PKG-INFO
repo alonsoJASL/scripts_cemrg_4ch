@@ -1,0 +1,8 @@
+Metadata-Version: 2.1
+Name: scripts-cemrgapp
+Version: 0.0.1
+Requires-Python: ~=3.8
+Requires-Dist: numpy~=1.23.0
+Requires-Dist: scipy~=1.10.1
+Requires-Dist: meshio~=5.3.4
+Requires-Dist: trimesh~=3.22.1

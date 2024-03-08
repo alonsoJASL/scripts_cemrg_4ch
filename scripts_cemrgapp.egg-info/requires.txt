@@ -1,0 +1,4 @@
+numpy~=1.23.0
+scipy~=1.10.1
+meshio~=5.3.4
+trimesh~=3.22.1
