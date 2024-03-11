@@ -5,6 +5,7 @@ import os
 import SimpleITK as sitk
 import seg_scripts.img as img
 from seg_scripts.img import MaskOperationMode as MM
+from seg_scripts.ImageAnalysis import ImageAnalysis 
 
 from seg_scripts.common import configure_logging, big_print, make_tmp
 logger = configure_logging(log_name=__name__)
@@ -20,7 +21,8 @@ class FourChamberProcess:
         self._is_mri = False
         self.CONSTANTS = CONSTANTS
         self._debug = False
-
+        self.swap_axes = True
+        
     @property 
     def path2points(self):
         return self._path2points
@@ -63,12 +65,9 @@ class FourChamberProcess:
                 img.convert_to_nrrd(self.path2points, filename_nii)
 
         return os.path.exists(self.DIR(filename))
-	
-    def cylinder(self, segname, points, plane_name, slicer_radius, slicer_height):
-        logger.info(f"Generating cylinder: {plane_name}")
+    
+    def cylinder_process(self, seg_array: np.array, points, plane_name, slicer_radius, slicer_height) -> np.array:
         origin, spacing = self.get_origin_spacing()
-        seg_array, _ = nrrd.read(self.DIR(segname))
-
         seg_array_cylinder = np.zeros(seg_array.shape, np.uint8)
 
         points_coords = np.copy(points)
@@ -136,28 +135,32 @@ class FourChamberProcess:
                         if test_radius<=slicer_radius:
                             seg_array_cylinder[i,j,k] = seg_array_cylinder[i,j,k]+1
 
-        seg_array_cylinder = np.swapaxes(seg_array_cylinder, 0, 2)
+        return seg_array_cylinder
+	
+    def cylinder(self, segname, points, plane_name, slicer_radius, slicer_height):
+        logger.info(f"Generating cylinder: {plane_name}")
+        origin, spacing = self.get_origin_spacing()
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+
+        seg_array = ima.load_image_array(segname)
+        # seg_array, _ = nrrd.read(self.DIR(segname))
+        seg_array_cylinder = self.cylinder_process(seg_array, points, plane_name, slicer_radius, slicer_height)
 
         logger.info("Saving...")
-        img.save_itk(seg_array_cylinder, origin, spacing, plane_name)
+        # seg_array_cylinder = np.swapaxes(seg_array_cylinder, 0, 2)
+        ima.save_itk(seg_array_cylinder, origin, spacing, plane_name, self.swap_axes)
     
     def create_and_save_svc_ivc(self, seg_name: str, svc_name: str, ivc_name: str, output_name: str):
 
         origin, spacings = self.get_origin_spacing()
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
         C=self.CONSTANTS
 
-        seg_file = self.DIR(seg_name)
-        svc_file = self.DIR(svc_name)
-        ivc_file = self.DIR(ivc_name)
-        # aorta_slicer_file = self.DIR(aorta_slicer_name)
-        # PArt_slicer_file = self.DIR(PArt_slicer_name)
-        output_file = self.DIR(output_name)
+        seg_s2_array = ima.load_image_array(self.DIR(seg_name))
+        svc_array = ima.load_image_array(self.DIR(svc_name))
+        ivc_array = ima.load_image_array(self.DIR(ivc_name))
 
-        seg_s2_array, _ = nrrd.read(seg_file)
-        svc_array, _ = nrrd.read(svc_file)
-        ivc_array, _ = nrrd.read(ivc_file)
-        # aorta_slicer_array, _ = nrrd.read(aorta_slicer_file)
-        # PArt_slicer_array, _ = nrrd.read(PArt_slicer_file)
+        output_file = self.DIR(output_name)
 
         # ----------------------------------------------------------------------------------------------
         # Add the SVC and IVC 
@@ -170,50 +173,46 @@ class FourChamberProcess:
         # Format and save the segmentation
         # ----------------------------------------------------------------------------------------------
         logger.info(' ## Formatting and saving the segmentation ##')
-        seg_s2a_array = np.swapaxes(seg_s2a_array,0,2)
-        img.save_itk(seg_s2a_array, origin, spacings, output_file)
+        ima.save_itk(seg_s2a_array, origin, spacings, output_file, self.swap_axes)
+
         logger.info(" ## Saved segmentation with SVC/IVC added ##")
     
     def remove_protruding_vessel(self, seed, label, input_name, output_name) :
     
         origin, spacings = self.get_origin_spacing()
-        input_file = os.path.join(self.path2points, input_name)
-        output_file = os.path.join(self.path2points, output_name)
-    
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+
+        input_array = ima.load_image_array(self.DIR(input_name))    
         logger.info(f' ## Removing any protruding {label} ## \n')
-        seg_array = img.connected_component_keep(input_file, seed, label, self.path2points)
-        seg_array = np.swapaxes(seg_array, 0, 2)
-        img.save_itk(seg_array, origin, spacings, output_file)
+        seg_array = ima.connected_component_keep(input_array, seed, label)
+        ima.save_itk(seg_array, origin, spacings, self.DIR(output_name), self.swap_axes)
     
     def add_vessel_masks(self, seg_name, output_name, aorta_pair:tuple, PArt_pair:tuple, SVC_name, IVC_name):
         origin, spacings = self.get_origin_spacing()
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
         C=self.CONSTANTS
-        seg_filename = self.DIR(seg_name)
-        output_filename = self.DIR(output_name)
-        SVC_filename = self.DIR(SVC_name)
-        IVC_filename = self.DIR(IVC_name)
     
         # Load the segmentation and vessel slicer arrays
-        input_seg_array, _ = nrrd.read(seg_filename)
-        aorta_slicer_array, _ = nrrd.read(self.DIR(aorta_pair[0]))
-        PArt_slicer_array, _ = nrrd.read(self.DIR(PArt_pair[0]))
-        SVC_slicer_array, _ = nrrd.read(SVC_filename)
-        IVC_slicer_array, _ = nrrd.read(IVC_filename)
+        input_seg_array = ima.load_image_array(self.DIR(seg_name))
+        aorta_slicer_array = ima.load_image_array(self.DIR(aorta_pair[0]))
+        PArt_slicer_array = ima.load_image_array(self.DIR(PArt_pair[0]))
+        SVC_slicer_array = ima.load_image_array(self.DIR(SVC_name))
+        IVC_slicer_array = ima.load_image_array(self.DIR(IVC_name))
 
         # Add masks for the aorta and pulmonary artery
-        seg_array = img.add_masks_replace_only(input_seg_array, aorta_slicer_array, aorta_pair[1], C.Ao_BP_label)
-        seg_array = img.add_masks_replace_only(seg_array, PArt_slicer_array, PArt_pair[1], C.PArt_BP_label)
+        seg_array = ima.add_masks_replace_only(input_seg_array, aorta_slicer_array, aorta_pair[1], C.Ao_BP_label)
+        seg_array = ima.add_masks_replace_only(seg_array, PArt_slicer_array, PArt_pair[1], C.PArt_BP_label)
 
         # Replace the RA label with the SVC or IVC label
-        new_RA_array = img.and_filter(seg_array, SVC_slicer_array, C.SVC_label, C.RA_BP_label)
-        seg_array = img.add_masks_replace_only(seg_array, new_RA_array, C.RA_BP_label, C.SVC_label)
+        new_RA_array = ima.and_filter(seg_array, SVC_slicer_array, C.SVC_label, C.RA_BP_label)
+        seg_array = ima.add_masks_replace_only(seg_array, new_RA_array, C.RA_BP_label, C.SVC_label)
 
-        new_RA_array = img.and_filter(seg_array, IVC_slicer_array, C.IVC_label, C.RA_BP_label)
-        seg_array = img.add_masks_replace_only(seg_array, new_RA_array, C.RA_BP_label, C.IVC_label)
+        new_RA_array = ima.and_filter(seg_array, IVC_slicer_array, C.IVC_label, C.RA_BP_label)
+        seg_array = ima.add_masks_replace_only(seg_array, new_RA_array, C.RA_BP_label, C.IVC_label)
     
         logger.info(' ## Formatting and saving the segmentation ##')
         seg_array = np.swapaxes(seg_array, 0, 2)
-        img.save_itk(seg_array, origin, spacings, output_filename)
+        ima.save_itk(seg_array, origin, spacings, self.DIR(output_name), self.swap_axes)
     
     def flatten_vessel_base(self, input_name, output_name, seed, label):
         """
@@ -239,6 +238,7 @@ class FourChamberProcess:
         output_filename = self.DIR(output_name)
 
         origin, spacings = self.get_origin_spacing()
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
         C = self.CONSTANTS
 
         logger.info(f' ## Flattening base of {label} ## \n')
@@ -480,9 +480,15 @@ class FourChamberProcess:
         seg_array = np.swapaxes(seg_array, 0, 2)
         img.save_itk(seg_array, origin, spacings, output_filename)
     
+    def get_connected_component(self, input_name, seed, layer) : 
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        input_array = ima.load_image_array(self.DIR(input_name))
+        
+        return ima.connected_component(input_array, seed, layer)
     def get_connected_component_and_save(self, input_name, seed, layer, output_name) : 
         origin, spacings = self.get_origin_spacing()
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
 
-        seg_array = img.connected_component(self.DIR(input_name), seed, layer, self.path2points)
-        seg_array = np.swapaxes(seg_array, 0, 2)
-        img.save_itk(seg_array, origin, spacings, self.DIR(output_name))
+        input_array = ima.load_image_array(self.DIR(input_name))
+        seg_array = ima.connected_component(input_array, seed, layer)
+        ima.save_itk(seg_array, origin, spacings, self.DIR(output_name))
