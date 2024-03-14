@@ -74,7 +74,7 @@ class ImageAnalysis:
         padded_img_array = np.pad(img_array, ((pad_x, pad_x), (pad_y, pad_y), (pad_z, pad_z)), mode='constant', constant_values=constant_pad_values)
         return padded_img_array
     
-    def distance_map(self, img: sitk.Image, label: int) -> sitk.Image:
+    def distance_map(self, img: sitk.Image, label: int, outname="") -> sitk.Image:
         """
         Generate a distance map from an image.
 
@@ -93,9 +93,15 @@ class ImageAnalysis:
         distance_map_filter.UseImageSpacingOff()
         DistMap = distance_map_filter.Execute(thresholded_img)
 
+        if self.debug:
+            outname = outname if outname != "" else "DistMap.nrrd"
+            outname += ".nrrd" if not outname.endswith(".nrrd") else ""
+            save_path = self.TMP(outname)
+            sitk.WriteImage(DistMap, save_path)
+
         return DistMap
 
-    def threshold_filter(self, img: sitk.Image, lower, upper) : 
+    def threshold_filter(self, img: sitk.Image, lower, upper, outname="") -> sitk.Image: 
         """
         Apply a threshold filter to an image.
 
@@ -112,7 +118,32 @@ class ImageAnalysis:
         threshold_filter.SetLower(lower)
         threshold_filter.SetUpper(upper)
         thresholded_img = threshold_filter.Execute(img)
+
+        if self.debug:
+            outname = outname if outname != "" else "Thresh.nrrd"
+            outname += ".nrrd" if not outname.endswith(".nrrd") else ""
+            save_path = self.TMP(outname)
+            sitk.WriteImage(thresholded_img, save_path)
+
         return thresholded_img
+    
+    def threshold_filter_array(self, img: sitk.Image, lower, upper, outname="") -> np.array:
+        """
+        Apply a threshold filter to an image array.
+
+        Parameters:
+            img (sitk.Image): The input image.
+            lower (int): The lower threshold value.
+            upper (int): The upper threshold value.
+
+        Returns:
+            np.array: The thresholded image array.
+
+        """
+        thresholded_img = self.threshold_filter(img, lower, upper, outname)
+        thresholded_img_array = sitk.GetArrayFromImage(thresholded_img)
+
+        return thresholded_img_array
 
     def and_filter(self, imga_array: np.array, imgb_array: np.array, label_a, new_label) -> np.array:
         """

@@ -10,6 +10,7 @@ import seg_scripts.img as img
 from seg_scripts.img import MaskOperationMode as mom
 import seg_scripts.Labels as L
 import seg_scripts.FourChamberProcess as FOURCH
+from seg_scripts.ImageAnalysis import ImageAnalysis
 
 logger = configure_logging(log_name=__name__)
 
@@ -219,6 +220,67 @@ def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, la
 
     logger.info("<Step 10/10> RV myo: Pushing the right ventricle with the aorta") 
     fcp.push_in_and_save('seg_s3o.nrrd', C.Ao_wall_label,C.RV_myo_label,C.RV_BP_label,C.RV_WT, outname='seg_s3p.nrrd')
+
+def create_valve_planes_bis(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, mydebug=False) :
+    logger.info("Creating valve planes")
+    fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file)
+    fcp.debug = mydebug
+    ima = ImageAnalysis(path2points, mydebug)
+
+    logger.info("<Step 1/8> Cropping major vessels")
+    fcp.get_connected_component_and_save('seg_s3p.nrrd', points_data['Ao_WT_tip'], C.Ao_wall_label, 'seg_s3r.nrrd')
+    fcp.get_connected_component_and_save('seg_s3r.nrrd', points_data['PArt_WT_tip'], C.PArt_wall_label, 'seg_s3s.nrrd')
+
+    input_seg_array = ima.load_image_array(fcp.DIR('seg_s3s.nrrd'))
+
+    logger.info("<Step 2/8> Creating the mitral valve")
+    labels = [C.LV_BP_label, C.valve_WT, C.LV_BP_LABEL, C.MV_label, C.MV_label]
+    seg_new_array, la_bp_distmap, la_bp_thresh, mv_array = ima.extract_structure(input_seg_array, labels, "LA_BP_DistMap", "LA_BP_thresh", "seg_s4a.nrrd")
+
+    labels = [C.LV_myo_label, C.LA_WT, C.LA_BP_label, C.LA_myo_label, C.LA_myo_label]
+    seg_new_array, lv_myo_distmap, lv_myo_thresh, la_myo_array = ima.extract_structure(seg_new_array, labels, "LV_myo_DistMap", "LV_myo_thresh", "seg_s4b.nrrd")
+
+    logger.info("<Step 3/8> Creating the tricuspid valve")
+    labels = [C.RV_BP_label, C.valve_WT, C.RV_BP_label, C.TV_label, C.TV_label]
+    seg_new_array, ra_bp_distmap, ra_bp_thresh, tv_array = ima.extract_structure(seg_new_array, labels, "RA_BP_DistMap", "RA_BP_thresh", "seg_s4c.nrrd")
+
+    labels = [C.RV_myo_label, C.RA_WT, C.RA_BP_label, C.RA_myo_label, C.RA_myo_label]
+    seg_new_array, rv_myo_distmap, rv_myo_thresh, ra_myo_array = ima.extract_structure(seg_new_array, labels, "RV_myo_DistMap", "RV_myo_extra", "seg_s4d.nrrd")
+
+    logger.info("<Step 4/8> Creating the aortic valve")
+    labels = [C.Ao_BP_label, C.valve_WT, C.LV_BP_label, C.AV_label, C.AV_label]
+    seg_new_array, ao_bp_distmap, ao_bp_thresh, av_array = ima.extract_structure(seg_new_array, labels, "Ao_BP_DistMap", "AV.nrrd", "seg_s4e.nrrd")
+
+    labels = [-1, C.Ao_WT, C.Ao_BP_label, C.Ao_wall_label, C.Ao_wall_label]
+    seg_new_array, ao_wall_distmap, ao_wall_thresh, ao_wall_array = ima.extract_structure(seg_new_array, labels, "LV_myo_DistMap", "Ao_wall_extra", "seg_s4f.nrrd", lv_myo_distmap)
+
+    labels = [C.AV_label, 2*C.valve_WT, C.MV_label, C.LV_myo_label, C.LV_myo_label]
+    seg_new_array, av_distmap, av_thresh, av_sep_array = ima.extract_structure(seg_new_array, labels, "AV_DistMap", "AV_sep.nrrd", "seg_s4f.nrrd")
+
+    labels = [C.LV_myo_label, C.LA_WT, C.LA_BP_label, C.LA_myo_label, C.LA_myo_label]
+    seg_new_array, lv_myo_distmap, lv_myo_thresh, la_myo_array = ima.extract_structure(seg_new_array, labels, "LV_myo_DistMap", "LV_myo_extra", "seg_s4ff.nrrd")
+
+    logger.info("<Step 5/8> Creating the pulmonary valve")
+    labels = [C.PArt_BP_label, C.valve_WT, C.RV_BP_label, C.PV_label, C.PV_label]
+    seg_new_array, pa_bp_distmap, pa_bp_thresh, pv_array = ima.extract_structure(seg_new_array, labels, "PArt_BP_DistMap", "PV.nrrd", "seg_s4g.nrrd")
+
+    labels = [-1, C.PArt_WT, C.PArt_BP_label, C.PArt_wall_label, C.PArt_wall_label]
+    seg_new_array, pa_wall_distmap, part_wall_extra, pa_wall_array = ima.extract_structure(seg_new_array, labels, "RV_myo_DistMap", "PArt_wall_extra", "seg_s4h.nrrd", rv_myo_distmap)
+
+    logger.info("<Step 6/8> Create the distance maps needed to cut the vein rings")
+    labels = [C.LA_myo_label, C.ring_thickness]
+    la_myo_distmap, la_myo_thresh = fcp.extract_distmap_and_threshold(seg_new_array, labels, "LA_myo_DistMap", "LA_myo_thresh.nrrd")
+    
+    labels = [C.RA_myo_label, C.ring_thickness]
+    ra_myo_distmap, ra_myo_thresh = fcp.extract_distmap_and_threshold(seg_new_array, labels, "RA_myo_DistMap", "RA_myo_thresh.nrrd")
+
+    logger.info("<Step 7/8> Creating the vein rings")
+    
+
+
+
+
+
 
 def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None) :
     logger.info("Creating valve planes")

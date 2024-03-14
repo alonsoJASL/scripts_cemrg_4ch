@@ -31,6 +31,10 @@ class FourChamberProcess:
     def debug(self):
         return self._debug
     
+    @debug.setter
+    def debug(self, value:bool):
+        self._debug = value
+    
     @property 
     def is_mri(self):
         return self._is_mri
@@ -492,3 +496,65 @@ class FourChamberProcess:
         input_array = ima.load_image_array(self.DIR(input_name))
         seg_array = ima.connected_component(input_array, seed, layer)
         ima.save_itk(seg_array, origin, spacings, self.DIR(output_name))
+
+    def extract_distmap_and_threshold(self, seg_array, labels:dict, dm_name, th_name, dmap_array=None): 
+        origin, spacings = self.get_origin_spacing()
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+
+        if dmap_array is None:
+            distmap_array = ima.distance_map(seg_array, labels[0], dm_name)
+        else:
+            distmap_array = dmap_array
+
+        thresh_array = ima.threshold_filter_array(distmap_array, 0, labels[1], th_name) 
+
+        return distmap_array, thresh_array
+        
+
+    # def extract_structure(self, seg_array, dist_map_dict, thresh_dict, and_filt_labels, add_masks_label, outname): 
+    def extract_structure(self, seg_array, labels: list, dm_name: str, th_name: str, outname: str, dmap_array=None): 
+        """
+        Extracts a specific structure from a segmentation array using a series of image processing operations.
+
+        Args:
+            seg_array (np.array): The input segmentation array.
+            labels (list): A list of labels used for different image processing operations. The list should contain the following labels in the specified order:
+                - labels[0] (int): The label of the structure used for distance map calculation.
+                - labels[1] (int): The label of the structure used for thresholding.
+                - labels[2] (int): The label of the structure used for the AND filter operation.
+                - labels[3] (int): The label of the structure used as the mask for the AND filter operation.
+                - labels[4] (int): The label of the structure to be added to the segmentation array.
+            dm_name (str): The name of the distance map file to be saved.
+            th_name (str): The name of the thresholded array file to be saved.
+            outname (str): The name of the output segmentation array file to be saved.
+
+        Returns:
+            tuple: A tuple containing the following arrays in the specified order:
+                - seg_array_new (np.array): The modified segmentation array with the extracted structure added.
+                - distmap_array (np.array): The distance map array.
+                - thresh_array (np.array): The thresholded array.
+                - struct_array (np.array): The structure array obtained from the AND filter operation.
+
+        Example Usage:
+            four_chamber = FourChamberProcess(path2points, origin_spacing, CONSTANTS)
+            seg_array = ...
+            labels = [label1, label2, label3, label4, label5]
+            dm_name = "distance_map.nrrd"
+            th_name = "thresholded_array.nrrd"
+            outname = "output_segmentation.nrrd"
+            result = four_chamber.extract_structure(seg_array, labels, dm_name, th_name, outname)
+        """
+        origin, spacings = self.get_origin_spacing()
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+
+        distmap_array, thresh_array = self.extract_distmap_and_threshold(seg_array, labels, dm_name, th_name, dmap_array)
+
+        struct_array = ima.and_filter(seg_array, thresh_array, labels[2], labels[3]) 
+        seg_array_new = ima.add_masks_replace(seg_array, struct_array, labels[4])
+
+        if self.debug: 
+            ima.save_itk(seg_array_new, origin, spacings, self.DIR(outname))
+        
+        return seg_array_new, distmap_array, thresh_array, struct_array
+    
+    
