@@ -21,6 +21,7 @@ class FourChamberProcess:
         self._is_mri = False
         self.CONSTANTS = CONSTANTS
         self._debug = False
+        self._save_seg_steps = True
         self.swap_axes = True
         
     @property 
@@ -34,6 +35,14 @@ class FourChamberProcess:
     @debug.setter
     def debug(self, value:bool):
         self._debug = value
+
+    @property
+    def save_seg_steps(self):
+        return self._save_seg_steps
+    
+    @save_seg_steps.setter
+    def save_seg_steps(self, value:bool):
+        self._save_seg_steps = value
     
     @property 
     def is_mri(self):
@@ -497,8 +506,28 @@ class FourChamberProcess:
         seg_array = ima.connected_component(input_array, seed, layer)
         ima.save_itk(seg_array, origin, spacings, self.DIR(output_name))
 
-    def extract_distmap_and_threshold(self, seg_array, labels:dict, dm_name, th_name, dmap_array=None): 
-        origin, spacings = self.get_origin_spacing()
+    def extract_distmap_and_threshold(self, seg_array, labels:list, dm_name, th_name, dmap_array=None): 
+        """
+        Extracts a distance map and threshold array from a segmentation array.
+
+        Args:
+            seg_array (np.array): The input segmentation array.
+            labels (list): A list containing two labels. The first label is used for generating the distance map, and the second label is used for thresholding.
+            dm_name (str): The name of the output file to save the distance map array.
+            th_name (str): The name of the output file to save the threshold array.
+            dmap_array (np.array, optional): An optional pre-computed distance map array. If provided, this array will be used instead of generating a new distance map.
+
+        Returns:
+            tuple: A tuple containing the distance map array and the threshold array.
+
+        Example Usage:
+            four_chamber = FourChamberProcess(path2points, origin_spacing, CONSTANTS)
+            seg_array = ...
+            labels = [label1, label2] # get labels from Labels.py
+            dm_name = "distance_map.nrrd"
+            th_name = "threshold.nrrd"
+            distmap_array, thresh_array = four_chamber.extract_distmap_and_threshold(seg_array, labels, dm_name, th_name)
+        """
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
 
         if dmap_array is None:
@@ -509,9 +538,29 @@ class FourChamberProcess:
         thresh_array = ima.threshold_filter_array(distmap_array, 0, labels[1], th_name) 
 
         return distmap_array, thresh_array
-        
 
-    # def extract_structure(self, seg_array, dist_map_dict, thresh_dict, and_filt_labels, add_masks_label, outname): 
+    def intersect_and_replace(self, seg_array, thresh_array, intrsct_label1, intrsct_label2, replace_label) -> np.array :
+        """
+        Intersects two segmentation arrays and replaces the intersected region with a specified label.
+
+        Args:
+            seg_array (np.array): The segmentation array to be modified.
+            thresh_array (np.array): The threshold array used for intersection.
+            intrsct_label1 (int): The label value of the first segmentation array to be intersected.
+            intrsct_label2 (int): The label value of the second segmentation array to be intersected.
+            replace_label (int): The label value to replace the intersected region with.
+
+        Returns:
+            np.array: The modified segmentation array with the intersected region replaced.
+
+        Example Usage:
+            four_chamber = FourChamberProcess(path2points, origin_spacing, CONSTANTS)
+            seg_array_new = four_chamber.intersect_and_replace(seg_array, thresh_array, intrsct_label1, intrsct_label2, replace_label)
+        """
+        struct_array = img.and_filter(seg_array, thresh_array, intrsct_label1, intrsct_label2)
+        seg_array_new = img.add_masks_replace(seg_array, struct_array, replace_label)
+        return seg_array_new, struct_array
+    
     def extract_structure(self, seg_array, labels: list, dm_name: str, th_name: str, outname: str, dmap_array=None): 
         """
         Extracts a specific structure from a segmentation array using a series of image processing operations.
@@ -548,13 +597,53 @@ class FourChamberProcess:
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
 
         distmap_array, thresh_array = self.extract_distmap_and_threshold(seg_array, labels, dm_name, th_name, dmap_array)
+        seg_array_new, struct_array = self.intersect_and_replace(seg_array, thresh_array, labels[2], labels[3], labels[4])
 
-        struct_array = ima.and_filter(seg_array, thresh_array, labels[2], labels[3]) 
-        seg_array_new = ima.add_masks_replace(seg_array, struct_array, labels[4])
-
-        if self.debug: 
+        if self.save_seg_steps: 
             ima.save_itk(seg_array_new, origin, spacings, self.DIR(outname))
         
         return seg_array_new, distmap_array, thresh_array, struct_array
     
-    
+    def extract_atrial_rings(self, seg_array, ring_array, la_myo_thresh, pv_ring_label, outname, replace_only_label:list=[]) : 
+        """
+        Extracts the atrial rings from the segmentation array by adding or replacing the ring array.
+        
+        Args:
+            seg_array (np.array): The segmentation array.
+            ring_array (np.array): The array representing the atrial rings.
+            la_myo_thresh (float): The threshold value for the left atrial myocardium.
+            pv_ring_label (int): The label value of the pulmonary vein ring.
+            outname (str): The name of the output file to save the modified segmentation array.
+            replace_only_label (list, optional): A list of label values for which the ring array should be replaced instead of added. Defaults to [].
+        
+        Returns:
+            np.array: The modified segmentation array with the atrial rings added or replaced.
+        
+        Example Usage:
+            four_chamber = FourChamberProcess(path2points, origin_spacing, CONSTANTS)
+            seg_array = ...
+            ring_array = ...
+            la_myo_thresh = ...
+            pv_ring_label = ...
+            outname = ...
+            replace_only_label = ...
+            result = four_chamber.extract_atrial_rings(seg_array, ring_array, la_myo_thresh, pv_ring_label, outname, replace_only_label)
+        """
+        origin, spacings = self.get_origin_spacing()
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+
+        # seg_array_new = ima.add_masks(seg_array, ring_array, pv_ring_label) 
+        if not replace_only_label
+            seg_array_new = ima.add_masks(seg_array, ring_array, pv_ring_label)
+        else:
+            # in LA: only for rpv1 where replace_only_label == [SVC_label]
+            # in RA: only for SVC where replace_only_label == [Ao_wall_label, LA_myo_label, RPV1_ring_label, RPV1_label, RPV2_ring_label, RPV2_label]
+            for label in replace_only_label:
+                seg_array_new = ima.add_masks_replace_only(seg_array, ring_array, pv_ring_label, label)
+        
+        seg_array_new, _ = self.intersect_and_replace(seg_array_new, la_myo_thresh, pv_ring_label, pv_ring_label, pv_ring_label)
+
+        if self.save_seg_steps:
+            ima.save_itk(seg_array_new, origin, spacings, self.DIR(outname))
+
+        return seg_array_new

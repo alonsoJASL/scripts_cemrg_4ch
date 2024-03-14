@@ -671,6 +671,7 @@ laa_ring = ima.threshold_filter_array(laa_bp_distmap, 0, C.ring_thickness, "LAA_
 seg_new_array = ima.add_masks(seg_new_array, laa_ring, C.LAA_ring_label) # seg_s4i_array
 laa_ring_array = ima.and_filter(seg_new_array, la_myo_thresh_array, C.LAA_ring_label, C.LAA_ring_label)
 seg_new_array = ima.add_masks_replace(seg_new_array, laa_ring_array, C.LAA_ring_label) # seg_s4j_array
+#######
 
 svc_bp_distmap = ima.distance_map(seg_new_array, C.SVC_label, "SVC_BP")
 svc_ring = ima.threshold_filter_array(svc_bp_distmap, 0, C.ring_thickness, "SVC_ring")
