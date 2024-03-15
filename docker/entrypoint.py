@@ -189,7 +189,7 @@ def docker_create_valve_planes(args, help=False) :
         origin_spacing_json: name of the json file containing the origin and spacing
     """
     
-    from seg_scripts.process_handler import create_valve_planes
+    from seg_scripts.process_handler import create_valve_planes_bis
     if(help) : 
         print(docker_create_valve_planes.__doc__)
         return
@@ -200,7 +200,7 @@ def docker_create_valve_planes(args, help=False) :
     path2ptsjson = args.points_json
     path2originjson = args.origin_spacing_json
 
-    create_valve_planes(path2points, path2ptsjson, path2originjson, labels_file)
+    create_valve_planes_bis(path2points, path2ptsjson, path2originjson, labels_file, mydebug=args.debug)
 
 def docker_clean_seg(args, help=False) :
     """
@@ -292,7 +292,7 @@ if __name__ == '__main__' :
 
     dev_group = parser.add_argument_group('Development arguments')
     dev_group.add_argument("-dir", "--base-dir", type=str, required=False, default="/data", help="Base directory") # this is path2points
-    # dev_group.add_argument("-local", "--local", action="store_true", help="Run locally")
+    dev_group.add_argument("-debug", "--debug", action="store_true", help="Debug outputs")
 
     labels_group = parser.add_argument_group('Labels (not all used in all modes)')
     labels_group.add_argument("--LV_BP_label", metavar='INT', help="LV_BP_label", default=CONSTANTS.LV_BP_label) 

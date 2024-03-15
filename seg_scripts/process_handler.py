@@ -225,16 +225,17 @@ def create_valve_planes_bis(path2points:str, path2ptsjson:str, path2originjson:s
     logger.info("Creating valve planes")
     fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file)
     fcp.debug = mydebug
+    fcp.save_seg_steps = True
     ima = ImageAnalysis(path2points, mydebug)
 
     logger.info("<Step 1/8> Cropping major vessels")
     fcp.get_connected_component_and_save('seg_s3p.nrrd', points_data['Ao_WT_tip'], C.Ao_wall_label, 'seg_s3r.nrrd')
     fcp.get_connected_component_and_save('seg_s3r.nrrd', points_data['PArt_WT_tip'], C.PArt_wall_label, 'seg_s3s.nrrd')
 
-    input_seg_array = ima.load_image_array(fcp.DIR('seg_s3s.nrrd'))
+    input_seg_array = fcp.load_image_array('seg_s3s.nrrd')
 
     logger.info("<Step 2/8> Creating the mitral valve")
-    labels = [C.LV_BP_label, C.valve_WT, C.LV_BP_LABEL, C.MV_label, C.MV_label]
+    labels = [C.LV_BP_label, C.valve_WT, C.LV_BP_label, C.MV_label, C.MV_label]
     seg_new_array, _, la_bp_thresh, _ = fcp.extract_structure(input_seg_array, labels, "LA_BP_DistMap", "LA_BP_thresh", "seg_s4a.nrrd")
 
     labels = [C.LV_myo_label, C.LA_WT, C.LA_BP_label, C.LA_myo_label, C.LA_myo_label]
@@ -317,8 +318,9 @@ def create_valve_planes_bis(path2points:str, path2ptsjson:str, path2originjson:s
     seg_new_array = fcp.intersect_and_replace(seg_new_array, ra_bp_thresh_2mm, C.SVC_label, C.plane_SVC_label, C.plane_SVC_label, "seg_s4j_svc.nrrd")
     seg_new_array = fcp.intersect_and_replace(seg_new_array, ra_bp_thresh_2mm, C.RPV1_ring_label, C.plane_SVC_label, C.plane_SVC_label, "seg_s4j_svc_extra.nrrd")
 
-    fcp.debug = True
     seg_new_array = fcp.intersect_and_replace(seg_new_array, ra_bp_thresh_2mm, C.IVC_label, C.plane_IVC_label, C.plane_IVC_label, "seg_s4k.nrrd")
+
+    logger.info("Finished creating valve planes")
 
     
 

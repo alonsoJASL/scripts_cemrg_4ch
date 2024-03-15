@@ -318,10 +318,11 @@ class ImageAnalysis:
         return img_array
     
     def connected_component(self, imga: sitk.Image, seed: list, layer: int, keep=False) -> np.array : 
-        # cast seed as list of int
-        seed_int = list(map(int, seed))
+        # cast seed as list of uint8
+        # seed_int = list(map(int, seed))
+        seed_int = [list(map(int, seed[i:i+3])) for i in range(0, len(seed), 3)]
         new_layer = layer + 100
-        CC = sitk.ConnectedCommponent(imga, seedList=seed_int, lower=layer, upper=layer, replaceValue=new_layer)
+        CC = sitk.ConnectedThreshold(imga, seedList=seed_int, lower=layer, upper=layer, replaceValue=new_layer)
         if self.debug:
             sitk.WriteImage(CC, self.TMP("CC.nrrd"))
 
@@ -388,7 +389,7 @@ class ImageAnalysis:
         img_array, _ = nrrd.read(filename)
         return img_array
     
-    def load_nii(self, filename) -> sitk.Image:
+    def load_sitk_image(self, filename) -> sitk.Image:
         """
         Load an image from a NIfTI file.
 

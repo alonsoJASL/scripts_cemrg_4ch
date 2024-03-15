@@ -495,15 +495,14 @@ class FourChamberProcess:
     
     def get_connected_component(self, input_name, seed, layer) : 
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
-        input_array = ima.load_image_array(self.DIR(input_name))
+        input_array = ima.load_sitk_image(self.DIR(input_name))
         
         return ima.connected_component(input_array, seed, layer)
     def get_connected_component_and_save(self, input_name, seed, layer, output_name) : 
         origin, spacings = self.get_origin_spacing()
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
 
-        input_array = ima.load_image_array(self.DIR(input_name))
-        seg_array = ima.connected_component(input_array, seed, layer)
+        seg_array = self.get_connected_component(input_name, seed, layer)
         ima.save_itk(seg_array, origin, spacings, self.DIR(output_name))
 
     def extract_distmap_and_threshold(self, seg_array, labels:list, dm_name, th_name, dmap_array=None): 
@@ -529,13 +528,16 @@ class FourChamberProcess:
             distmap_array, thresh_array = four_chamber.extract_distmap_and_threshold(seg_array, labels, dm_name, th_name)
         """
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        origin, spacing = self.get_origin_spacing()
 
+        seg_itk = ima.array2itk(seg_array, origin, spacing)
         if dmap_array is None:
-            distmap_array = ima.distance_map(seg_array, labels[0], dm_name)
+            distmap_array = ima.distance_map(seg_itk, labels[0], dm_name)
         else:
             distmap_array = dmap_array
 
-        thresh_array = ima.threshold_filter_array(distmap_array, 0, labels[1], th_name) 
+        distmap_itk = ima.array2itk(distmap_array, origin, spacing)
+        thresh_array = ima.threshold_filter_array(distmap_itk, 0, labels[1], th_name) 
 
         return distmap_array, thresh_array
 
@@ -633,7 +635,7 @@ class FourChamberProcess:
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
 
         # seg_array_new = ima.add_masks(seg_array, ring_array, pv_ring_label) 
-        if not replace_only_label
+        if not replace_only_label :
             seg_array_new = ima.add_masks(seg_array, ring_array, pv_ring_label)
         else:
             # in LA: only for rpv1 where replace_only_label == [SVC_label]
@@ -647,3 +649,7 @@ class FourChamberProcess:
             ima.save_itk(seg_array_new, origin, spacings, self.DIR(outname))
 
         return seg_array_new
+    
+    def load_image_array(self, filename:str) -> np.array:
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        return ima.load_image_array(self.DIR(filename))
