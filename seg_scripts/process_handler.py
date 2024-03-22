@@ -46,7 +46,6 @@ def get_origin_and_spacing(path2points:str, segmentation_name = "seg_corrected.n
     
     logger.info("Finding origin and spacing")
     dir_name = os.path.join(path2points, dicom_dir)
-    print(dir_name)
 
     list_of_files = sorted(filter(os.path.isfile, glob.glob(os.path.join(dir_name, '*')) ) )
     image_origin = img.get_origin_from_dicom(list_of_files)
@@ -289,19 +288,23 @@ def create_valve_planes_bis(path2points:str, path2ptsjson:str, path2originjson:s
     seg_new_array = fcp.extract_atrial_rings(seg_new_array, rpv1_ring, la_myo_thresh, labels[2], "seg_s4i_rpv1.nrrd", [C.SVC_label])
 
     labels = [C.RPV2_label, C.ring_thickness, C.RPV2_ring_label]
+    print('Extracting RPV2')
     _, rpv2_ring = fcp.extract_distmap_and_threshold(seg_new_array, labels, "RPV2_BP_DistMap", "RPV2_ring.nrrd")
     seg_new_array = fcp.extract_atrial_rings(seg_new_array, rpv2_ring, la_myo_thresh, labels[2], "seg_s4i_rpv2.nrrd")
 
     labels = [C.LAA_label, C.ring_thickness, C.LAA_ring_label]
+    print('Extracting LAA')
     _, laa_ring = fcp.extract_distmap_and_threshold(seg_new_array, labels, "LAA_BP_DistMap", "LAA_ring.nrrd")
     seg_new_array = fcp.extract_atrial_rings(seg_new_array, laa_ring, la_myo_thresh, labels[2], "seg_s4i_laa.nrrd")
 
     labels = [C.SVC_label, C.ring_thickness, C.SVC_ring_label] 
+    print('Extracting SVC')
     replace_only_labels = [C.Ao_wall_label, C.LA_myo_label, C.RPV1_ring_label, C.RPV1_label, C.RPV2_ring_label, C.RPV2_label]
     _, svc_ring = fcp.extract_distmap_and_threshold(seg_new_array, labels, "SVC_BP_DistMap", "SVC_ring.nrrd")
     seg_new_array = fcp.extract_atrial_rings(seg_new_array, svc_ring, ra_myo_thresh, labels[2], "seg_s4i_svc.nrrd", replace_only_labels)
 
     labels = [C.IVC_label, C.ring_thickness, C.IVC_ring_label]
+    print('Extracting IVC')
     _, ivc_ring = fcp.extract_distmap_and_threshold(seg_new_array, labels, "IVC_BP_DistMap", "IVC_ring.nrrd")
     seg_new_array = fcp.extract_atrial_rings(seg_new_array, ivc_ring, ra_myo_thresh, labels[2], "seg_s4j.nrrd")
     

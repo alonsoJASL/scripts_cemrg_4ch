@@ -531,17 +531,18 @@ class FourChamberProcess:
         origin, spacing = self.get_origin_spacing()
 
         seg_itk = ima.array2itk(seg_array, origin, spacing)
-        if dmap_array is None:
-            distmap_array = ima.distance_map(seg_itk, labels[0], dm_name)
+        skip_dmap = dmap_array is not None
+        if skip_dmap:
+            distmap_itk = ima.array2itk(dmap_array, origin, spacing)
         else:
-            distmap_array = dmap_array
+            distmap_itk = ima.distance_map(seg_itk, labels[0], dm_name)
 
-        distmap_itk = ima.array2itk(distmap_array, origin, spacing)
-        thresh_array = ima.threshold_filter_array(distmap_itk, 0, labels[1], th_name) 
+        thresh_array = ima.threshold_filter_array(distmap_itk, 0, labels[1], th_name)
+        distmap_array = dmap_array if (skip_dmap) else ima.itk2array(distmap_itk)
 
         return distmap_array, thresh_array
 
-    def intersect_and_replace(self, seg_array, thresh_array, intrsct_label1, intrsct_label2, replace_label) -> np.array :
+    def intersect_and_replace(self, seg_array, thresh_array, intrsct_label1, intrsct_label2, replace_label, outname="") -> np.array :
         """
         Intersects two segmentation arrays and replaces the intersected region with a specified label.
 
@@ -559,8 +560,15 @@ class FourChamberProcess:
             four_chamber = FourChamberProcess(path2points, origin_spacing, CONSTANTS)
             seg_array_new = four_chamber.intersect_and_replace(seg_array, thresh_array, intrsct_label1, intrsct_label2, replace_label)
         """
-        struct_array = img.and_filter(seg_array, thresh_array, intrsct_label1, intrsct_label2)
+        origin, spacings = self.get_origin_spacing()
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+
+        struct_array = ima.and_filter(seg_array, thresh_array, intrsct_label1, intrsct_label2)
         seg_array_new = img.add_masks_replace(seg_array, struct_array, replace_label)
+
+        if self.save_seg_steps and outname != "":
+            ima.save_itk(seg_array_new, origin, spacings, self.DIR(outname))
+
         return seg_array_new, struct_array
     
     def extract_structure(self, seg_array, labels: list, dm_name: str, th_name: str, outname: str, dmap_array=None): 
