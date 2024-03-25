@@ -1,6 +1,7 @@
+import cut_labels
 from img import *
-import SimpleITK as sitk
 
+import SimpleITK as sitk
 import numpy as np
 import nrrd
 import json
@@ -75,28 +76,28 @@ seg_array_good_header = sitk.ReadImage(path2points+'/seg_s2a.nrrd')
 # ----------------------------------------------------------------------------------------------
 # Prepare the seeds for the tips of the aorta and pulmonary artery
 # ----------------------------------------------------------------------------------------------
-Ao_tip_seed = points_data['Ao_tip']
-PArt_tip_seed = points_data['PArt_tip']
+# Ao_tip_seed = points_data['Ao_tip']
+# PArt_tip_seed = points_data['PArt_tip']
 
 # ----------------------------------------------------------------------------------------------
 # Connected component in the aorta and save the segmentation
 # ----------------------------------------------------------------------------------------------
-print(' ## Running connected component in the aorta ## \n')
-seg_s2f_nrrd = path2points+'/seg_s2f.nrrd'
-seg_aorta_cc_array = connected_component(seg_s2f_nrrd, Ao_tip_seed, Ao_BP_label,path2points)
-seg_aorta_cc_array = np.swapaxes(seg_aorta_cc_array,0,2)
-save_itk_keeping_header(new_image=seg_aorta_cc_array, original_image=seg_array_good_header, filename=path2points+'/seg_aorta_cc.nrrd')
+# print(' ## Running connected component in the aorta ## \n')
+# seg_s2f_nrrd = path2points+'/seg_s2f.nrrd'
+# seg_aorta_cc_array = connected_component(seg_s2f_nrrd, Ao_tip_seed, Ao_BP_label,path2points)
+# seg_aorta_cc_array = np.swapaxes(seg_aorta_cc_array,0,2)
+# save_itk_keeping_header(new_image=seg_aorta_cc_array, original_image=seg_array_good_header, filename=path2points+'/seg_aorta_cc.nrrd')
 
 
 # ----------------------------------------------------------------------------------------------
 # Connected component in the pulmonary artery and save the segmentation
 # ----------------------------------------------------------------------------------------------
-print(' ## Running connected component in the pulmonary artery ## \n')
-seg_aorta_cc_nrrd = path2points+'/seg_aorta_cc.nrrd'
-seg_PA_cc_array = connected_component(seg_aorta_cc_nrrd, PArt_tip_seed, PArt_BP_label,path2points)
-seg_PA_cc_array = np.swapaxes(seg_PA_cc_array,0,2)
+# print(' ## Running connected component in the pulmonary artery ## \n')
+# seg_aorta_cc_nrrd = path2points+'/seg_aorta_cc.nrrd'
+# seg_PA_cc_array = connected_component(seg_aorta_cc_nrrd, PArt_tip_seed, PArt_BP_label,path2points)
+# seg_PA_cc_array = np.swapaxes(seg_PA_cc_array,0,2)
 
-save_itk_keeping_header(new_image=seg_PA_cc_array, original_image=seg_array_good_header, filename=path2points+'/seg_PA_cc.nrrd')
+# save_itk_keeping_header(new_image=seg_PA_cc_array, original_image=seg_array_good_header, filename=path2points+'/seg_PA_cc.nrrd')
 
 
 # ----------------------------------------------------------------------------------------------
@@ -104,7 +105,7 @@ save_itk_keeping_header(new_image=seg_PA_cc_array, original_image=seg_array_good
 # ----------------------------------------------------------------------------------------------
 print('\n ## Step 1/10: Creating myocardium for the LV outflow tract ## \n')
 print(' ## LV neck: Executing distance map ## \n')
-LV_DistMap = distance_map(path2points+'/seg_PA_cc.nrrd',LV_BP_label)
+LV_DistMap = distance_map(path2points+'/seg_s2f.nrrd',LV_BP_label)
 print(' ## LV neck: Writing temporary image ## \n')
 sitk.WriteImage(LV_DistMap,path2points+'/tmp/LV_DistMap.nrrd',True)
 
@@ -114,9 +115,9 @@ sitk.WriteImage(LV_neck,path2points+'/tmp/LV_neck.nrrd',True)
 
 print(' ## LV neck: Adding LV neck to LV myo ## \n')
 LV_neck_array, header = nrrd.read(path2points+'/tmp/LV_neck.nrrd')
-seg_PA_cc_array, header = nrrd.read(path2points+'seg_PA_cc.nrrd')
+seg_s2f_array, header = nrrd.read(path2points+'seg_s2f.nrrd')
 LV_neck_array = add_masks_replace(LV_neck_array,LV_neck_array,LV_neck_label)
-seg_s3a_array = add_masks(seg_PA_cc_array,LV_neck_array,2)
+seg_s3a_array = add_masks(seg_s2f_array,LV_neck_array,2)
 
 # ----------------------------------------------------------------------------------------------
 # Format and save the segmentation
@@ -228,31 +229,45 @@ print(" ## Pulmonary artery wall: Saved segmentation with pulmonary artery wall 
 # Open the aorta and pulmonary artery
 # ----------------------------------------------------------------------------------------------
 print(' ## Step 4/10: Opening arteries ## \n')
-seg_s3d_array, header = nrrd.read(path2points+'seg_s3d.nrrd')
+# seg_s3d_array, header = nrrd.read(path2points+'seg_s3d.nrrd')
 
-aorta_slicer_nrrd = path2points+'/aorta_slicer.nrrd'
-aorta_slicer_label = 0
+# aorta_slicer_nrrd = path2points+'/aorta_slicer.nrrd'
+# aorta_slicer_label = 0
 
-aorta_slicer_array, header = nrrd.read(aorta_slicer_nrrd)
+# aorta_slicer_array, header = nrrd.read(aorta_slicer_nrrd)
 
-print(' ## Cropping major vessels: Slicing the aortic wall ## \n')
-seg_s3e_array = add_masks_replace_only(seg_s3d_array, aorta_slicer_array, aorta_slicer_label, Ao_wall_label)
+# print(' ## Cropping major vessels: Slicing the aortic wall ## \n')
+# seg_s3e_array = add_masks_replace_only(seg_s3d_array, aorta_slicer_array, aorta_slicer_label, Ao_wall_label)
 
-PArt_slicer_nrrd = path2points+'/PArt_slicer.nrrd'
-PArt_slicer_label = 0
+# PArt_slicer_nrrd = path2points+'/PArt_slicer.nrrd'
+# PArt_slicer_label = 0
 
-PArt_slicer_array, header = nrrd.read(PArt_slicer_nrrd)
+# PArt_slicer_array, header = nrrd.read(PArt_slicer_nrrd)
 
-print(' ## Opening major vessels: Slicing the pulmonary artery wall ## \n')
-seg_s3e_array = add_masks_replace_only(seg_s3e_array, PArt_slicer_array, PArt_slicer_label, PArt_wall_label)
+# print(' ## Opening major vessels: Slicing the pulmonary artery wall ## \n')
+# seg_s3e_array = add_masks_replace_only(seg_s3e_array, PArt_slicer_array, PArt_slicer_label, PArt_wall_label)
+
+cut_labels.open_artery(path2image      = f"{path2points}/seg_s3d.nrrd", 
+					   myo_label       = Ao_wall_label, 
+					   artery_bp_label = Ao_BP_label, 
+					   ventricle_label = LV_BP_label, 
+					   cut_ratio       = 0.95,
+					   save_filename   = f"{path2points}/seg_s3d_aorta.nrrd")
+
+cut_labels.open_artery(path2image      = f"{path2points}/seg_s3d_aorta.nrrd", 
+					   myo_label       = PArt_wall_label, 
+					   artery_bp_label = PArt_BP_label, 
+					   ventricle_label = RV_BP_label, 
+					   cut_ratio       = 0.85,
+					   save_filename   = f"{path2points}/seg_s3e.nrrd")
 
 # ----------------------------------------------------------------------------------------------
 # Format and save the segmentation
 # ----------------------------------------------------------------------------------------------
-print(' ## Cropping major vessels: Formatting and saving the segmentation ## \n')
-seg_s3e_array = np.swapaxes(seg_s3e_array,0,2)
+# print(' ## Cropping major vessels: Formatting and saving the segmentation ## \n')
+# seg_s3e_array = np.swapaxes(seg_s3e_array,0,2)
 # save_itk(seg_s3e_array, origin, spacings, path2points+'/seg_s3e.nrrd')
-save_itk_keeping_header(new_image=seg_s3e_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3e.nrrd')
+# save_itk_keeping_header(new_image=seg_s3e_array, original_image=seg_array_good_header, filename=path2points+'/seg_s3e.nrrd')
 
 # Sometimes the wall is over the slicer, so another connected appears with only myocardium, so we need to rerun the connected component.
 
