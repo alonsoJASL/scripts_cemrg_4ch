@@ -118,7 +118,7 @@ class ImageAnalysis:
         binary_threshold_filter.SetUpperThreshold(upper)
         binary_threshold_filter.SetOutsideValue(ZERO_LABEL)
         binary_threshold_filter.SetInsideValue(SEG_LABEL)
-        thresholded_img = binary_threshold_filter.Execute(img) d
+        thresholded_img = binary_threshold_filter.Execute(img)
 
         if self.debug:
             outname = outname if outname != "" else "Thresh.nrrd"
