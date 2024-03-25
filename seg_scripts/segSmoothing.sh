@@ -8,7 +8,7 @@ RESOLUTION=0.15
 
 path2points=$1
 
-IMGFILE="${path2points}/seg_final.nrrd"
+IMGFILE="${path2points}/seg_s5.nrrd"
 OUTFILE="${path2points}/seg_final_smooth"
 
 cmd="/home/common/carpusers-segtools/bin/segsmooth
