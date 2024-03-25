@@ -9,12 +9,48 @@ import tqdm
 
 parser = argparse.ArgumentParser(description='To run: python3 create_cylinders.py [path_to_points]')
 parser.add_argument("path_to_points")
-args = parser.parse_args()
+args = parser.parse_args()    
 
 
 path2points = args.path_to_points
-os.system("python3 txt_2_json.py "+path2points+"/points.txt "+path2points+"/labels.txt "+path2points+"/points.json")
+
 os.system("python3 txt_2_json.py "+path2points+"/origin_spacing.txt "+path2points+"/origin_spacing_labels.txt "+path2points+"/origin_spacing.json")
+
+file = open(path2points+'/origin_spacing.json')
+origin_data = json.load(file)
+origin = origin_data["origin"]
+spacing = origin_data["spacing"]
+
+if not os.path.isfile(f"{path2points}/points.json"):
+    print("points.json not found, looking for points.txt...")
+
+    if not os.path.isfile(f"{path2points}/points.txt"):
+        print("point.txt not found.\n")
+        print("Reading world coordinates instead of voxel indices...")
+        world_coord_json = json.load(open(f"{path2points}/physical_points.json"))
+
+        points_voxels=[]
+
+        def world_to_voxel(x,origin,spacing):
+            sub=(np.array(x)-np.array(origin))
+            res = [int(i) for i in np.divide(sub,spacing)]
+            return res
+        
+        points_voxels.append(world_to_voxel(world_coord_json['SVC_1'],origin,spacing))
+        points_voxels.append(world_to_voxel(world_coord_json['SVC_2'],origin,spacing))
+        points_voxels.append(world_to_voxel(world_coord_json['SVC_3'],origin,spacing))
+        points_voxels.append(world_to_voxel(world_coord_json['IVC_1'],origin,spacing))
+        points_voxels.append(world_to_voxel(world_coord_json['IVC_2'],origin,spacing))
+        points_voxels.append(world_to_voxel(world_coord_json['IVC_3'],origin,spacing))
+        
+        np.savetxt(f"{path2points}/points.txt",points_voxels,delimiter=' ')
+    else:
+        os.system("python3 txt_2_json.py "+path2points+"/points.txt "+path2points+"/labels.txt "+path2points+"/points.json")
+else:
+    print("Using points.json...")
+
+np.savetxt(f"{path2points}/labels.txt",[['SVC_1'],['SVC_2'],['SVC_3'],['IVC_1'],['IVC_2'],['IVC_3']],delimiter=' ',fmt="%s")
+
 
 
 def cylinder(seg_nrrd, points, plane_name, slicer_radius, slicer_height, origin, spacing):
@@ -82,10 +118,7 @@ def cylinder(seg_nrrd, points, plane_name, slicer_radius, slicer_height, origin,
 file = open(path2points+'/points.json')
 points_data = json.load(file)
 
-file = open(path2points+'/origin_spacing.json')
-origin_data = json.load(file)
-origin = origin_data["origin"]
-spacing = origin_data["spacing"]
+
 
 seg_name = path2points+"/seg_corrected.nrrd"
 
@@ -121,6 +154,7 @@ slicer_height = int(np.ceil(np.min(spacing)*slicer_height_mm))
 # slicer_height = 30
 cylinder(seg_name,points,path2points+"/IVC.nrrd",slicer_radius, slicer_height,origin,spacing)
 
+"""
 # Aorta slicer
 pts1 = points_data['Ao_1']
 pts2 = points_data['Ao_2']
@@ -154,3 +188,4 @@ slicer_height = int(np.ceil(np.min(spacing)*slicer_height_mm))
 cylinder(seg_name,points,path2points+"/PArt_slicer.nrrd",slicer_radius, slicer_height,origin,spacing)
 
 print("Note: the positions of the slicers are not reliable at this stage. Continue with the pipeline.")
+"""
