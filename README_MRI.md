@@ -4,43 +4,28 @@ Instructions for using four-chamber mesh generation pipeline
 Segmentation
 =========================================================================================================
 1) Make folder (e.g. henry) in /data/Dropbox then make folder `segmentations' inside
-2) Copy `points.txt`, `labels.txt`, `origin_spacing.txt` and `origin_spacing_labels.txt` templates into `segmentations` folder (currently in `h_templates` folder)
+<!-- 2) Copy `points.txt`, `labels.txt`, `origin_spacing.txt` and `origin_spacing_labels.txt` templates into `segmentations` folder (currently in `h_templates` folder) -->
 5) Manually split and relabel pulmonary veins:
 6) Export the segmentation as `seg_corrected.nrrd` with the new tags:
-        LSPV = 8
-        LIPV = 9
-        RSPV = 10
-        RIPV = 11
-        LAA = 12
- Resample to 0.3 mm isotropic using the `img.py` script.
+- LSPV = 8
+- LIPV = 9
+- RSPV = 10
+- RIPV = 11
+- LAA = 12
+1) Make sure the image is in a suitable orientation (by opening it in ITKsnap, for instance). If not, you can use `c3d seg_corrected.nii -orient RAI -o seg_corrected_RAI.nii.gz` to convert it to RAI orientation.
+5) Resample to 0.3 mm isotropic using the `img.py` script.
 
-7) Select manually in itksnap the origin and spacing and add it to origin_spacing.txt
+6) Run `create_origin_spacing_files` in `img.py`. Otherwise, select manually in itksnap the origin and spacing and add it to origin_spacing.txt
 
 9) Select 3 points for SVC and IVC cylinders (pixel) and save in `points.txt`
-10) Select 3 points for Ao_slicer and for PArt_slicer and save in `points.txt`
-    a. Note: be careful not to crop the PArt too close to the RV_BP
+
 11) Run `create_cylinders.py /heart_folder/segmentations`
 
 12) Run `create_svc_ivc.py /heart_folder/segmentations`. At this point the segmentation should have the venae cavae incorporated.
 
-13) Select:
-    3 points for SVC_slicer 
-    1 point for SVC_tip
-    3 points for IVC_slicer
-    1 point for IVC_tip
-    1 point for Ao_tip
-    1 point for PArt_tip
+1) Run `cut_vessels.py /heart_folder/segmentations`. Check that the venae cava have some base, otherwise adjust the threhsold values. 
 
-    and save in `points.txt`
-    
-    a. Note: SVC/IVC tips are used for removing sections protruding from wrong side of RA
-
-14) Run `create_slicers.py /heart_folder/segmentations/` 
-16) Run `crop_svc_ivc.py /heart_folder/segmentations`
-
-If you need to re-do the slicers of the aorta or pulmonary artery, you have to re run 1_create_cylinders.
-
-17) Run `create_myo.py /heart_folder/segmentations`. After this, the aorta and the pulmonary artery should have one connected component each. If not and there's a thin layer or some lose voxels, you have to remove them by hand (maybe using `itksnap`). If it's a big piece, probably it is because you did not select the aorta/PA tip point correctly.
+17) Run `create_myo.py /heart_folder/segmentations`
 
 19) Run `create_valve_planes.py /heart_folder/segmentations`
 
@@ -49,14 +34,14 @@ If you need to re-do the slicers of the aorta or pulmonary artery, you have to r
 21) Load `.nrrd` and manually clean valve ring. Check for any lose voxels. Make sure all the chambers are closed by the valve planes.
 22) Export segmentation as `seg_final.nrrd`
 
-23) Run `segSmoothing.sh /heart_folder/segmentations`
+23) Run `segSmoothing.sh /heart_folder/segmentations` - Not working reliably. Resample and use 3D slicer instead.
 
-23) Check all the labels one last time. It is common that lose voxels appear, so run connected components in all the labels. Export it as `seg_final_smooth_corrected.nrrd`.
-24) Run `segsmooth /heart_folder/segmentations/seg_final_smooth_corrected.nrrd /heart_folder/segmentations/seg_final_smooth_corrected.inr`
+23) Check all the labels one last time. It is common that lose voxels appear, so run connected components in all the labels. Export it as `seg_final_smooth_corrected.nrrd`. Convert it to `.inr` using `segconver`
+24) SKIP THIS STEP Run `segsmooth /heart_folder/segmentations/seg_final_smooth_corrected.nrrd /heart_folder/segmentations/seg_final_smooth_corrected.inr`
 
 Meshing
 =========================================================================================================
-1) Run `meshing.py /heart_folder`
+1) Run `python3 meshing.py /heart_folder`
 
 2) cd into the meshing folder (inside heart folder)
 2) Modify `heart_mesh_data_file` to point to your segmentation and folder paths.
