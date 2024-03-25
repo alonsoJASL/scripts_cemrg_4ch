@@ -134,7 +134,9 @@ def distance_map(img_nrrd,label):
   distance_map.InputIsBinaryOff()
   distance_map.SquaredDistanceOff()
   distance_map.UseImageSpacingOff()
+  print("Executing distance map...")
   DistMap = distance_map.Execute(img_itk)
+  print("Done")
   return DistMap
 
 def mask_plane_creator_alternative(seg_nrrd,origin,spacing,points,plane_name,slicer_radius, slicer_height, segPath, scriptsPath):
@@ -578,3 +580,24 @@ def resample_img(input_image_path="/media/croderog/SeagateExpansionDrive/010_001
     sitk.WriteImage(output_image, output_image_path)
 
     print("Image resampled and saved successfully!")
+
+
+def create_origin_spacing_files(input_image_path="/media/croderog/SeagateExpansionDrive/010_001_TREDHF/segmentations/seg_corrected.nrrd",
+                                output_path="/media/croderog/SeagateExpansionDrive/010_001_TREDHF/segmentations/"):
+    # Load the input image
+    input_image = sitk.ReadImage(input_image_path)
+
+    # Get the origin and spacing
+    origin = input_image.GetOrigin()
+    spacing = input_image.GetSpacing()
+
+    # Write origin_spacing_labels.txt
+    with open(f"{output_path}/origin_spacing_labels.txt", "w") as labels_file:
+        labels_file.write("origin\nspacing\n")
+
+    # Write origin_spacing.txt
+    with open(f"{output_path}/origin_spacing.txt", "w") as output_file:
+        output_file.write(f"{np.round(origin[0],2)} {np.round(origin[1],2)} {np.round(origin[2],2)}\n")
+        output_file.write(f"{np.round(spacing[0],2)} {np.round(spacing[1],2)} {np.round(spacing[2],2)}\n")
+
+    print("Origin and spacing files created successfully!")
