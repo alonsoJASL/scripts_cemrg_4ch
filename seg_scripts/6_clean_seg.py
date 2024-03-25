@@ -1,5 +1,5 @@
 from img import push_inside
-from img import save_itk_keeping_header
+from img import save_itk_keeping_header, save_itk
 import SimpleITK as sitk
 
 import numpy as np
