@@ -1,4 +1,6 @@
-h_template/
+h_template/*sh
+h_template/*vtx
+h_template/*txt
 ._premetadata.nrrd
 __pycache__/
 runtimes.txt
