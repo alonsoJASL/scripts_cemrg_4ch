@@ -503,7 +503,7 @@ class FourChamberProcess:
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
 
         seg_array = self.get_connected_component(input_name, seed, layer)
-        ima.save_itk(seg_array, origin, spacings, self.DIR(output_name))
+        ima.save_itk(seg_array, origin, spacings, self.DIR(output_name), self.swap_axes)
 
     def extract_distmap_and_threshold(self, seg_array, labels:list, dm_name, th_name, dmap_array=None): 
         """
@@ -542,7 +542,7 @@ class FourChamberProcess:
 
         return distmap_array, thresh_array
 
-    def intersect_and_replace(self, seg_array, thresh_array, intrsct_label1, intrsct_label2, replace_label, outname="") -> np.array :
+    def intersect_and_replace(self, seg_array: np.ndarray, thresh_array: np.ndarray, intrsct_label1, intrsct_label2, replace_label, outname="") -> np.ndarray :
         """
         Intersects two segmentation arrays and replaces the intersected region with a specified label.
 
@@ -564,10 +564,11 @@ class FourChamberProcess:
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
 
         struct_array = ima.and_filter(seg_array, thresh_array, intrsct_label1, intrsct_label2)
-        seg_array_new = img.add_masks_replace(seg_array, struct_array, replace_label)
+        seg_array_new = ima.add_masks_replace(seg_array, struct_array, replace_label)
 
         if self.save_seg_steps and outname != "":
-            ima.save_itk(seg_array_new, origin, spacings, self.DIR(outname))
+            logger.debug(f"Saving intersected and replaced segmentation array to {outname}", exc_info=self.debug)
+            ima.save_itk(seg_array_new, origin, spacings, self.DIR(outname), self.swap_axes)
 
         return seg_array_new, struct_array
     
@@ -610,7 +611,7 @@ class FourChamberProcess:
         seg_array_new, struct_array = self.intersect_and_replace(seg_array, thresh_array, labels[2], labels[3], labels[4])
 
         if self.save_seg_steps: 
-            ima.save_itk(seg_array_new, origin, spacings, self.DIR(outname))
+            ima.save_itk(seg_array_new, origin, spacings, self.DIR(outname), self.swap_axes)
         
         return seg_array_new, distmap_array, thresh_array, struct_array
     
@@ -654,10 +655,16 @@ class FourChamberProcess:
         seg_array_new, _ = self.intersect_and_replace(seg_array_new, la_myo_thresh, pv_ring_label, pv_ring_label, pv_ring_label)
 
         if self.save_seg_steps:
-            ima.save_itk(seg_array_new, origin, spacings, self.DIR(outname))
+            ima.save_itk(seg_array_new, origin, spacings, self.DIR(outname), self.swap_axes)
 
         return seg_array_new
     
     def load_image_array(self, filename:str) -> np.array:
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
         return ima.load_image_array(self.DIR(filename))
+    
+    def save_image_array(self, array:np.array, filename:str):
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        origin, spacings = self.get_origin_spacing()
+
+        ima.save_itk(array, origin, spacings, self.DIR(filename), self.swap_axes)

@@ -8,6 +8,9 @@ import inspect
 
 from enum import Enum
 
+from seg_scripts.common import configure_logging, big_print, make_tmp
+logger = configure_logging(log_name=__name__)
+
 ZERO_LABEL = 0
 SEG_LABEL = 1
 class MaskOperationMode(Enum):
