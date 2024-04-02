@@ -103,7 +103,7 @@ class ImageAnalysis:
 
         return DistMap
 
-    def threshold_filter(self, img: sitk.Image, lower, upper, outname="") -> sitk.Image: 
+    def threshold_filter(self, img: sitk.Image, lower, upper, outname="", binarise=False) -> sitk.Image: 
         """
         Apply a threshold filter to an image.
 
@@ -116,12 +116,20 @@ class ImageAnalysis:
             sitk.Image: The thresholded image.
 
         """
-        binary_threshold_filter = sitk.BinaryThresholdImageFilter()
-        binary_threshold_filter.SetLowerThreshold(lower)
-        binary_threshold_filter.SetUpperThreshold(upper)
-        binary_threshold_filter.SetOutsideValue(ZERO_LABEL)
-        binary_threshold_filter.SetInsideValue(SEG_LABEL)
-        thresholded_img = binary_threshold_filter.Execute(img)
+
+        if binarise:
+            threshold_filter = sitk.BinaryThresholdImageFilter()
+            threshold_filter.SetLowerThreshold(lower)
+            threshold_filter.SetUpperThreshold(upper)
+            threshold_filter.SetOutsideValue(ZERO_LABEL)
+            threshold_filter.SetInsideValue(SEG_LABEL)
+        else:    
+            threshold_filter = sitk.ThresholdImageFilter()
+            threshold_filter.SetLower(lower)
+            threshold_filter.SetUpper(upper)
+            threshold_filter.SetOutsideValue(ZERO_LABEL)
+
+        thresholded_img = threshold_filter.Execute(img)
 
         if self.debug:
             outname = outname if outname != "" else "Thresh.nrrd"

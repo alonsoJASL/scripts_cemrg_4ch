@@ -455,15 +455,27 @@ class FourChamberProcess:
         seg_array = np.swapaxes(seg_array, 0, 2)
         img.save_itk(seg_array, origin, spacings, self.DIR(output_name))
 
-
+    def pushing_in(self, img_array: np.ndarray, pusher_wall_lab, pushed_wall_lab, pushed_bp_lab, pushed_wt) -> np.ndarray :
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        origin, spacings = self.get_origin_spacing()
+        im = ima.array2itk(img_array, origin, spacings)
+        
+        return ima.push_inside(im, pusher_wall_lab, pushed_wall_lab, pushed_bp_lab, pushed_wt)
 
     def push_in_and_save(self, input_name, pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT, outname='')  :
         origin, spacings = self.get_origin_spacing()
         outname = input_name if outname=='' else outname
 
-        seg_array = img.push_inside(self.path2points, self.DIR(input_name), pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT) 
-        seg_array = np.swapaxes(seg_array, 0, 2)
-        img.save_itk(seg_array, origin, spacings, self.DIR(outname))
+        # seg_array = img.push_inside(self.path2points, self.DIR(input_name), pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT) 
+        # seg_array = np.swapaxes(seg_array, 0, 2)
+        # img.save_itk(seg_array, origin, spacings, self.DIR(outname))
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        im = ima.load_sitk_image(self.DIR(input_name))
+        seg_array = ima.push_inside(im, pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT)
+
+        if outname != "":
+            logger.debug(f"Saving pushed segmentation array to {outname}", exc_info=self.debug)
+            self.save_if_seg_steps(seg_array, outname)
 
     def cropping_veins(self, input_name, slicer_tuple_list, output_name) :
         """
@@ -566,9 +578,9 @@ class FourChamberProcess:
         struct_array = ima.and_filter(seg_array, thresh_array, intrsct_label1, intrsct_label2)
         seg_array_new = ima.add_masks_replace(seg_array, struct_array, replace_label)
 
-        if self.save_seg_steps and outname != "":
+        if outname != "":
             logger.debug(f"Saving intersected and replaced segmentation array to {outname}", exc_info=self.debug)
-            ima.save_itk(seg_array_new, origin, spacings, self.DIR(outname), self.swap_axes)
+            self.save_if_seg_steps(seg_array_new, outname)
 
         return seg_array_new, struct_array
     
@@ -610,8 +622,7 @@ class FourChamberProcess:
         distmap_array, thresh_array = self.extract_distmap_and_threshold(seg_array, labels, dm_name, th_name, dmap_array)
         seg_array_new, struct_array = self.intersect_and_replace(seg_array, thresh_array, labels[2], labels[3], labels[4])
 
-        if self.save_seg_steps: 
-            ima.save_itk(seg_array_new, origin, spacings, self.DIR(outname), self.swap_axes)
+        self.save_if_seg_steps(seg_array_new, outname)
         
         return seg_array_new, distmap_array, thresh_array, struct_array
     
@@ -654,8 +665,7 @@ class FourChamberProcess:
         
         seg_array_new, _ = self.intersect_and_replace(seg_array_new, la_myo_thresh, pv_ring_label, pv_ring_label, pv_ring_label)
 
-        if self.save_seg_steps:
-            ima.save_itk(seg_array_new, origin, spacings, self.DIR(outname), self.swap_axes)
+        self.save_if_seg_steps(seg_array_new, outname)
 
         return seg_array_new
     
@@ -668,3 +678,12 @@ class FourChamberProcess:
         origin, spacings = self.get_origin_spacing()
 
         ima.save_itk(array, origin, spacings, self.DIR(filename), self.swap_axes)
+
+    def save_if_seg_steps(self, array:np.array, filename:str, saving_itk=True):
+        if self.save_seg_steps:
+            if saving_itk:
+                origin, spacings = self.get_origin_spacing()
+                ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+                ima.save_itk(array, origin, spacings, self.DIR(filename), self.swap_axes)
+            else:
+                self.save_image_array(array, filename)

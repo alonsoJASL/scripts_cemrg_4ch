@@ -220,6 +220,60 @@ def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, la
     logger.info("<Step 10/10> RV myo: Pushing the right ventricle with the aorta") 
     fcp.push_in_and_save('seg_s3o.nrrd', C.Ao_wall_label,C.RV_myo_label,C.RV_BP_label,C.RV_WT, outname='seg_s3p.nrrd')
 
+def create_mycardium_bis(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, mydebug=False) :
+    logger.info("Creating myocardium")
+    fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file)
+    fcp.debug = mydebug
+    fcp.save_seg_steps = True
+    fcp.swap_axes = False
+
+    ima = ImageAnalysis(path2points, mydebug=mydebug)
+
+    input_seg_array = fcp.load_image_array('seg_s3f.nrrd')
+
+    logger.info("<Step 1/10> Creating myocardium for the LV outflow tract")
+    labels = [C.LV_BP_label, C.LV_neck_WT, C.LV_neck_label]
+    _, LV_neck_array = fcp.extract_distmap_and_threshold(input_seg_array, labels, "LV_DistMap", "LV_neck.nrrd")
+    LV_neck_array = ima.add_masks_replace(LV_neck_array, LV_neck_array, C.LV_neck_label)
+    seg_new_array = ima.add_masks(input_seg_array, LV_neck_array, 2)
+    fcp.save_if_seg_steps('seg_s3a.nrrd', seg_new_array)
+
+    seg_new_array = fcp.pushing_in(seg_new_array, C.RV_BP_label, C.LV_myo_label, C.LV_BP_label, C.LV_neck_WT)
+    fcp.save_if_seg_steps('seg_s3a.nrrd', seg_new_array)
+
+    logger.info("<Step 2/10> Creating the aortic wall")
+    labels = [C.Ao_BP_label, C.Ao_WT, C.Ao_wall_label]
+    _, Ao_wall_array = fcp.extract_distmap_and_threshold(seg_new_array, labels, "Ao_DistMap", "Ao_wall.nrrd")
+    Ao_wall_array = ima.add_masks_replace(Ao_wall_array, Ao_wall_array, C.Ao_wall_label)
+    seg_new_array = ima.add_masks_replace_except(seg_new_array, Ao_wall_array, C.Ao_wall_label, [C.LV_BP_label, C.LV_myo_label])
+    fcp.save_if_seg_steps('seg_s3b.nrrd', seg_new_array)
+
+    logger.info("<Step 3/10> Creating the pulmonary artery wall")
+    labels = [C.PArt_BP_label, C.PArt_WT, C.PArt_wall_label]
+    _, PArt_wall_array = fcp.extract_distmap_and_threshold(seg_new_array, labels, "PArt_DistMap", "PArt_wall.nrrd")
+    PArt_wall_array = ima.add_masks_replace(PArt_wall_array, PArt_wall_array, C.PArt_wall_label)
+    seg_new_array = ima.add_masks_replace_except(seg_new_array, PArt_wall_array, C.PArt_wall_label, [3, C.Ao_wall_label])
+    fcp.save_if_seg_steps('seg_s3c.nrrd', seg_new_array)
+
+    seg_new_array = fcp.pushing_in(seg_new_array, C.Ao_wall_label, C.PArt_wall_label, C.PArt_BP_label, C.PArt_WT)
+    fcp.save_if_seg_steps('seg_s3d.nrrd', seg_new_array)
+
+    logger.info("<Step 4/10> Cropping veins")
+    aorta_slicer_array = ima.load_image_array('aorta_slicer.nrrd')
+    aorta_slicer_label = 0
+    seg_new_array = ima.add_masks_replace_only(seg_new_array, aorta_slicer_array, aorta_slicer_label, [C.Ao_wall_label])
+
+    PArt_slicer_array = ima.load_image_array('PArt_slicer.nrrd')
+    PArt_slicer_label = 0
+    seg_new_array = ima.add_masks_replace_only(seg_new_array, PArt_slicer_array, PArt_slicer_label, [C.PArt_wall_label])
+
+    logger.info("<Step 5/10> Creating the right ventricular myocardium") 
+    logger.info("<Step 6/10> Creating the left atrial myocardium")
+    logger.info("<Step 7/10> Creating the right atrial myocardium")
+    logger.info("<Step 8/10> LA myo: Pushing the left atrium with the aorta") 
+    logger.info("<Step 9/10> PArt wall: Pushing the pulmonary artery with the aorta")
+    logger.info("<Step 10/10> RV myo: Pushing the right ventricle with the aorta") 
+
 def create_valve_planes_bis(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, mydebug=False) :
     logger.info("Creating valve planes")
     fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file)
