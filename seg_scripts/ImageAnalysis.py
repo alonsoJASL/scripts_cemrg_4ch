@@ -204,6 +204,30 @@ class ImageAnalysis:
         
         return imga_array_new
     
+    def add_masks_mode(self, imga_array: np.ndarray, imgb_array: np.ndarray, mode: MaskOperationMode, newmask, special_case_labels = None) -> np.ndarray:
+        switcher = {
+            MaskOperationMode.REPLACE_EXCEPT: self.add_masks_replace_except,
+            MaskOperationMode.REPLACE_ONLY: self.add_masks_replace_only,
+            MaskOperationMode.REPLACE: self.add_masks_replace,
+            MaskOperationMode.ADD: self.add_masks,
+            MaskOperationMode.NO_OVERRIDE: self.add_masks
+        }
+
+        func = switcher.get(mode)
+        if func is None:
+            raise ValueError(f'Invalid mode: {mode}')
+
+        if mode == MaskOperationMode.REPLACE_EXCEPT and special_case_labels is not None:
+            func_array = func(imga_array, imgb_array, newmask, except_these=special_case_labels)
+            return func_array
+        elif mode == MaskOperationMode.REPLACE_ONLY and special_case_labels is not None:
+            func_array = func(imga_array, imgb_array, newmask, only_override_this=special_case_labels)
+            return func_array
+        else:
+            func_array = func(imga_array, imgb_array, newmask)
+            return func_array
+
+    
     def add_masks(self, imga_array: np.ndarray, imgb_array: np.ndarray, newmask) -> np.ndarray:
         """
         Apply a mask (imgb) to an image array without overriding any pixels that already belong to the image array.

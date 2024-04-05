@@ -4,7 +4,7 @@ import copy
 import os
 import SimpleITK as sitk
 import seg_scripts.img as img
-from seg_scripts.img import MaskOperationMode as MM
+from seg_scripts.ImageAnalysis import MaskOperationMode as MM
 from seg_scripts.ImageAnalysis import ImageAnalysis 
 
 from seg_scripts.common import configure_logging, big_print, make_tmp
@@ -515,7 +515,20 @@ class FourChamberProcess:
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
 
         seg_array = self.get_connected_component(input_name, seed, layer)
-        ima.save_itk(seg_array, origin, spacings, self.DIR(output_name), self.swap_axes)
+        self.save_if_seg_steps(seg_array, output_name)
+        # ima.save_itk(seg_array, origin, spacings, self.DIR(output_name), self.swap_axes)
+
+    def connected_component_process(self, seg_array, seed, layer, outname) : 
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        origin, spacing = self.get_origin_spacing()
+
+        seg_itk = ima.array2itk(seg_array, origin, spacing)
+        seg_new_array = ima.connected_component(seg_itk, seed, layer)
+
+        self.save_if_seg_steps(seg_new_array, outname)
+
+        return seg_new_array
+    
 
     def extract_distmap_and_threshold(self, seg_array, labels:list, dm_name, th_name, dmap_array=None): 
         """
@@ -668,6 +681,45 @@ class FourChamberProcess:
         self.save_if_seg_steps(seg_array_new, outname)
 
         return seg_array_new
+    
+    def create_myocardium(self, seg_array: np.ndarray, labels: list, mode:MM, mode_labels, seg_out, mode2: MM = None, mode2_labels = None, dmname="", thname="") -> np.array:
+        """
+    Create myocardium segmentation based on the input segmentation array.
+
+    Args:
+        seg_array (np.ndarray): The input segmentation array.
+        labels (list): A list of labels to be used for myocardium segmentation.
+            labels[0,1] (int): labels for extracting the distance map and threshold array.
+            labels[2] (int): label for the structure to be added to the segmentation array (add_masks_replace).
+            labels[3] (int): label for the structure to be added to the segmentation array (add_masks_mode:newmask).
+            labels[4] (int): OPTIONAL: label for the structure to be added to the segmentation array (add_masks_mode:newmask).
+        mode (MM): The mode of mask operation to be used.
+        mode_labels: The labels to be used for the mode mask operation.
+        seg_out: The name of the output segmentation file.
+        mode2 (MM, optional): The second mode of mask operation to be used. Defaults to None.
+        mode2_labels (optional): The labels to be used for the second mode mask operation. Defaults to None.
+        dmname (str, optional): The name of the distance map file. Defaults to "".
+        thname (str, optional): The name of the threshold file. Defaults to "".
+
+    Returns:
+        np.array: The myocardium segmentation array.
+"""
+        dmname = dmname if dmname != "" else "myo_distmap.nrrd"
+        thname = thname if thname != "" else "myo_threshold.nrrd"
+        
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+
+        _, myo_array = self.extract_distmap_and_threshold(seg_array, labels, dmname, thname)
+        myo_array = ima.add_masks_replace(myo_array, myo_array, labels[2])
+        seg_new_array = ima.add_masks_mode(seg_array, myo_array, mode, newmask=labels[3], special_case_labels=mode_labels)
+
+        if mode2 is not None and mode2_labels is not None:
+            seg_new_array = ima.add_masks_mode(seg_new_array, myo_array, mode2, newmask=labels[4], special_case_labels=mode2_labels)
+        
+        self.save_if_seg_steps(seg_new_array, seg_out)
+
+        return seg_new_array
+
     
     def load_image_array(self, filename:str) -> np.array:
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)

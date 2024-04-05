@@ -7,12 +7,13 @@ from seg_scripts.common import configure_logging, add_file_handler
 from seg_scripts.common import parse_txt_to_json, get_json_data, make_tmp, mycp
 
 import seg_scripts.img as img
-from seg_scripts.img import MaskOperationMode as mom
 import seg_scripts.Labels as L
 import seg_scripts.FourChamberProcess as FOURCH
 from seg_scripts.ImageAnalysis import ImageAnalysis
+from seg_scripts.ImageAnalysis import MaskOperationMode as MM
 
 logger = configure_logging(log_name=__name__)
+ZERO_LABEL = 0
 
 def parse_input_parameters(path2points:str, path2originjson:str, path2ptsjson:str = "", labels_file=None) :
 
@@ -155,131 +156,92 @@ def crop_svc_ivc(path2points:str, path2ptsjson:str, path2originjson:str, labels_
     fcp.flatten_vessel_base('seg_s2d.nrrd', 'seg_s2e.nrrd', SVC_seed, C.SVC_label)
     fcp.flatten_vessel_base('seg_s2e.nrrd', 'seg_s2f.nrrd', IVC_seed, C.IVC_label)
 
-def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None) :
-    logger.info("Creating myocardium")
-    fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file)
-
-    logger.info("<Step 1/10> Creating myocardium for the LV outflow tract")
-    labelsd, thresd = fcp.get_distance_map_dictionaries('LV_BP_label', 'LV_DistMap.nrrd', 'LV_neck_WT', 'LV_neck.nrrd')
-    maskt = fcp.get_distance_map_tuples(mom.REPLACE, C.LV_neck_label, [],  mom.NO_OVERRIDE, 2, [])
-    fcp.create_mask_from_distance_map('seg_s2f.nrrd', 'seg_s3a.nrrd', labelsd, thresd, maskt)
-
-    fcp.push_in_and_save('seg_s3a.nrrd', C.RV_BP_label, C.LV_myo_label, C.LV_BP_label, C.LV_neck_WT)
-
-    logger.info("<Step 2/10> Creating the aortic wall")
-    labelsd, thresd = fcp.get_distance_map_dictionaries('Ao_BP_label', 'Ao_DistMap.nrrd', 'Ao_WT', 'Ao_wall.nrrd')
-    maskt = fcp.get_distance_map_tuples(mom.REPLACE, C.Ao_wall_label, [], mom.REPLACE_EXCEPT, C.Ao_wall_label, [C.LV_BP_label, C.LV_myo_label])
-    fcp.create_mask_from_distance_map('seg_s3a.nrrd', 'seg_s3b.nrrd', labelsd, thresd, maskt)
-    
-    logger.info("<Step 3/10> Creating the pulmonary artery wall")
-    labelsd, thresd= fcp.get_distance_map_dictionaries('PArt_BP_label', 'PArt_DistMap.nrrd','PArt_WT', 'PArt_wall.nrrd')
-    maskt = fcp.get_distance_map_tuples(mom.REPLACE, C.PArt_wall_label, [], mom.REPLACE_EXCEPT, C.PArt_wall_label, [3,C.Ao_wall_label])
-    fcp.create_mask_from_distance_map('seg_s3b.nrrd', 'seg_s3c.nrrd', labelsd, thresd, maskt)
-    
-    fcp.push_in_and_save('seg_s3c.nrrd', C.Ao_wall_label,C.PArt_wall_label,C.PArt_BP_label,C.PArt_WT, outname='seg_s3d.nrrd')
-
-    logger.info("<Step 4/10> Cropping veins")
-    slicer_tuple_list = [ ("aorta_slicer.nrrd", mom.REPLACE_ONLY, 0, [C.Ao_wall_label]), 
-                         ("PArt_slicer.nrrd",  mom.REPLACE_ONLY, 0, [C.PArt_wall_label])]
-    fcp.cropping_veins('seg_s3d.nrrd', slicer_tuple_list, 'seg_s3e.nrrd') 
-
-    inputs_tuple_list = [ ('seg_s3d.nrrd', points_data['Ao_tip'], C.Ao_BP_label, 'seg_s3f.nrrd'), 
-                           ('seg_s3f.nrrd', points_data['PArt_tip'], C.PArt_BP_label, 'seg_s3f.nrrd')]
-    for inputname, seed, label, outname in inputs_tuple_list :
-        fcp.get_connected_component_and_save(inputname, seed, label, output_name=outname)
-
-    logger.info("<Step 5/10> Creating the right ventricular myocardium") 
-    labelsd, thresd = fcp.get_distance_map_dictionaries('RV_BP_label', 'RV_BP_DistMap.nrrd', 'RV_WT', 'RV_myo.nrrd')
-    maskt = fcp.get_distance_map_tuples(mom.REPLACE, C.RV_myo_label, [], mom.REPLACE_ONLY, C.RV_myo_label, [C.Ao_wall_label])
-
-    fcp.create_mask_from_distance_map('seg_s3e.nrrd', 'seg_s3g.nrrd', labelsd, thresd, maskt)
-
-    logger.info("<Step 6/10> Creating the left atrial myocardium")
-    labelsd, thresd = fcp.get_distance_map_dictionaries('LA_BP_label', 'LA_BP_DistMap.nrrd', 'LA_WT', 'LA_myo.nrrd')
-    maskt = fcp.get_distance_map_tuples(mom.REPLACE_ONLY, C.LA_myo_label, [C.RA_BP_label], mom.REPLACE_ONLY, C.LA_myo_label, [C.SVC_label])
-
-    fcp.create_mask_from_distance_map('seg_s3g.nrrd', 'seg_s3h.nrrd', labelsd, thresd, maskt)
-
-    logger.info("<Step 7/10> Creating the right atrial myocardium")
-    labelsd, thresd = fcp.get_distance_map_dictionaries('RA_BP_label', 'RA_BP_DistMap.nrrd', 'RA_WT', 'RA_myo.nrrd')
-    maskt = fcp.get_distance_map_tuples(mom.REPLACE, C.RA_myo_label, [], mom.REPLACE_ONLY, C.RA_myo_label, [C.RPV1_label])
-
-    fcp.create_mask_from_distance_map('seg_s3h.nrrd', 'seg_s3i.nrrd', labelsd, thresd, maskt)
-
-    fcp.push_in_and_save('seg_s3i.nrrd', C.LA_myo_label, C.RA_myo_label, C.RA_BP_label, C.RA_WT, outname='seg_s3j.nrrd')
-    fcp.push_in_and_save('seg_s3j.nrrd', C.Ao_wall_label,C.RA_myo_label,C.RA_BP_label,C.RA_WT, outname='seg_s3k.nrrd')
-    fcp.push_in_and_save('seg_s3k.nrrd', C.LV_myo_label,C.RA_myo_label,C.RA_BP_label,C.RA_WT, outname='seg_s3l.nrrd')
-
-    logger.info("<Step 8/10> LA myo: Pushing the left atrium with the aorta") 
-    fcp.push_in_and_save('seg_s3l.nrrd', C.Ao_wall_label, C.LA_myo_label, C.LA_BP_label, C.LA_WT, outname='seg_s3m.nrrd')
-
-    logger.info("<Step 9/10> PArt wall: Pushing the pulmonary artery with the aorta")
-    fcp.push_in_and_save('seg_s3m.nrrd', C.Ao_wall_label, C.PArt_wall_label, C.PArt_BP_label, C.PArt_WT, outname='seg_s3n.nrrd')
-    fcp.push_in_and_save('seg_s3n.nrrd', C.LV_myo_label,C.PArt_wall_label,C.PArt_BP_label,C.PArt_WT, outname='seg_s3o.nrrd')
-
-    logger.info("<Step 10/10> RV myo: Pushing the right ventricle with the aorta") 
-    fcp.push_in_and_save('seg_s3o.nrrd', C.Ao_wall_label,C.RV_myo_label,C.RV_BP_label,C.RV_WT, outname='seg_s3p.nrrd')
-
-def create_mycardium_bis(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, mydebug=False) :
+def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, mydebug=False) :
     logger.info("Creating myocardium")
     fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file)
     fcp.debug = mydebug
     fcp.save_seg_steps = True
-    fcp.swap_axes = False
+    fcp.swap_axes = True
 
-    ima = ImageAnalysis(path2points, mydebug=mydebug)
+    ima = ImageAnalysis(path2points, debug=mydebug)
 
-    input_seg_array = fcp.load_image_array('seg_s3f.nrrd')
+    input_seg_array = fcp.load_image_array('seg_s2f.nrrd')
 
     logger.info("<Step 1/10> Creating myocardium for the LV outflow tract")
-    labels = [C.LV_BP_label, C.LV_neck_WT, C.LV_neck_label]
-    _, LV_neck_array = fcp.extract_distmap_and_threshold(input_seg_array, labels, "LV_DistMap", "LV_neck.nrrd")
-    LV_neck_array = ima.add_masks_replace(LV_neck_array, LV_neck_array, C.LV_neck_label)
-    seg_new_array = ima.add_masks(input_seg_array, LV_neck_array, 2)
-    fcp.save_if_seg_steps('seg_s3a.nrrd', seg_new_array)
+    labels = [C.LV_BP_label, C.LV_neck_WT, C.LV_neck_label, 2]
+    seg_new_array = fcp.create_myocardium(input_seg_array, labels, MM.ADD, None, 'seg_s3a.nrrd', dmname='LV_DistMap', thname='LV_neck.nrrd')
 
     seg_new_array = fcp.pushing_in(seg_new_array, C.RV_BP_label, C.LV_myo_label, C.LV_BP_label, C.LV_neck_WT)
-    fcp.save_if_seg_steps('seg_s3a.nrrd', seg_new_array)
+    fcp.save_if_seg_steps(seg_new_array, 'seg_s3a.nrrd')
 
     logger.info("<Step 2/10> Creating the aortic wall")
-    labels = [C.Ao_BP_label, C.Ao_WT, C.Ao_wall_label]
-    _, Ao_wall_array = fcp.extract_distmap_and_threshold(seg_new_array, labels, "Ao_DistMap", "Ao_wall.nrrd")
-    Ao_wall_array = ima.add_masks_replace(Ao_wall_array, Ao_wall_array, C.Ao_wall_label)
-    seg_new_array = ima.add_masks_replace_except(seg_new_array, Ao_wall_array, C.Ao_wall_label, [C.LV_BP_label, C.LV_myo_label])
-    fcp.save_if_seg_steps('seg_s3b.nrrd', seg_new_array)
+    labels = [C.Ao_BP_label, C.Ao_WT, C.Ao_wall_label, C.Ao_wall_label]
+    seg_new_array = fcp.create_myocardium(seg_new_array, labels, MM.REPLACE_EXCEPT, [C.LV_BP_label, C.LV_myo_label], 'seg_s3b.nrrd', dmname='Ao_DistMap', thname='Ao_wall.nrrd')
 
     logger.info("<Step 3/10> Creating the pulmonary artery wall")
-    labels = [C.PArt_BP_label, C.PArt_WT, C.PArt_wall_label]
-    _, PArt_wall_array = fcp.extract_distmap_and_threshold(seg_new_array, labels, "PArt_DistMap", "PArt_wall.nrrd")
-    PArt_wall_array = ima.add_masks_replace(PArt_wall_array, PArt_wall_array, C.PArt_wall_label)
-    seg_new_array = ima.add_masks_replace_except(seg_new_array, PArt_wall_array, C.PArt_wall_label, [3, C.Ao_wall_label])
-    fcp.save_if_seg_steps('seg_s3c.nrrd', seg_new_array)
+    labels = [C.PArt_BP_label, C.PArt_WT, C.PArt_wall_label, C.PArt_wall_label]
+    seg_new_array = fcp.create_myocardium(seg_new_array, labels, MM.REPLACE_EXCEPT, [3, C.Ao_wall_label], 'seg_s3c.nrrd', dmname='PArt_DistMap', thname='PArt_wall.nrrd')
 
     seg_new_array = fcp.pushing_in(seg_new_array, C.Ao_wall_label, C.PArt_wall_label, C.PArt_BP_label, C.PArt_WT)
-    fcp.save_if_seg_steps('seg_s3d.nrrd', seg_new_array)
+    fcp.save_if_seg_steps(seg_new_array, 'seg_s3d.nrrd')
 
     logger.info("<Step 4/10> Cropping veins")
-    aorta_slicer_array = ima.load_image_array('aorta_slicer.nrrd')
-    aorta_slicer_label = 0
-    seg_new_array = ima.add_masks_replace_only(seg_new_array, aorta_slicer_array, aorta_slicer_label, [C.Ao_wall_label])
+    aorta_slicer_array = fcp.load_image_array('aorta_slicer.nrrd')
+    seg_new_array = ima.add_masks_replace_only(seg_new_array, aorta_slicer_array, ZERO_LABEL, C.Ao_wall_label)
 
-    PArt_slicer_array = ima.load_image_array('PArt_slicer.nrrd')
-    PArt_slicer_label = 0
-    seg_new_array = ima.add_masks_replace_only(seg_new_array, PArt_slicer_array, PArt_slicer_label, [C.PArt_wall_label])
+    PArt_slicer_array = fcp.load_image_array('PArt_slicer.nrrd')
+    seg_new_array = ima.add_masks_replace_only(seg_new_array, PArt_slicer_array, ZERO_LABEL, C.PArt_wall_label)
+
+    fcp.save_if_seg_steps(seg_new_array, 'seg_s3e.nrrd')
+
+    seg_new_array = fcp.connected_component_process(seg_new_array, points_data['Ao_tip'], C.Ao_BP_label, 'seg_s3f.nrrd')
+    seg_new_array = fcp.connected_component_process(seg_new_array, points_data['PArt_tip'], C.PArt_BP_label, 'seg_s3f.nrrd')
 
     logger.info("<Step 5/10> Creating the right ventricular myocardium") 
-    logger.info("<Step 6/10> Creating the left atrial myocardium")
-    logger.info("<Step 7/10> Creating the right atrial myocardium")
-    logger.info("<Step 8/10> LA myo: Pushing the left atrium with the aorta") 
-    logger.info("<Step 9/10> PArt wall: Pushing the pulmonary artery with the aorta")
-    logger.info("<Step 10/10> RV myo: Pushing the right ventricle with the aorta") 
+    labels = [C.RV_BP_label, C.RV_WT, C.RV_myo_label, C.RV_myo_label]
+    seg_new_array = fcp.create_myocardium(seg_new_array, labels, MM.REPLACE_ONLY, C.Ao_wall_label, 'seg_s3g.nrrd', dmname='RV_BP_DistMap', thname='RV_myo.nrrd')
 
-def create_valve_planes_bis(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, mydebug=False) :
+    logger.info("<Step 6/10> Creating the left atrial myocardium")
+    labels = [C.LA_BP_label, C.LA_WT, C.LA_myo_label, C.LA_myo_label, C.LA_myo_label]
+    seg_new_array = fcp.create_myocardium(seg_new_array, labels, MM.REPLACE_ONLY, C.LA_myo_label, 'seg_s3h.nrrd', MM.REPLACE_ONLY, C.SVC_label, dmname='LA_BP_DistMap', thname='LA_myo.nrrd')
+
+    logger.info("<Step 7/10> Creating the right atrial myocardium")
+    labels = [C.RA_BP_label, C.RA_WT, C.RA_myo_label, C.RA_myo_label]
+    seg_new_array = fcp.create_myocardium(seg_new_array, labels, MM.REPLACE_ONLY, C.RA_myo_label, 'seg_s3i.nrrd', dmname='RA_BP_DistMap', thname='RA_myo.nrrd')
+
+    seg_new_array = fcp.pushing_in(seg_new_array, C.LA_myo_label, C.RA_myo_label, C.RA_BP_label, C.RA_WT)
+    fcp.save_if_seg_steps(seg_new_array, 'seg_s3j.nrrd')
+
+    seg_new_array = fcp.pushing_in(seg_new_array, C.Ao_wall_label, C.RA_myo_label, C.RA_BP_label, C.RA_WT)
+    fcp.save_if_seg_steps(seg_new_array, 'seg_s3k.nrrd')
+
+    seg_new_array = fcp.pushing_in(seg_new_array, C.LV_myo_label, C.RA_myo_label, C.SVC_label, C.RA_WT)
+    fcp.save_if_seg_steps(seg_new_array, 'seg_s3k.nrrd')
+
+    seg_new_array = fcp.pushing_in(seg_new_array, C.LV_myo_label, C.RA_myo_label, C.RA_BP_label, C.RA_WT)
+    fcp.save_if_seg_steps(seg_new_array, 'seg_s3l.nrrd')
+
+    logger.info("<Step 8/10> LA myo: Pushing the left atrium with the aorta") 
+    seg_new_array = fcp.pushing_in(seg_new_array, C.Ao_wall_label, C.LA_myo_label, C.LA_BP_label, C.LA_WT)
+    fcp.save_if_seg_steps(seg_new_array, 'seg_s3m.nrrd')
+
+    logger.info("<Step 9/10> PArt wall: Pushing the pulmonary artery with the aorta")
+    seg_new_array = fcp.pushing_in(seg_new_array, C.Ao_wall_label, C.PArt_wall_label, C.PArt_BP_label, C.PArt_WT)
+    fcp.save_if_seg_steps(seg_new_array, 'seg_s3n.nrrd')
+
+    seg_new_array = fcp.pushing_in(seg_new_array, C.LV_myo_label, C.PArt_wall_label, C.PArt_BP_label, C.PArt_WT)
+    fcp.save_if_seg_steps(seg_new_array, 'seg_s3o.nrrd')
+    
+    logger.info("<Step 10/10> RV myo: Pushing the right ventricle with the aorta") 
+    seg_new_array = fcp.pushing_in(seg_new_array, C.Ao_wall_label, C.RV_myo_label, C.RV_BP_label, C.RV_WT)
+    fcp.save_if_seg_steps(seg_new_array, 'seg_s3p.nrrd')
+
+def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, mydebug=False) :
     logger.info("Creating valve planes")
     fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file)
     fcp.debug = mydebug
     fcp.save_seg_steps = True
-    fcp.swap_axes = False
+    fcp.swap_axes = True
 
     logger.info("<Step 1/8> Cropping major vessels")
     fcp.get_connected_component_and_save('seg_s3p.nrrd', points_data['Ao_WT_tip'], C.Ao_wall_label, 'seg_s3r.nrrd')
@@ -377,92 +339,6 @@ def create_valve_planes_bis(path2points:str, path2ptsjson:str, path2originjson:s
     seg_new_array, _ = fcp.intersect_and_replace(seg_new_array, ra_bp_thresh_2mm, C.IVC_label, C.plane_IVC_label, C.plane_IVC_label, "seg_s4k.nrrd")
 
     logger.info("Finished creating valve planes")
-
-    
-
-def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None) :
-    logger.info("Creating valve planes")
-    fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file) 
-
-    logger.info("<Step 1/8> Cropping major vessels")
-    fcp.get_connected_component_and_save('seg_s3p.nrrd', points_data['Ao_WT_tip'], C.Ao_wall_label, 'seg_s3r.nrrd')
-    fcp.get_connected_component_and_save('seg_s3r.nrrd', points_data['PArt_WT_tip'], C.PArt_wall_label, 'seg_s3s.nrrd')
-
-    list_to_extract = [
-        ('seg_s3s.nrrd', 'seg_s4a.nrrd', C.LV_BP_label, C.MV_label, 'LA_BP_label', 'LA_BP_DistMap.nrrd', 'valve_WT', 'LA_BP_thresh.nrrd', False, 1),
-        ('seg_s4a.nrrd', 'seg_s4b.nrrd', C.LA_BP_label, C.LA_myo_label, 'LV_myo_label', 'LV_myo_DistMap.nrrd', 'LA_WT', 'LV_myo_extra.nrrd', False, 1),
-        ('seg_s4b.nrrd', 'seg_s4c.nrrd', C.RV_BP_label, C.TV_label, 'RA_BP_label', 'RA_BP_DistMap.nrrd', 'valve_WT', 'RA_BP_thresh.nrrd', False, 1),
-        ('seg_s4c.nrrd', 'seg_s4d.nrrd', C.RA_BP_label, C.RA_myo_label, 'RV_myo_label', 'RV_myo_DistMap.nrrd', 'RA_WT', 'RV_myo_extra.nrrd', False, 1),
-        ('seg_s4d.nrrd', 'seg_s4e.nrrd', C.LV_BP_label, C.AV_label, 'Ao_BP_label', 'Ao_BP_DistMap.nrrd', 'valve_WT', 'AV.nrrd', False, 1),
-        ('seg_s4e.nrrd', 'seg_s4f.nrrd', C.Ao_BP_label, C.Ao_wall_label, 'LV_myo_label', 'LV_myo_DistMap.nrrd', 'Ao_WT', 'Ao_wall_extra.nrrd', True, 1),
-        ('seg_s4f.nrrd', 'seg_s4f.nrrd', C.MV_label, C.LV_myo_label, 'AV_label', 'AV_DistMap.nrrd', 'valve_WT', 'AV_sep.nrrd', False, 2),
-        ('seg_s4f.nrrd', 'seg_s4g.nrrd', C.RV_BP_label, C.PV_label, 'PArt_BP_label', 'PArt_BP_DistMap.nrrd', 'valve_WT', 'PV.nrrd', False, 1),
-        ('seg_s4g.nrrd', 'seg_s4h.nrrd', C.PArt_BP_label, C.PArt_wall_label, 'RV_myo_label', 'RV_myo_DistMap.nrrd', 'PArt_WT', 'PArt_wall_extra.nrrd', True, 1)
-    ]
-
-    msg_list = ['mitral valve', '', 'tricuspid valve', '', 'aortic valve', '', '', '', 'pulmonary valve']
-
-    count = 2
-    for msg, extractables in zip(msg_list, list_to_extract) :
-        iname, oname, label, new_label, dmap_l, dmap_n, thresh, thresh_name, skip_dmap, mult = extractables
-        if (msg != '') :
-            logger.info(f'<Step {count}/8> Creating {msg}')
-            count += 1
-        labelsd, thresd = fcp.get_distance_map_dictionaries(dmap_l, dmap_n, thresh, thresh_name)
-        thresd['threshold'] *= mult
-        fcp.extract_structure_w_distance_map(iname, oname, labelsd, thresd, label, new_label, skip_dmap=skip_dmap)
-
-
-    logger.info('<Step 6/8> Create the distance maps needed to cut the vein rings')
-    list_of_rings = []
-    list_of_inputs = [('LA_myo_label', 'LA_myo_DistMap.nrrd', 'ring_thickness', 'LA_myo_thresh.nrrd'),
-                      ('RA_myo_label', 'RA_myo_DistMap.nrrd', 'ring_thickness', 'RA_myo_thresh.nrrd'),
-                      ('LPV1_label', 'LPV1_BP_DistMap.nrrd', 'ring_thickness', 'LPV1_ring.nrrd'),
-                      ('LPV2_label', 'LPV2_BP_DistMap.nrrd', 'ring_thickness', 'LPV2_ring.nrrd'),
-                      ('RPV1_label', 'RPV1_BP_DistMap.nrrd', 'ring_thickness', 'RPV1_ring.nrrd'),
-                      ('RPV2_label', 'RPV2_BP_DistMap.nrrd', 'ring_thickness', 'RPV2_ring.nrrd'),
-                      ('LAA_label', 'LAA_BP_DistMap.nrrd', 'ring_thickness', 'LAA_ring.nrrd'),
-                      ('SVC_label', 'SVC_BP_DistMap.nrrd', 'ring_thickness', 'SVC_ring.nrrd'),
-                      ('IVC_label', 'IVC_BP_DistMap.nrrd', 'ring_thickness', 'IVC_ring.nrrd')]
-    
-     
-    for label, dmap, wt, outname in list_of_inputs :
-        labelsd, thresd = fcp.get_distance_map_dictionaries(label, dmap, wt, outname)
-        aux_dict = fcp.threshold_distance_map('seg_s4h.nrrd', labelsd, thresd)
-        list_of_rings.append(aux_dict['threshold'])
-
-    logger.info('<Step 7/8> Creating the vein rings')
-    list_of_processes = [
-        ('LPV1_ring_label', mom.NO_OVERRIDE, ''),
-        ('LPV2_ring_label', mom.NO_OVERRIDE, ''),
-        ('RPV1_ring_label', mom.REPLACE_ONLY, 'SVC_label'),
-        ('RPV2_ring_label',  mom.NO_OVERRIDE, ''),
-        ('LAA_ring_label', mom.NO_OVERRIDE, ''),
-        ('SVC_ring_label', mom.REPLACE_ONLY, 'Ao_wall_label,LA_myo_label,RPV1_ring_label,RPV1_label'),
-        ('IVC_ring_label', mom.NO_OVERRIDE, '')
-    ]
-
-    fcp.creating_vein_rings('seg_s4h.nrrd', 'seg_s4i.nrrd', 'seg_s4j.nrrd', list_of_rings, list_of_processes)
-
-    logger.info('<Step 8/8> Creating the valve planes')
-    fcp.threshold_and_save('RA_BP_DistMap.nrrd', 'RA_BP_thresh_2mm.nrrd', C.valve_WT_svc_ivc)
-    LA_BP_thresh_path = 'LA_BP_thresh.nrrd'
-    RA_BP_thresh_path = 'RA_BP_thresh_2mm.nrrd'
-
-    list_of_la_labels = [
-        (C.LPV1_label,C.plane_LPV1_label), 
-        (C.LPV2_label,C.plane_LPV2_label),
-        (C.RPV1_label,C.plane_RPV1_label),
-        (C.RPV2_label,C.plane_RPV2_label),
-        (C.LAA_label,C.plane_LAA_label)
-    ]
-
-    list_of_ra_labels = [
-        (C.SVC_label,C.plane_SVC_label),
-        (C.IVC_label,C.plane_IVC_label)
-    ]
-
-    fcp.creating_valve_planes('seg_s4j.nrrd', LA_BP_thresh_path, RA_BP_thresh_path, 'seg_s4k.nrrd', list_of_la_labels, list_of_ra_labels)
 
 def clean_segmentation(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None) :
     logger.info("Cleaning segmentation")

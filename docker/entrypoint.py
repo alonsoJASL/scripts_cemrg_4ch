@@ -173,7 +173,7 @@ def docker_create_myo(args, help=False) :
     path2ptsjson = args.points_json
     path2originjson = args.origin_spacing_json
 
-    create_myocardium(path2points, path2ptsjson, path2originjson, labels_file)
+    create_myocardium(path2points, path2ptsjson, path2originjson, labels_file, mydebug=args.debug)
 
 
 def docker_create_valve_planes(args, help=False) :
@@ -189,7 +189,7 @@ def docker_create_valve_planes(args, help=False) :
         origin_spacing_json: name of the json file containing the origin and spacing
     """
     
-    from seg_scripts.process_handler import create_valve_planes_bis
+    from seg_scripts.process_handler import create_valve_planes
     if(help) : 
         print(docker_create_valve_planes.__doc__)
         return
@@ -200,7 +200,7 @@ def docker_create_valve_planes(args, help=False) :
     path2ptsjson = args.points_json
     path2originjson = args.origin_spacing_json
 
-    create_valve_planes_bis(path2points, path2ptsjson, path2originjson, labels_file, mydebug=args.debug)
+    create_valve_planes(path2points, path2ptsjson, path2originjson, labels_file, mydebug=args.debug)
 
 def docker_clean_seg(args, help=False) :
     """
