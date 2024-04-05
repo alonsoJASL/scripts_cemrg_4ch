@@ -6,3 +6,4 @@ __pycache__/
 runtimes.txt
 venv_barrows_segmentation/
 README_MRI
+seg_scripts/make_*
