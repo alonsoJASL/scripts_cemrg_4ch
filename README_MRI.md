@@ -12,8 +12,8 @@ Segmentation
 - RSPV = 10
 - RIPV = 11
 - LAA = 12
-1) Make sure the image is in a suitable orientation (by opening it in ITKsnap, for instance). If not, you can use `c3d seg_corrected.nii -orient RAI -o seg_corrected_RAI.nii.gz` to convert it to RAI orientation.
-5) Resample to 0.3 mm isotropic using the `img.py` script.
+1) Make sure the image is in a suitable orientation (by opening it in ITKsnap, for instance). If not, you can use `c3d seg_corrected_badly_oriented.nii -orient RAI -o seg_corrected_RAI.nii.gz` to convert it to RAI orientation.
+5) Resample to 0.3 mm isotropic using the `img.py` script. The final segmentation name has to be `seg_corrected.nrrd` for the following steps to work.
 
 6) Run `create_origin_spacing_files` in `img.py`. Otherwise, select manually in itksnap the origin and spacing and add it to origin_spacing.txt
 
@@ -33,11 +33,11 @@ Segmentation
 
 9) Select 3 points for SVC and IVC cylinders (pixel) and save in `points.txt`
 
-11) Run `create_cylinders.py /heart_folder/segmentations`
+11) Run `create_cylinders.py /heart_folder/segmentations`. Note that if you visualize the SVC and IVC at this stage it will look off. Just continue with the pipeline and check them in the following step.
 
 12) Run `create_svc_ivc.py /heart_folder/segmentations`. At this point the segmentation should have the venae cavae incorporated.
 
-1) Run `cut_vessels.py /heart_folder/segmentations`. Check that the venae cava have some base, otherwise adjust the threhsold values. 
+1) Copy the file `vc_joint.json` from `h_template/segmentations` to your segementation folder. The information there will be used to add a piece of the RA to the venae cavae to avoid areas of too few cotact. Ideally, you just want to add enough so there are no sharp corners. The values go from 0 to 1, where 1 means that 100% of the cylinder for the vena cava is added to RA. Run `cut_vessels.py /heart_folder/segmentations`. Check that the venae cava have some base, otherwise adjust the threhsold values. 
 
 17) Run `create_myo.py /heart_folder/segmentations`
 
