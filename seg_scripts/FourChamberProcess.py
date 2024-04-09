@@ -8,21 +8,21 @@ from seg_scripts.ImageAnalysis import MaskOperationMode as MM
 from seg_scripts.ImageAnalysis import ImageAnalysis 
 
 from seg_scripts.common import configure_logging, big_print, make_tmp
-logger = configure_logging(log_name=__name__)
 
 import seg_scripts.Labels as Labels
 
 DISTANCE_MAP_KEY = 'distance_map'
 THRESHOLD_KEY = 'threshold'
 class FourChamberProcess:
-    def __init__(self, path2points: str, origin_spacing: dict, CONSTANTS:Labels):
+    def __init__(self, path2points: str, origin_spacing: dict, CONSTANTS:Labels, debug=False):
         self._path2points = path2points
         self._origin_spacing = origin_spacing
         self._is_mri = False
         self.CONSTANTS = CONSTANTS
-        self._debug = False
+        self._debug = debug
         self._save_seg_steps = True
         self.swap_axes = True
+        self.logger = configure_logging(log_name=__name__, is_debug=self._debug)
         
     @property 
     def path2points(self):
@@ -71,10 +71,10 @@ class FourChamberProcess:
             filename = filename + '.nrrd'
 
         if not os.path.exists(self.DIR(filename)):
-            logger.info(f'{filename} file does not exist. Attempting using .nii')
+            self.logger.info(f'{filename} file does not exist. Attempting using .nii')
             filename_nii = filename.replace('.nrrd','.nii')
             if os.path.exists(self.DIR(filename_nii)):
-                logger.info(f'{filename_nii} file exists. Converting to .nrrd')
+                self.logger.info(f'{filename_nii} file exists. Converting to .nrrd')
                 img.convert_to_nrrd(self.path2points, filename_nii)
 
         return os.path.exists(self.DIR(filename))
@@ -151,7 +151,7 @@ class FourChamberProcess:
         return seg_array_cylinder
 	
     def cylinder(self, segname, points, plane_name, slicer_radius, slicer_height):
-        logger.info(f"Generating cylinder: {plane_name}")
+        self.logger.info(f"Generating cylinder: {plane_name}")
         origin, spacing = self.get_origin_spacing()
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
 
@@ -159,7 +159,7 @@ class FourChamberProcess:
         # seg_array, _ = nrrd.read(self.DIR(segname))
         seg_array_cylinder = self.cylinder_process(seg_array, points, plane_name, slicer_radius, slicer_height)
 
-        logger.info("Saving...")
+        self.logger.info("Saving...")
         # seg_array_cylinder = np.swapaxes(seg_array_cylinder, 0, 2)
         ima.save_itk(seg_array_cylinder, origin, spacing, plane_name, self.swap_axes)
     
@@ -178,17 +178,17 @@ class FourChamberProcess:
         # ----------------------------------------------------------------------------------------------
         # Add the SVC and IVC 
         # ----------------------------------------------------------------------------------------------
-        logger.info('## Adding the SVC, IVC and slicers ##')
+        self.logger.info('## Adding the SVC, IVC and slicers ##')
         seg_s2a_array = img.add_masks_replace_only(seg_s2_array, svc_array, C.SVC_label,C.RPV1_label)
         seg_s2a_array = img.add_masks(seg_s2a_array, ivc_array, C.IVC_label)
 
         # ----------------------------------------------------------------------------------------------
         # Format and save the segmentation
         # ----------------------------------------------------------------------------------------------
-        logger.info(' ## Formatting and saving the segmentation ##')
+        self.logger.info(' ## Formatting and saving the segmentation ##')
         ima.save_itk(seg_s2a_array, origin, spacings, output_file, self.swap_axes)
 
-        logger.info(" ## Saved segmentation with SVC/IVC added ##")
+        self.logger.info(" ## Saved segmentation with SVC/IVC added ##")
     
     def remove_protruding_vessel(self, seed, label, input_name, output_name) :
     
@@ -196,7 +196,7 @@ class FourChamberProcess:
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
 
         input_array = ima.load_image_array(self.DIR(input_name))    
-        logger.info(f' ## Removing any protruding {label} ## \n')
+        self.logger.info(f' ## Removing any protruding {label} ## \n')
         seg_array = ima.connected_component_keep(input_array, seed, label)
         ima.save_itk(seg_array, origin, spacings, self.DIR(output_name), self.swap_axes)
     
@@ -223,7 +223,7 @@ class FourChamberProcess:
         new_RA_array = ima.and_filter(seg_array, IVC_slicer_array, C.IVC_label, C.RA_BP_label)
         seg_array = ima.add_masks_replace_only(seg_array, new_RA_array, C.RA_BP_label, C.IVC_label)
     
-        logger.info(' ## Formatting and saving the segmentation ##')
+        self.logger.info(' ## Formatting and saving the segmentation ##')
         seg_array = np.swapaxes(seg_array, 0, 2)
         ima.save_itk(seg_array, origin, spacings, self.DIR(output_name), self.swap_axes)
     
@@ -254,7 +254,7 @@ class FourChamberProcess:
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
         C = self.CONSTANTS
 
-        logger.info(f' ## Flattening base of {label} ## \n')
+        self.logger.info(f' ## Flattening base of {label} ## \n')
 
         seg_array = img.connected_component(input_filename, seed, label, self.path2points)
         seg_array = img.add_masks_replace_only(seg_array, seg_array, C.RA_BP_label, label)
@@ -304,7 +304,7 @@ class FourChamberProcess:
         thresh_name = tmp_dict[THRESHOLD_KEY]
 
         if skip_processed and os.path.exists(self.TMP(dmap_name)):
-            logger.info(f"Skipping distance map calculation for {dmap_name}")
+            self.logger.info(f"Skipping distance map calculation for {dmap_name}")
         else :
             self.distance_map_and_save(input_name, dmap_name, labels[DISTANCE_MAP_KEY])
     
@@ -474,7 +474,7 @@ class FourChamberProcess:
         seg_array = ima.push_inside(im, pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT)
 
         if outname != "":
-            logger.debug(f"Saving pushed segmentation array to {outname}", exc_info=self.debug)
+            self.logger.debug(f"Saving pushed segmentation array to {outname}", exc_info=self.debug)
             self.save_if_seg_steps(seg_array, outname)
 
     def cropping_veins(self, input_name, slicer_tuple_list, output_name) :
@@ -588,11 +588,16 @@ class FourChamberProcess:
         origin, spacings = self.get_origin_spacing()
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
 
+        self.logger.debug(f"Intersecting structures with labels {intrsct_label1} and {intrsct_label2}")
         struct_array = ima.and_filter(seg_array, thresh_array, intrsct_label1, intrsct_label2)
+
+        self.logger.debug(f"AND filter unique values: {np.unique(struct_array)}")
+
+        self.logger.debug(f"Replacing intersected structures with label {replace_label}")
         seg_array_new = ima.add_masks_replace(seg_array, struct_array, replace_label)
 
         if outname != "":
-            logger.debug(f"Saving intersected and replaced segmentation array to {outname}", exc_info=self.debug)
+            self.logger.debug(f"Saving intersected and replaced segmentation array to {outname}", exc_info=self.debug)
             self.save_if_seg_steps(seg_array_new, outname)
 
         return seg_array_new, struct_array
@@ -632,7 +637,10 @@ class FourChamberProcess:
         origin, spacings = self.get_origin_spacing()
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
 
+        self.logger.debug(f"Extracting distance map for label {labels[0]} and threshold at: {labels[1]}")
         distmap_array, thresh_array = self.extract_distmap_and_threshold(seg_array, labels, dm_name, th_name, dmap_array)
+
+        self.logger.debug(f"Intersecting and replacing structures with labels {labels[2]}, {labels[3]}, and {labels[4]}")
         seg_array_new, struct_array = self.intersect_and_replace(seg_array, thresh_array, labels[2], labels[3], labels[4])
 
         self.save_if_seg_steps(seg_array_new, outname)

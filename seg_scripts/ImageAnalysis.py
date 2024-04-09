@@ -9,7 +9,6 @@ import inspect
 from enum import Enum
 
 from seg_scripts.common import configure_logging, big_print, make_tmp
-logger = configure_logging(log_name=__name__)
 
 ZERO_LABEL = 0
 SEG_LABEL = 1
@@ -23,6 +22,7 @@ class ImageAnalysis:
     def __init__(self, path2points="", debug=False):
         self._path2points = path2points
         self._debug = debug
+        self.logger = configure_logging(log_name=__name__, is_debug=self._debug)
 
     @property
     def path2points(self):
@@ -40,10 +40,10 @@ class ImageAnalysis:
     def debug(self, debug):
         self._debug = debug
 
-    def DIR(self, x):
+    def DIR(self, x=""):
         return os.path.join(self.path2points, x)
     
-    def TMP(self, x):
+    def TMP(self, x=""):
         return os.path.join(self.path2points, "tmp", x)
     
     def set_debug(self, debug, pth2points):
@@ -134,6 +134,8 @@ class ImageAnalysis:
         if self.debug:
             outname = outname if outname != "" else "Thresh.nrrd"
             outname += ".nrrd" if not outname.endswith(".nrrd") else ""
+            # check TMP folder 
+            make_tmp(self.TMP())
             save_path = self.TMP(outname)
             sitk.WriteImage(thresholded_img, save_path)
 
@@ -171,9 +173,9 @@ class ImageAnalysis:
             np.ndarray: The resulting image array after applying the 'and' filter.
 
         """
-
+        self.logger.debug(f"Applying AND filter to values where imga_array == {label_a} setting to {new_label}")
         # Get indices where imgb_array is nonzero
-        imgb_indices = np.transpose(np.where(imgb_array != ZERO_LABEL))
+        imgb_indices = np.transpose(np.nonzero(imgb_array))
 
         # Apply filtering
         imga_values = imga_array[imgb_indices[:, 0], imgb_indices[:, 1], imgb_indices[:, 2]]

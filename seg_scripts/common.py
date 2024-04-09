@@ -6,15 +6,17 @@ import logging
 from seg_scripts.txt_2_json import txt2json
 
 
-def configure_logging(log_name: str, log_level=logging.INFO, log_format='[%(funcName)s] %(message)s'):
-    logger = logging.getLogger(log_name)
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter(log_format)
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(log_level)
+def configure_logging(log_name: str, is_debug = False, log_format='[%(funcName)s] %(message)s'):
+	logger = logging.getLogger(log_name)
+	handler = logging.StreamHandler()
+	formatter = logging.Formatter(log_format)
+	handler.setFormatter(formatter)
+	logger.addHandler(handler)
+	
+	log_level = logging.DEBUG if is_debug else logging.INFO
+	logger.setLevel(log_level)
 
-    return logger
+	return logger
 
 def add_file_handler(logger, file_path: str):
     file_handler = logging.FileHandler(file_path)

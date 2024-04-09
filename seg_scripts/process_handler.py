@@ -15,7 +15,7 @@ from seg_scripts.ImageAnalysis import MaskOperationMode as MM
 logger = configure_logging(log_name=__name__)
 ZERO_LABEL = 0
 
-def parse_input_parameters(path2points:str, path2originjson:str, path2ptsjson:str = "", labels_file=None) :
+def parse_input_parameters(path2points:str, path2originjson:str, path2ptsjson:str = "", labels_file=None, set_debug=False) :
 
     if path2ptsjson is not None: 
         points_output_file = parse_txt_to_json(path2points, path2ptsjson, "points", "labels")
@@ -27,7 +27,7 @@ def parse_input_parameters(path2points:str, path2originjson:str, path2ptsjson:st
     origin_data = get_json_data(origin_spacing_output_file)
 
     C = L.Labels(filename=labels_file)
-    fcp = FOURCH.FourChamberProcess(path2points, origin_data, CONSTANTS=C)
+    fcp = FOURCH.FourChamberProcess(path2points, origin_data, CONSTANTS=C, debug=set_debug)
 
     return fcp, C, points_data
 
@@ -158,8 +158,7 @@ def crop_svc_ivc(path2points:str, path2ptsjson:str, path2originjson:str, labels_
 
 def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, mydebug=False) :
     logger.info("Creating myocardium")
-    fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file)
-    fcp.debug = mydebug
+    fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file, set_debug=mydebug)
     fcp.save_seg_steps = True
     fcp.swap_axes = True
 
@@ -238,8 +237,7 @@ def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, la
 
 def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, mydebug=False) :
     logger.info("Creating valve planes")
-    fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file)
-    fcp.debug = mydebug
+    fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file, set_debug=mydebug)
     fcp.save_seg_steps = True
     fcp.swap_axes = True
 
@@ -250,14 +248,14 @@ def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, 
     input_seg_array = fcp.load_image_array('seg_s3s.nrrd')
 
     logger.info("<Step 2/8> Creating the mitral valve")
-    labels = [C.LV_BP_label, C.valve_WT, C.LV_BP_label, C.MV_label, C.MV_label]
+    labels = [C.LA_BP_label, C.valve_WT, C.LV_BP_label, C.MV_label, C.MV_label]
     seg_new_array, _, la_bp_thresh, _ = fcp.extract_structure(input_seg_array, labels, "LA_BP_DistMap", "LA_BP_thresh", "seg_s4a.nrrd")
 
     labels = [C.LV_myo_label, C.LA_WT, C.LA_BP_label, C.LA_myo_label, C.LA_myo_label]
     seg_new_array, lv_myo_distmap, _, _ = fcp.extract_structure(seg_new_array, labels, "LV_myo_DistMap", "LV_myo_thresh", "seg_s4b.nrrd")
 
     logger.info("<Step 3/8> Creating the tricuspid valve")
-    labels = [C.RV_BP_label, C.valve_WT, C.RV_BP_label, C.TV_label, C.TV_label]
+    labels = [C.RA_BP_label, C.valve_WT, C.RV_BP_label, C.TV_label, C.TV_label]
     seg_new_array, ra_bp_distmap, _, _ = fcp.extract_structure(seg_new_array, labels, "RA_BP_DistMap", "RA_BP_thresh", "seg_s4c.nrrd")
 
     labels = [C.RV_myo_label, C.RA_WT, C.RA_BP_label, C.RA_myo_label, C.RA_myo_label]
@@ -325,7 +323,7 @@ def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, 
     seg_new_array = fcp.extract_atrial_rings(seg_new_array, ivc_ring, ra_myo_thresh, labels[2], "seg_s4j.nrrd")
     
     logger.info("<Step 8/8> Creating the valve planes")
-    seg_new_array, _ = fcp.intersect_and_replace(seg_new_array, la_myo_thresh, C.LPV1_label, C.plane_LPV1_label, C.plane_LPV1_label, "seg_s4j_lpv1.nrrd")
+    seg_new_array, _ = fcp.intersect_and_replace(seg_new_array, la_bp_thresh, C.LPV1_label, C.plane_LPV1_label, C.plane_LPV1_label, "seg_s4j_lpv1.nrrd")
     seg_new_array, _ = fcp.intersect_and_replace(seg_new_array, la_bp_thresh, C.LPV2_label, C.plane_LPV2_label, C.plane_LPV2_label, "seg_s4j_lpv2.nrrd")
     seg_new_array, _ = fcp.intersect_and_replace(seg_new_array, la_bp_thresh, C.RPV1_label, C.plane_RPV1_label, C.plane_RPV1_label, "seg_s4j_rpv1.nrrd")
     seg_new_array, _ = fcp.intersect_and_replace(seg_new_array, la_bp_thresh, C.RPV2_label, C.plane_RPV2_label, C.plane_RPV2_label, "seg_s4j_rpv2.nrrd")
