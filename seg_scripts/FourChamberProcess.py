@@ -647,14 +647,15 @@ class FourChamberProcess:
         
         return seg_array_new, distmap_array, thresh_array, struct_array
     
-    def extract_atrial_rings(self, seg_array, ring_array, la_myo_thresh, pv_ring_label, outname, replace_only_label:list=[]) : 
+    def extract_atrial_rings(self, seg_array, acc_array, ring_array, atrial_myo_thresh, pv_ring_label, outname, replace_only_label:list=[]) : 
         """
         Extracts the atrial rings from the segmentation array by adding or replacing the ring array.
         
         Args:
             seg_array (np.array): The segmentation array.
+            acc_array (np.array): The array representing the finsl output of all the veins (seg_s4j)
             ring_array (np.array): The array representing the atrial rings.
-            la_myo_thresh (float): The threshold value for the left atrial myocardium.
+            atrial_myo_thresh (float): The threshold value for the left atrial myocardium.
             pv_ring_label (int): The label value of the pulmonary vein ring.
             outname (str): The name of the output file to save the modified segmentation array.
             replace_only_label (list, optional): A list of label values for which the ring array should be replaced instead of added. Defaults to [].
@@ -666,29 +667,32 @@ class FourChamberProcess:
             four_chamber = FourChamberProcess(path2points, origin_spacing, CONSTANTS)
             seg_array = ...
             ring_array = ...
-            la_myo_thresh = ...
+            atrial_myo_thresh = ...
             pv_ring_label = ...
             outname = ...
             replace_only_label = ...
-            result = four_chamber.extract_atrial_rings(seg_array, ring_array, la_myo_thresh, pv_ring_label, outname, replace_only_label)
+            result = four_chamber.extract_atrial_rings(seg_array, ring_array, atrial_myo_thresh, pv_ring_label, outname, replace_only_label)
         """
         origin, spacings = self.get_origin_spacing()
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
 
-        # seg_array_new = ima.add_masks(seg_array, ring_array, pv_ring_label) 
+        # intermediate_array = ima.add_masks(seg_array, ring_array, pv_ring_label) 
         if not replace_only_label :
-            seg_array_new = ima.add_masks(seg_array, ring_array, pv_ring_label)
+            intermediate_array = ima.add_masks(seg_array, ring_array, pv_ring_label)
         else:
             # in LA: only for rpv1 where replace_only_label == [SVC_label]
             # in RA: only for SVC where replace_only_label == [Ao_wall_label, LA_myo_label, RPV1_ring_label, RPV1_label, RPV2_ring_label, RPV2_label]
             for label in replace_only_label:
-                seg_array_new = ima.add_masks_replace_only(seg_array, ring_array, pv_ring_label, label)
+                intermediate_array = ima.add_masks_replace_only(seg_array, ring_array, pv_ring_label, label)
         
-        seg_array_new, _ = self.intersect_and_replace(seg_array_new, la_myo_thresh, pv_ring_label, pv_ring_label, pv_ring_label)
+        # seg_array_new, _ = self.intersect_and_replace(intermediate_array, atrial_myo_thresh, pv_ring_label, pv_ring_label, pv_ring_label)
+        ring_array = ima.and_filter(intermediate_array, atrial_myo_thresh, pv_ring_label, pv_ring_label)
+        seg_array_new = ima.add_masks_replace(acc_array, ring_array, pv_ring_label)
 
-        self.save_if_seg_steps(seg_array_new, outname)
 
-        return seg_array_new
+        self.save_if_seg_steps(intermediate_array, outname)
+
+        return seg_array_new, intermediate_array
     
     def create_myocardium(self, seg_array: np.ndarray, labels: list, mode:MM, mode_labels, seg_out, mode2: MM = None, mode2_labels = None, dmname="", thname="") -> np.array:
         """

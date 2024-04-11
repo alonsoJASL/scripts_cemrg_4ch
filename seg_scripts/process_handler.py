@@ -280,6 +280,8 @@ def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, 
 
     labels = [-1, C.PArt_WT, C.PArt_BP_label, C.PArt_wall_label, C.PArt_wall_label]
     seg_new_array, _, _, _ = fcp.extract_structure(seg_new_array, labels, "RV_myo_DistMap", "PArt_wall_extra", "seg_s4h.nrrd", rv_myo_distmap)
+    
+    seg_h_array = fcp.load_image_array('seg_s4h.nrrd')
 
     logger.info("<Step 6/8> Create the distance maps needed to cut the vein rings")
     labels = [C.LA_myo_label, C.ring_thickness]
@@ -290,37 +292,34 @@ def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, 
 
     logger.info("<Step 7/8> Creating the vein rings")
     labels = [C.LPV1_label, C.ring_thickness, C.LPV1_ring_label]
-    _, lpv1_ring = fcp.extract_distmap_and_threshold(seg_new_array, labels, "LPV1_BP_DistMap", "LPV1_ring.nrrd")
-    seg_new_array = fcp.extract_atrial_rings(seg_new_array, lpv1_ring, la_myo_thresh, labels[2], "seg_s4i_lpv1.nrrd")
+    _, lpv1_ring = fcp.extract_distmap_and_threshold(seg_h_array, labels, "LPV1_BP_DistMap", "LPV1_ring.nrrd")
+    seg_new_array, seg_i_array = fcp.extract_atrial_rings(seg_h_array, seg_new_array, lpv1_ring, la_myo_thresh, labels[2], "seg_s4i_lpv1.nrrd")
 
     labels = [C.LPV2_label, C.ring_thickness, C.LPV2_ring_label]
-    _, lpv2_ring = fcp.extract_distmap_and_threshold(seg_new_array, labels, "LPV2_BP_DistMap", "LPV2_ring.nrrd")
-    seg_new_array = fcp.extract_atrial_rings(seg_new_array, lpv2_ring, la_myo_thresh, labels[2], "seg_s4i_lpv2.nrrd")
+    _, lpv2_ring = fcp.extract_distmap_and_threshold(seg_h_array, labels, "LPV2_BP_DistMap", "LPV2_ring.nrrd")
+    seg_new_array, seg_i_array = fcp.extract_atrial_rings(seg_i_array, seg_new_array, lpv2_ring, la_myo_thresh, labels[2], "seg_s4i_lpv2.nrrd")
 
     labels = [C.RPV1_label, C.ring_thickness, C.RPV1_ring_label]
-    _, rpv1_ring = fcp.extract_distmap_and_threshold(seg_new_array, labels, "RPV1_BP_DistMap", "RPV1_ring.nrrd")
-    seg_new_array = fcp.extract_atrial_rings(seg_new_array, rpv1_ring, la_myo_thresh, labels[2], "seg_s4i_rpv1.nrrd", [C.SVC_label])
+    _, rpv1_ring = fcp.extract_distmap_and_threshold(seg_h_array, labels, "RPV1_BP_DistMap", "RPV1_ring.nrrd")
+    seg_new_array, seg_i_array = fcp.extract_atrial_rings(seg_i_array, seg_new_array, rpv1_ring, la_myo_thresh, labels[2], "seg_s4i_rpv1.nrrd", [C.SVC_label])
 
     labels = [C.RPV2_label, C.ring_thickness, C.RPV2_ring_label]
-    logger.debug('Extracting RPV2', exc_info=mydebug)
-    _, rpv2_ring = fcp.extract_distmap_and_threshold(seg_new_array, labels, "RPV2_BP_DistMap", "RPV2_ring.nrrd")
-    seg_new_array = fcp.extract_atrial_rings(seg_new_array, rpv2_ring, la_myo_thresh, labels[2], "seg_s4i_rpv2.nrrd")
+    _, rpv2_ring = fcp.extract_distmap_and_threshold(seg_h_array, labels, "RPV2_BP_DistMap", "RPV2_ring.nrrd")
+    seg_new_array, seg_i_array = fcp.extract_atrial_rings(seg_i_array, seg_new_array, rpv2_ring, la_myo_thresh, labels[2], "seg_s4i_rpv2.nrrd")
 
     labels = [C.LAA_label, C.ring_thickness, C.LAA_ring_label]
-    logger.debug('Extracting LAA', exc_info=mydebug)
-    _, laa_ring = fcp.extract_distmap_and_threshold(seg_new_array, labels, "LAA_BP_DistMap", "LAA_ring.nrrd")
-    seg_new_array = fcp.extract_atrial_rings(seg_new_array, laa_ring, la_myo_thresh, labels[2], "seg_s4i_laa.nrrd")
+    _, laa_ring = fcp.extract_distmap_and_threshold(seg_h_array, labels, "LAA_BP_DistMap", "LAA_ring.nrrd")
+    seg_new_array, seg_i_array = fcp.extract_atrial_rings(seg_i_array, seg_new_array, laa_ring, la_myo_thresh, labels[2], "seg_s4i_laa.nrrd")
 
     labels = [C.SVC_label, C.ring_thickness, C.SVC_ring_label] 
-    logger.debug('Extracting SVC', exc_info=mydebug)
     replace_only_labels = [C.Ao_wall_label, C.LA_myo_label, C.RPV1_ring_label, C.RPV1_label, C.RPV2_ring_label, C.RPV2_label]
-    _, svc_ring = fcp.extract_distmap_and_threshold(seg_new_array, labels, "SVC_BP_DistMap", "SVC_ring.nrrd")
-    seg_new_array = fcp.extract_atrial_rings(seg_new_array, svc_ring, ra_myo_thresh, labels[2], "seg_s4i_svc.nrrd", replace_only_labels)
+    _, svc_ring = fcp.extract_distmap_and_threshold(seg_h_array, labels, "SVC_BP_DistMap", "SVC_ring.nrrd")
+    seg_new_array, seg_i_array = fcp.extract_atrial_rings(seg_i_array, seg_new_array, svc_ring, ra_myo_thresh, labels[2], "seg_s4i_svc.nrrd", replace_only_labels)
 
     labels = [C.IVC_label, C.ring_thickness, C.IVC_ring_label]
-    logger.debug('Extracting IVC', exc_info=mydebug)
-    _, ivc_ring = fcp.extract_distmap_and_threshold(seg_new_array, labels, "IVC_BP_DistMap", "IVC_ring.nrrd")
-    seg_new_array = fcp.extract_atrial_rings(seg_new_array, ivc_ring, ra_myo_thresh, labels[2], "seg_s4j.nrrd")
+    _, ivc_ring = fcp.extract_distmap_and_threshold(seg_h_array, labels, "IVC_BP_DistMap", "IVC_ring.nrrd")
+    seg_new_array, seg_i_array = fcp.extract_atrial_rings(seg_i_array, seg_new_array, ivc_ring, ra_myo_thresh, labels[2], "seg_s4i.nrrd")
+    fcp.save_if_seg_steps(seg_new_array, 'seg_s4j.nrrd')
     
     logger.info("<Step 8/8> Creating the valve planes")
     seg_new_array, _ = fcp.intersect_and_replace(seg_new_array, la_bp_thresh, C.LPV1_label, C.plane_LPV1_label, C.plane_LPV1_label, "seg_s4j_lpv1.nrrd")
