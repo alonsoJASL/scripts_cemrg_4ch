@@ -14,7 +14,8 @@ parser.add_argument("path_to_points")
 args = parser.parse_args()
 path2points = args.path_to_points
 
-os.system("python3 txt_2_json.py "+path2points+"/points.txt "+path2points+"/labels.txt "+path2points+"/points.json")
+if os.path.isfile(f"{path2points}/points.txt"):
+	os.system("python3 txt_2_json.py "+path2points+"/points.txt "+path2points+"/labels.txt "+path2points+"/points.json")
 
 points_file = open(path2points+'/points.json')
 points_data = json.load(points_file)
