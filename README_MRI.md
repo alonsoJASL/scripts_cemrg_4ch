@@ -56,8 +56,7 @@ Segmentation
 
 24) Run `align_segmentation.py /heart_folder/segmentations`. Not very well tested, check the output of this compared to the dicom/nifti images or with the first segmentation of the pipeline.
 
-23) Check all the labels one last time. It is common that lose voxels appear, so run connected components in all the labels. Export it as `seg_final_smooth_corrected.nrrd`. Convert it to `.inr` using `segconver`
-24) SKIP THIS STEP Run `segsmooth /heart_folder/segmentations/seg_final_smooth_corrected.nrrd /heart_folder/segmentations/seg_final_smooth_corrected.inr`
+23) Check all the labels one last time. It is common that lose voxels appear, so run connected components in all the labels. Export it as `seg_final_smooth_corrected.nrrd`. Convert it to `.inr` using `segconvert`
 
 Meshing
 =========================================================================================================
