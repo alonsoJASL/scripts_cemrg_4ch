@@ -6,7 +6,7 @@
 seg_dir = WRITE_MESH_FOLDER_HERE
 seg_name = seg_final_smooth_corrected.inr 
 mesh_from_segmentation = 1
-boundary_relabelling = 0
+boundary_relabeling = 0
 
 [meshing]
 facet_angle         = 30
@@ -24,7 +24,7 @@ dimKrilovSp     = 500
 verbose         = 1 
 
 [others]
-eval_thickness  = 1
+eval_thickness  = 0
 
 
 [output]
@@ -34,5 +34,5 @@ out_medit       = 0
 out_carp        = 1
 out_carp_binary = 0
 out_vtk         = 1
-out_vtk_binary  = 1
+out_vtk_binary  = 0
 out_potential   = 0
