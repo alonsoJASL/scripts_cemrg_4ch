@@ -8,10 +8,9 @@ args = parser.parse_args()
 heart_folder = args.heart_folder
 
 mesh=heart_folder+"/meshing/myocardium_OUT/myocardium"
-os.system("cp -n "+mesh+".elem "+mesh+"_old_labels.elem")
 
 print('Reading mesh...')
-mesh_elem = pd.read_csv(mesh+'.elem', sep=" ", header=0, names=['colA','colB','colC','colD','colE','colF'])
+mesh_elem = pd.read_csv(mesh+'.elem', sep=r'\s+', header=0, names=['colA','colB','colC','colD','colE','colF'])
 label_col = mesh_elem['colF']
 other_cols = mesh_elem[['colA','colB','colC','colD','colE']]
 print('Done')
