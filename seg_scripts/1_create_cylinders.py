@@ -44,8 +44,8 @@ if not os.path.isfile(f"{path2points}/points.json"):
         points_voxels.append(world_to_voxel(world_coord_json['IVC_3'],origin,spacing))
         
         np.savetxt(f"{path2points}/points.txt",points_voxels,delimiter=' ')
-    else:
-        os.system("python3 txt_2_json.py "+path2points+"/points.txt "+path2points+"/labels.txt "+path2points+"/points.json")
+
+    os.system("python3 txt_2_json.py "+path2points+"/points.txt "+path2points+"/labels.txt "+path2points+"/points.json")
 else:
     print("Using points.json...")
 
