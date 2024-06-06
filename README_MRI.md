@@ -47,16 +47,19 @@ Segmentation
 
 21) Run `correct_pulmonary_valve.py /heart_folder/segmentations`
 
-21) Load `.nrrd` and manually clean valve ring. Check for any lose voxels. Make sure all the chambers are closed by the valve planes.
+21) Check for any lose voxels. Make sure all the chambers are closed by the valve planes.
 22) Export segmentation as `seg_final.nrrd`
 
+At this point, talk with Cristobal for the next steps.
+
+<!-- 
 23) Run `prepare_for_segsmooth.py`
 
-23) Run `segSmoothing.sh /heart_folder/segmentations`. If you get a warning about "ghost labels", go in the script and uncomment the commented block, and comment the current calling block.
+23) Run `segSmoothing.sh /heart_folder/segmentations`. If you get a warning about "ghost labels", run it as `segSmoothing.sh /heart_folder/segmentations 2`. 
 
 24) Run `align_segmentation.py /heart_folder/segmentations`. Not very well tested, check the output of this compared to the dicom/nifti images or with the first segmentation of the pipeline.
 
-23) Check all the labels one last time. It is common that lose voxels appear, so run connected components in all the labels. Export it as `seg_final_smooth_corrected.nrrd`. Convert it to `.inr` using `segconvert`
+23) Check all the labels one last time. It is common that lose voxels appear, so run connected components in all the labels. Export it as `seg_final_smooth_corrected.nrrd`. Convert it to `.inr` using `segconvert` -->
 
 Meshing
 =========================================================================================================
