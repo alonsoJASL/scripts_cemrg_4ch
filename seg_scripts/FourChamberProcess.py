@@ -155,7 +155,7 @@ class FourChamberProcess:
         origin, spacing = self.get_origin_spacing()
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
 
-        seg_array = ima.load_image_array(segname)
+        seg_array = ima.load_image_array(self.DIR(segname))
         # seg_array, _ = nrrd.read(self.DIR(segname))
         seg_array_cylinder = self.cylinder_process(seg_array, points, plane_name, slicer_radius, slicer_height)
 

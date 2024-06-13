@@ -64,6 +64,7 @@ def parse_txt_to_json(path2points, path2file, pts_name, labels_name, out_name=""
 
 def get_json_data(path2file):
 	fname = os.path.basename(path2file)
+	print(f"Reading {fname} file...")
 	if not os.path.exists(path2file):
 		print(f"ERROR: {fname} file does not exist. Please run txt_2_json.py first.")
 		raise FileNotFoundError 
