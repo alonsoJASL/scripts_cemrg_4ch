@@ -194,10 +194,10 @@ class FourChamberProcess:
     
         origin, spacings = self.get_origin_spacing()
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
-
-        input_array = ima.load_image_array(self.DIR(input_name))    
+        
+        input_image = ima.load_sitk_image(self.DIR(input_name))  
         self.logger.info(f' ## Removing any protruding {label} ## \n')
-        seg_array = ima.connected_component_keep(input_array, seed, label)
+        seg_array = ima.connected_component_keep(input_image, seed, label)
         ima.save_itk(seg_array, origin, spacings, self.DIR(output_name), self.swap_axes)
     
     def add_vessel_masks(self, seg_name, output_name, aorta_pair:tuple, PArt_pair:tuple, SVC_name, IVC_name):
