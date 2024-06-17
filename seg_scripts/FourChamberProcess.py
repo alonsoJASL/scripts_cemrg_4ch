@@ -194,8 +194,9 @@ class FourChamberProcess:
     
         origin, spacings = self.get_origin_spacing()
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
-        
-        input_image = ima.load_sitk_image(self.DIR(input_name))  
+
+        input_array = ima.load_image_array(self.DIR(input_name))
+        input_image = ima.array2itk(input_array, origin, spacings)
         self.logger.info(f' ## Removing any protruding {label} ## \n')
         seg_array = ima.connected_component_keep(input_image, seed, label)
         ima.save_itk(seg_array, origin, spacings, self.DIR(output_name), self.swap_axes)

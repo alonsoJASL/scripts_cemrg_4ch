@@ -293,6 +293,10 @@ class ImageAnalysis:
         """
 
         # only overrides pixels that already belong to a specific mask
+        if imga_array.shape != imgb_array.shape:
+            imga_array = np.swapaxes(imga_array, 0, 2)
+            # raise ValueError("Input arrays must have the same shape")
+            
         imga_array_new = copy.deepcopy(imga_array)
         mask_indices = np.transpose(np.where(imgb_array != ZERO_LABEL))
 
