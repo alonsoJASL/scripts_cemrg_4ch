@@ -341,7 +341,9 @@ def clean_segmentation(path2points:str, path2ptsjson:str, path2originjson:str, l
     logger.info("Cleaning segmentation")
     fcp, C, _ = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file)
 
-    mycp(fcp.DIR('seg_s4k.nrrd'), fcp.DIR('seg_s5.nrrd'))
+    # mycp(fcp.DIR('seg_s4k.nrrd'), fcp.DIR('seg_s5.nrrd'))
+    input_image = 'seg_s4k.nrrd'
+    output_image = 'seg_s5.nrrd'
 
     list_of_corrections1 = [(C.RPV1_ring_label,C.RPV2_ring_label,C.RPV2_label,C.ring_thickness),
                             (C.LPV1_ring_label,C.LPV2_ring_label,C.LPV2_label,C.ring_thickness),
@@ -349,8 +351,13 @@ def clean_segmentation(path2points:str, path2ptsjson:str, path2originjson:str, l
                             (C.RV_myo_label,C.Ao_wall_label,C.Ao_BP_label,C.Ao_WT),
                             (C.SVC_ring_label,C.LA_myo_label,C.LA_BP_label,C.LA_WT)]
     
+    seg_new_array = fcp.load_image_array(input_image)
+    
     for pusher_wall_lab,pushed_wall_lab,pushed_BP_lab, pushed_WT in list_of_corrections1 : 
-        fcp.push_in_and_save('seg_s5.nrrd', pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT)    
+        seg_new_array = fcp.pushing_in(seg_new_array, pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT)
+        print(f'Shape after pushing in {pusher_wall_lab} to {pushed_wall_lab}: {seg_new_array.shape}')
+    
+    fcp.save_image_array(seg_new_array, fcp.DIR(output_image))
     
 
 

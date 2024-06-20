@@ -62,6 +62,12 @@ class FourChamberProcess:
         spacing = self._origin_spacing["spacing"]
         return origin, spacing
     
+    def get_dimensions(self) : 
+        if "dimensions" in self._origin_spacing:
+            return self._origin_spacing["dimensions"]
+        else:
+            return None
+    
     def check_nrrd(self, filename) -> bool: 
         """
         Checks if a file.nrrd exists in the path2points directory, and if not, 
@@ -463,7 +469,7 @@ class FourChamberProcess:
         
         return ima.push_inside(im, pusher_wall_lab, pushed_wall_lab, pushed_bp_lab, pushed_wt)
 
-    def push_in_and_save(self, input_name, pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT, outname='')  :
+    def push_in_and_save(self, input_name, pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT, outname='') -> np.ndarray :
         origin, spacings = self.get_origin_spacing()
         outname = input_name if outname=='' else outname
 
@@ -732,7 +738,7 @@ class FourChamberProcess:
         self.save_if_seg_steps(seg_new_array, seg_out)
 
         return seg_new_array
-
+        
     
     def load_image_array(self, filename:str) -> np.array:
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
