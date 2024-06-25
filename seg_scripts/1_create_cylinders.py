@@ -70,7 +70,7 @@ def cylinder(seg_nrrd, points, plane_name, slicer_radius, slicer_height, origin,
     p1 = cog - n * slicer_height / 2.
     p2 = cog + n * slicer_height / 2.
 
-    n_z, n_x, n_y = seg_array.shape
+    n_x, n_y, n_z = seg_array.shape
 
     cube_size = max(slicer_height, slicer_radius) + 10 if slicer_height > slicer_radius else max(slicer_height, slicer_radius) + 30
 
