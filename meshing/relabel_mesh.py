@@ -5,10 +5,12 @@ import argparse
 
 parser = argparse.ArgumentParser(description='To run: python3 relabel_mesh.py [heart_folder]')
 parser.add_argument("heart_folder")
+parser.add_argument("--mesh", help="Path to the mesh file", default="heart_mesh")
 args = parser.parse_args()
 heart_folder = args.heart_folder
 
-mesh=heart_folder+"/meshing/myocardium_OUT/myocardium"
+# mesh=heart_folder+"/meshing/myocardium_OUT/myocardium"
+mesh=os.path.join(heart_folder, args.mesh)
 os.system("cp -n "+mesh+".elem "+mesh+"_old_labels.elem")
 
 print('Reading mesh...')
