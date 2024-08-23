@@ -12,7 +12,7 @@ import seg_scripts.Labels as L
 import seg_scripts.FourChamberProcess as FOURCH
 from seg_scripts.ImageAnalysis import ImageAnalysis
 from seg_scripts.ImageAnalysis import MaskOperationMode as MM
-import cut_labels as cuts
+import seg_scripts.cut_labels as cuts
 
 logger = configure_logging(log_name=__name__)
 ZERO_LABEL = 0
