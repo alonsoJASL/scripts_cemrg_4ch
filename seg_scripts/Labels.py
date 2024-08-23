@@ -1,8 +1,9 @@
 import json
+import numpy as np
 
 class Labels:
-    def __init__(self, filename=None, scale_factor=1/0.39844):
-        self.scale_factor = scale_factor
+    def __init__(self, filename=None, thickness_file=None, spacings=0.39844) :
+        self.scale_factor = np.ceil(1/spacings[0])
         
         self.valve_WT_multiplier = 4
         self.valve_WT_svc_ivc_multiplier = 4
@@ -13,6 +14,8 @@ class Labels:
         self.RA_WT_multiplier = 2.00
         self.Ao_WT_multiplier = 2.00
         self.PArt_WT_multiplier = 2.00
+        if thickness_file is not None:
+            self.load_thickness(thickness_file)
 
         self.set_wt_params()
 
@@ -121,20 +124,21 @@ class Labels:
         self.SVC_ring_label = data.get('SVC_ring_label', self.SVC_ring_label)
         self.IVC_ring_label = data.get('IVC_ring_label', self.IVC_ring_label)
 
-    def load_wt_params(self, filename_wt): 
-        with open(filename_wt, 'r') as f:
+    def load_thickness(self, thickness_file): 
+        with open(thickness_file, 'r') as f:
             data = json.load(f)
+        
         self.scale_factor = data.get('scale_factor', self.scale_factor)
 
-        self.valve_WT_multiplier = data.get('valve_WT_multiplier', self.valve_WT_multiplier)
-        self.valve_WT_svc_ivc_multiplier = data.get('valve_WT_svc_ivc_multiplier', self.valve_WT_svc_ivc_multiplier)
-        self.ring_thickness_multiplier = data.get('ring_thickness_multiplier', self.ring_thickness_multiplier)
-        self.LV_neck_WT_multiplier = data.get('LV_neck_WT_multiplier', self.LV_neck_WT_multiplier)
-        self.RV_WT_multiplier = data.get('RV_WT_multiplier', self.RV_WT_multiplier)
-        self.LA_WT_multiplier = data.get('LA_WT_multiplier', self.LA_WT_multiplier)
-        self.RA_WT_multiplier = data.get('RA_WT_multiplier', self.RA_WT_multiplier)
-        self.Ao_WT_multiplier = data.get('Ao_WT_multiplier', self.Ao_WT_multiplier)
-        self.PArt_WT_multiplier = data.get('PArt_WT_multiplier', self.PArt_WT_multiplier)
+        self.valve_WT_multiplier = data.get('valves', self.valve_WT_multiplier)
+        self.valve_WT_svc_ivc_multiplier = data.get('valves', self.valve_WT_svc_ivc_multiplier)
+        self.ring_thickness_multiplier = data.get('rings', self.ring_thickness_multiplier)
+        self.LV_neck_WT_multiplier = data.get('LV', self.LV_neck_WT_multiplier)
+        self.RV_WT_multiplier = data.get('RV', self.RV_WT_multiplier)
+        self.LA_WT_multiplier = data.get('LA', self.LA_WT_multiplier)
+        self.RA_WT_multiplier = data.get('RA', self.RA_WT_multiplier)
+        self.Ao_WT_multiplier = data.get('aorta', self.Ao_WT_multiplier)
+        self.PArt_WT_multiplier = data.get('RV', self.PArt_WT_multiplier)
 
         self.set_wt_params() 
 
@@ -188,6 +192,20 @@ class Labels:
             'LAA_ring_label': self.LAA_ring_label,
             'SVC_ring_label': self.SVC_ring_label,
             'IVC_ring_label': self.IVC_ring_label,
+        }
+        return data
+    
+    def get_dictionary_thickness(self) :
+        data = {
+            'scale_factor': self.scale_factor,
+            'valves': self.valve_WT_multiplier,
+            'rings': self.ring_thickness_multiplier,
+            'LV': self.LV_neck_WT_multiplier,
+            'RV': self.RV_WT_multiplier,
+            'LA': self.LA_WT_multiplier,
+            'RA': self.RA_WT_multiplier,
+            'aorta': self.Ao_WT_multiplier,
+            'RV': self.PArt_WT_multiplier,
         }
         return data
     
@@ -253,5 +271,10 @@ class Labels:
 
     def save(self, filename):
         data = self.get_dictionary()
+        with open(filename, 'w') as f:
+            json.dump(data, f)
+
+    def save_thickness(self, filename):
+        data = self.get_dictionary_thickness()
         with open(filename, 'w') as f:
             json.dump(data, f)

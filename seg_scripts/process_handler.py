@@ -2,6 +2,7 @@ import os
 import sys
 import glob
 import numpy as np
+import json
 
 from seg_scripts.common import configure_logging, add_file_handler
 from seg_scripts.common import parse_txt_to_json, get_json_data, make_tmp, mycp
@@ -11,6 +12,7 @@ import seg_scripts.Labels as L
 import seg_scripts.FourChamberProcess as FOURCH
 from seg_scripts.ImageAnalysis import ImageAnalysis
 from seg_scripts.ImageAnalysis import MaskOperationMode as MM
+import cut_labels as cuts
 
 logger = configure_logging(log_name=__name__)
 ZERO_LABEL = 0
@@ -74,7 +76,93 @@ def get_origin_and_spacing(path2points:str, segmentation_name = "seg_corrected.n
         with open(output_path_labels, 'w') as f:
             f.write(f'origin\n')
             f.write(f'spacing\n')
+
+VEIN_CHOICES = ['LSPV', 'LIPV', 'RSPV', 'RIPV', 'LAA']
+def create_extra_veins(path2points:str, path2veinpoints, path2originjson:str, seg_name='seg_corrected.nrrd', which_vein='LIPV', sl_height=15, sl_radius=5, labels_file=None) :
+    fcp, _, _ = parse_input_parameters(path2points, path2originjson, path2ptsjson=None, labels_file=labels_file)
+    with open(path2veinpoints, 'r') as f:
+        points_data = json.load(f)
+    
+    if which_vein not in VEIN_CHOICES :
+        logger.error(f"Vein choice {which_vein} not in {VEIN_CHOICES}")
+        raise ValueError(f"Vein choice {which_vein} not in {VEIN_CHOICES}")
+        return
+    
+    pts1 = points_data[f'{which_vein}_1']
+    pts2 = points_data[f'{which_vein}_2']
+    pts3 = points_data[f'{which_vein}_3']
+    points = np.row_stack((pts1,pts2,pts3))
+
+    plane_name = f'{which_vein}.nrrd'
+    fcp.cylinder(seg_name, points, fcp.DIR(plane_name), sl_radius, sl_height) 
+
+def add_extra_veins_to_seg(path2points:str, path2originjson:str, seg_name='seg_corrected.nrrd', which_vein='LIPV', labels_file=None, is_mri=True) :
+    logger.info("Adding extra veins to the segmentation")
+    fcp, C, _ = parse_input_parameters(path2points, path2originjson, path2ptsjson='', labels_file=labels_file)
+    fcp.is_mri = is_mri
+
+    ima = ImageAnalysis(path2points)
+
+    vein_dic = {
+        'LSPV': C.LPV1_label,
+        'LIPV': C.LPV2_label,
+        'RSPV': C.RPV1_label,
+        'RIPV': C.RPV2_label,
+        'LAA': C.LAA_label
+    }
+
+    if which_vein not in VEIN_CHOICES :
+        logger.error(f"Vein choice {which_vein} not in {VEIN_CHOICES}")
+        raise ValueError(f"Vein choice {which_vein} not in {VEIN_CHOICES}")
+        return
+    
+    seg_array = fcp.load_image_array(seg_name)
+    vein_array = fcp.load_image_array(f'{which_vein}.nrrd')
+
+    logger.info(f"Adding {which_vein} to the segmentation")
+    seg_corrected_array = ima.add_masks(seg_array, vein_array, ZERO_LABEL, vein_dic[which_vein])
+
+    # save
+    if fcp.is_mri : 
+        fcp.ref_image(seg_array)
+    
+    fcp.save_image_array(seg_corrected_array, fcp.DIR(seg_name))
+    
+CYLINDER_CHOICES = ['SVC', 'IVC', 'Ao', 'PArt']
+SLICER_SIZES_MM = { 'SVC' : [25, 70], 'IVC' : [25, 70], 'Ao' : [70, 10], 'PArt' : [100, 10] }
+SLICER_SIZES =    { 'SVC' : [10, 30], 'IVC' : [10, 30], 'Ao' : [30, 2], 'PArt' : [30, 2] }
+
+def create_cylinders_general(path2points:str, path2ptsjson:str, path2originjson:str, which_cyl:list, segmentation_name="seg_corrected.nrrd", is_mm=False, world_coords=False) :
+    fcp, _, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=None)
+
+    if world_coords :
+        points_data = fcp.convert_points_to_physical(points_data)
         
+    if segmentation_name.endswith('.nii'):
+        logger.info(f"Converting {segmentation_name} to .nrrd")
+        segmentation_name = segmentation_name.replace('.nii','.nrrd')
+
+    if not fcp.check_nrrd(segmentation_name) :
+        msg = f"Could not find {segmentation_name} file and conversion to .nii failed."
+        logger.error(msg)
+        raise FileNotFoundError(msg)
+    
+    slicer_dict = SLICER_SIZES_MM if is_mm else SLICER_SIZES
+    for name in which_cyl :
+        if name not in CYLINDER_CHOICES :
+            logger.error(f"Cylinder choice {name} not in {CYLINDER_CHOICES}, continuing with the next one...")
+            continue
+
+        radius, height = slicer_dict[name]
+        points = np.row_stack((points_data[f'{name}_1'], points_data[f'{name}_2'], points_data[f'{name}_3']))
+        logger.info(f"Generating cylinder: {name}\n Radius: {radius}, Height: {height}")
+
+        if is_mm :
+            fcp.cylinder_in_mm(segmentation_name, points, fcp.DIR(name), radius, height)
+        else : 
+            fcp.cylinder(segmentation_name, points, fcp.DIR(name), radius, height)
+    
+
 def create_cylinders(path2points:str, path2ptsjson="", path2originjson="", segmentation_name="seg_corrected.nrrd") : 
     fcp, _, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=None)
 
@@ -99,6 +187,7 @@ def create_cylinders(path2points:str, path2ptsjson="", path2originjson="", segme
         # points = np.row_stack([points_data[pt] for pt in idx])
         points = np.row_stack((points_data[idx[0]], points_data[idx[1]], points_data[idx[2]]))
         fcp.cylinder(segmentation_name, points, fcp.DIR(out_name), radius, height)
+
 
 def create_svc_ivc(path2points:str, path2originjson:str, segmentation_name="seg_corrected.nrrd", output_segname="seg_s2a.nrrd", labels_file=None) :
     fcp, _, _ = parse_input_parameters(path2points, path2originjson, path2ptsjson=None, labels_file=labels_file)
@@ -156,6 +245,31 @@ def crop_svc_ivc(path2points:str, path2ptsjson:str, path2originjson:str, labels_
     fcp.flatten_vessel_base('seg_s2d.nrrd', 'seg_s2e.nrrd', SVC_seed, C.SVC_label)
     fcp.flatten_vessel_base('seg_s2e.nrrd', 'seg_s2f.nrrd', IVC_seed, C.IVC_label)
 
+def cut_vessels(path2points:str, vcjointjson:str, seg_name='seg_s2a.nrrd', labels_file=None, cut_percentage=0.75) :
+    logger.info("Cutting vessels")
+    with open(os.path.join(path2points, vcjointjson)) as f:
+        vc_cutoff = json.load(f)
+
+    C = L.Labels(filename=labels_file)
+    basename = seg_name.split(".")[0]
+
+    input_seg = os.path.join(path2points, seg_name)
+    output_seg = os.path.join(path2points, f"{basename}_aorta.nrrd")
+    cuts.cut_vessels(input_seg, C.Ao_BP_label, C.LV_BP_label, cut_percentage, output_seg)
+
+    input_seg = output_seg
+    output_seg = os.path.join(path2points, f"{basename}_PA.nrrd")
+    cuts.cut_vessels(input_seg, C.PArt_BP_label, C.RV_BP_label, cut_percentage, output_seg)
+
+    input_seg = output_seg
+    output_seg = os.path.join(path2points, f"{basename}_SVC.nrrd")
+    cuts.reassign_vessels(input_seg, C.SVC_label, C.RA_BP_label, vc_cutoff["SVC"], output_seg)
+
+    input_seg = output_seg
+    output_seg = os.path.join(path2points, f"{basename}_IVC.nrrd")
+    cuts.reassign_vessels(input_seg, C.IVC_label, C.RA_BP_label, vc_cutoff["IVC"], output_seg)
+
+    
 def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, mydebug=False) :
     logger.info("Creating myocardium")
     fcp, C, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file, set_debug=mydebug)
@@ -234,6 +348,97 @@ def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, la
     logger.info("<Step 10/10> RV myo: Pushing the right ventricle with the aorta") 
     seg_new_array = fcp.pushing_in(seg_new_array, C.Ao_wall_label, C.RV_myo_label, C.RV_BP_label, C.RV_WT)
     fcp.save_if_seg_steps(seg_new_array, 'seg_s3p.nrrd')
+
+def myo_helper_open_artery(fourch_object: FOURCH.FourChamberProcess, seg_array:np.ndarray, cut_ratio:float, basename:str, suffix:str) : 
+    C = fourch_object.CONSTANTS
+
+    seg_name = f'{basename}.nrrd'
+    seg_path = fourch_object.DIR(seg_name)
+
+    if not os.path.exists(seg_path) : 
+        fourch_object.save_image_array(seg_array, seg_name)
+
+    cuts.open_artery(seg_path, C.Ao_wall_label, C.Ao_BP_label, C.LV_BP_label, cut_ratio, fourch_object.DIR(f'{basename}_{suffix}.nrrd'))
+    seg_new_array = fourch_object.load_image_array(f'{basename}_{suffix}.nrrd')
+    return seg_new_array
+
+def create_myocardium_refact(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, is_mri=False, mydebug=False) :
+    logger.info("Creating myocardium")
+    fcp, _, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file, set_debug=mydebug)
+    fcp.save_seg_steps = True
+    fcp.swap_axes = True
+    fcp.is_mri = is_mri
+    fcp.ref_image_mri = fcp.load_image_array('seg_s2a.nrrd') if fcp.is_mri else None
+
+    new_implemetation = True
+
+    input_seg_array = fcp.load_image_array('seg_s2f.nrrd')
+    logger.info("<Step 1/10> Creating myocardium for the LV outflow tract")
+    seg_new_array = fcp.myo_lv_outflow_tract(input_seg_array, 'seg_s3a.nrrd')
+
+    logger.info("<Step 2/10> Creating the aortic wall")
+    seg_new_array = fcp.myo_aortic_wall(seg_new_array, 'seg_s3b.nrrd')
+    
+    if new_implemetation :
+        seg_new_array = myo_helper_open_artery(fcp, seg_new_array, cut_ratio=0.95, basename='seg_s3b', suffix='aorta')
+
+    logger.info("<Step 3/10> Creating the pulmonary artery wall")
+    seg_new_array = fcp.myo_pulmonary_artery(seg_new_array, 'seg_s3c.nrrd')
+
+    if new_implemetation :
+        seg_new_array = myo_helper_open_artery(fcp, seg_new_array, cut_ratio=0.85, basename='seg_s3c', suffix='PA')
+
+    if not new_implemetation :
+        logger.info("<Step 4/10> Cropping veins")
+            
+        aorta_slicer_array = fcp.load_image_array('aorta_slicer.nrrd')
+        PArt_slicer_array = fcp.load_image_array('PArt_slicer.nrrd')
+        seg_new_array = fcp.myo_crop_veins(seg_new_array, aorta_slicer_array, PArt_slicer_array, 'seg_s3e.nrrd')
+        seg_new_array = fcp.myo_intermediate_cc_process(seg_new_array, points_data, 'seg_s3f.nrrd')
+
+    logger.info("<Step 5/10> Creating the right ventricular myocardium")
+    seg_new_array = fcp.myo_right_ventricle(seg_new_array, 'seg_s3g.nrrd')
+
+    logger.info("<Step 6/10> Creating the left atrial myocardium")
+    seg_new_array = fcp.myo_left_atrium(seg_new_array, 'seg_s3h.nrrd')
+
+    logger.info("<Step 7/10> Creating the right atrial myocardium")
+    seg_new_array = fcp.myo_right_atrium(seg_new_array, 'seg_s3i.nrrd')
+    seg_new_array = fcp.myo_push_in_ra(seg_new_array)
+
+    logger.info("<Step 8/10> LA myo: Pushing the left atrium with the aorta")
+    seg_new_array = fcp.myo_push_in_la(seg_new_array)
+
+    logger.info("<Step 9/10> PArt wall: Pushing the pulmonary artery with the aorta")
+    seg_new_array = fcp.myo_push_in_part(seg_new_array)
+
+    logger.info("<Step 10/10> RV myo: Pushing the right ventricle with the aorta")
+    seg_new_array = fcp.myo_push_in_rv(seg_new_array)
+
+def create_valve_planes_refact(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, is_mri=False, mydebug=False) :
+    logger.info("Creating valve planes")
+    fcp, _, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file, set_debug=mydebug)
+    fcp.save_seg_steps = True
+    fcp.swap_axes = True
+    fcp.is_mri = is_mri
+    fcp.ref_image_mri = fcp.load_image_array('seg_s2a.nrrd') if fcp.is_mri else None
+
+    new_implemetation = True
+
+    if new_implemetation :
+        input_seg_array = fcp.load_image_array('seg_s3p.nrrd')
+    else:
+        logger.info("<Step 1/8> Cropping major vessels")
+        input_seg_array = fcp.valves_cropping_major_vessels('seg_s3p.nrrd', points_data, 'seg_s3s.nrrd')
+    
+    logger.info("<Step 2/8> Creating the mitral valve")
+    output_tuple = fcp.valves_mitral_valve(input_seg_array)
+    # select outputs
+
+    logger.info("<Step 3/8> Creating the tricuspid valve")
+    output_tuple = fcp.valves_tricuspid_valve(seg_new_array)
+    # select outputs
+    
 
 def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, mydebug=False) :
     logger.info("Creating valve planes")

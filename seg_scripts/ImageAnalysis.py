@@ -18,6 +18,8 @@ class MaskOperationMode(Enum):
   REPLACE = 3
   ADD = 4
   NO_OVERRIDE = 5
+
+ORIENT_CHOICES = ['LPS', 'RAI', 'LAI', 'RPS']
 class ImageAnalysis: 
     def __init__(self, path2points="", debug=False):
         self._path2points = path2points
@@ -56,6 +58,17 @@ class ImageAnalysis:
         """ 
         mask_ind = np.array(img_array.nonzero())
         return mask_ind
+    
+    def find_maskloc(self, img_array: np.ndarray, spacing: np.ndarray, img_offset: np.ndarray) -> np.ndarray:
+        origin_ind = img_offset / spacing
+        origin_ind.round() 
+        mask_ind=np.array(img_array.nonzero())
+        mask_ind[0]+=int(origin_ind.round()[0]); 
+        mask_ind[1]+=int(origin_ind.round()[1]); 
+        mask_ind[2]+=int(origin_ind.round()[2]);
+
+        return mask_ind
+
 
     def pad_image(self, img_array: np.ndarray, pad_x=10, pad_y=10, pad_z=10, pad_value=0) -> np.ndarray:
         """
@@ -387,6 +400,79 @@ class ImageAnalysis:
     def connected_component_keep(self, imga: sitk.Image, seed: list, layer: int) -> np.ndarray:
         return self.connected_component(imga, seed, layer, True)
     
+    def connected_component_keep_largest(self, imga: sitk.Image, layer: int) -> sitk.Image:
+        component_img = sitk.ConnectedComponent(imga)
+        sorted_cc_img = sitk.RelabelComponent(component_img, sortByObjectSize=True)
+
+        cc_filter = sitk.ConnectedThresholdImageFilter()
+        cc_filter.SetLower(1)
+        cc_filter.SetUpper(1)
+        cc_filter.SetReplaceValue(layer)
+
+        largest_cc_img = cc_filter.Execute(sorted_cc_img)
+        return largest_cc_img
+    
+
+    def mask_plane_creator(self, img_path:str , points: list, plane_name: str, slicer_radius: float, slicer_height: float, pro_path: str, o_origin=None, o_spac=None) -> None : 
+        """
+        Create a masked plane using the specified points and parameters.
+
+        Parameters:
+            img_path (str): The path to the image file.
+            points (list): List of coordinates for the points.
+            plane_name (str): Name of the plane.
+            slicer_radius (float): Radius for the slicer.
+            slicer_height (float): Height for the slicer.
+            pro_path (str): Path for saving the plane.
+            
+            o_origin (optional): Origin information, overrides the origin in the image header
+            o_spac (optional): Spacing information, overrides the spacing in the image header
+        """
+        import post_slicer as pslicer
+        _, header = nrrd.read(img_path)
+        img_min = header['axis mins'] if o_origin is None else o_origin
+        img_spa = header['spacings'] if o_spac is None else o_spac
+        img_siz = header['sizes']   
+        # img_dim = str(len(img_siz))
+
+        # coordinates 
+        ppsa = np.array([(points[0] - 0.5) * img_spa[0], (points[1] - 0.5) * img_spa[1], (points[2] - 0.5) * img_spa[2]])
+        ppsb = np.array([(points[3] - 0.5) * img_spa[0], (points[4] - 0.5) * img_spa[1], (points[5] - 0.5) * img_spa[2]])
+        ppsc = np.array([(points[6] - 0.5) * img_spa[0], (points[7] - 0.5) * img_spa[1], (points[8] - 0.5) * img_spa[2]])
+
+        img_siz_x = int(img_siz[0])
+        img_siz_y = int(img_siz[1])
+        img_siz_z = int(img_siz[2])
+
+        img_min_x = float(img_min[0])
+        img_min_y = float(img_min[1])
+        img_min_z = float(img_min[2])
+
+        size_tuple = (img_siz_x, img_siz_y, img_siz_z)
+        spacing_tuple = (img_spa[0], img_spa[1], img_spa[2])
+        min_tuple = (img_min_x, img_min_y, img_min_z)
+
+        wh_im, he = pslicer.slice_segmentation(ppsa, ppsb, ppsc, size_tuple, spacing_tuple, min_tuple, slicer_height, slicer_radius)
+        nrrd.write(f'{pro_path}/{plane_name}.nrrd', wh_im, he)     
+
+    def mask_plane_creator_alternative(self, img_path:str, origin, spacing, points, plane_name, slicer_radius, slicer_height, segPath) -> None:
+        """
+        Create a masked plane using the specified points and parameters.
+
+        Parameters:
+            img_path (str): The path to the image file.
+
+            origin: Origin information, overrides the origin in the image header.
+            spacing: Spacing information, overrides the spacing in the image header.
+
+            points (list): List of coordinates for the points.
+            plane_name (str): Name of the plane.
+            slicer_radius (float): Radius for the slicer.
+            slicer_height (float): Height for the slicer.
+            segPath (str): Path for saving the plane.
+        """
+        self.mask_plane_creator(img_path, points, plane_name, slicer_radius, slicer_height, segPath, o_origin=origin, o_spac=spacing)
+    
     # helper functions 
     def array2itk(self, img_array: np.ndarray, origin, spacing) -> sitk.Image:
         """
@@ -420,7 +506,7 @@ class ImageAnalysis:
         img_array = sitk.GetArrayFromImage(img)
         return img_array
     
-    def save_itk(self, img_array: np.ndarray, origin, spacing, filename, swap_axes=False) -> None:
+    def save_itk(self, img_array: np.ndarray, origin, spacing, filename, swap_axes=False, ref_image=None) -> None:
         """
         Save an image array as a SimpleITK image.
 
@@ -435,7 +521,65 @@ class ImageAnalysis:
             img_array = np.swapaxes(img_array, 0, 2)
         
         img = self.array2itk(img_array, origin, spacing)
-        sitk.WriteImage(img, filename)
+
+        if ref_image is not None:
+            sitk.WriteImage(img, filename)
+        else: # save the image keeping header 
+            self.save_itk_keeping_header(img_obj=img, reference_img_obj=ref_image, filename=filename) 
+    
+    def save_itk_like_image(self, img:sitk.Image, reference_img:sitk.Image, filename, img_orient='LPS') -> None:
+        """
+        Save an image array as a SimpleITK image, preserving the header info of reference_img.
+
+        Parameters:
+            img (sitk.Image): The input image array.
+            reference_img: The origin of the image.
+            filename: The filename to save the image as.
+
+        """
+        if img_orient not in ORIENT_CHOICES:
+            raise ValueError(f"Invalid orientation choice: {img_orient}")
+
+        img.CopyInformation(reference_img)
+        img.SetDirection(reference_img.GetDirection())
+        img.SetOrigin(reference_img.GetOrigin())
+
+        for key in reference_img.GetMetaDataKeys():
+            img.SetMetaData(key, reference_img.GetMetaData(key))
+        
+        new_img = sitk.DICOMOrient(img, img_orient)
+        sitk.WriteImage(new_img, filename, useCompression=True)
+    
+    def parse_obj(self, obj):
+        if isinstance(obj, str):
+            img = self.load_sitk_image(obj)
+        elif isinstance(obj, np.ndarray):
+            img = sitk.GetArrayFromImage(obj)
+        elif isinstance(obj, sitk.Image):
+            img = obj
+        else:
+            raise ValueError(f"Invalid image object: {obj}")
+        return img
+    
+    def save_itk_keeping_header(self, img_obj, reference_img_obj, filename, img_orient='LPS') -> None:
+        """
+        Save an image array as a SimpleITK image.
+        """
+
+        img = self.parse_obj(img_obj)
+        reference_img = self.parse_obj(reference_img_obj)
+
+        self.save_itk_like_image(img, reference_img, filename, img_orient)
+    
+    def transfer_header_keeping_spacings(self, img_obj, reference_img_obj, filename) -> None:
+        img = self.parse_obj(img_obj)
+        reference_img = self.parse_obj(reference_img_obj)
+
+        img.SetSpacing(reference_img.GetSpacing())
+        img.SetOrigin(reference_img.GetOrigin())
+
+        sitk.WriteImage(img, filename, useCompression=True)
+
 
     def load_image_array(self, filename) -> np.ndarray:
         """

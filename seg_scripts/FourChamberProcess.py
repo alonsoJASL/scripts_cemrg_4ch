@@ -13,11 +13,14 @@ import seg_scripts.Labels as Labels
 
 DISTANCE_MAP_KEY = 'distance_map'
 THRESHOLD_KEY = 'threshold'
+ZERO_LABEL = 0
+
 class FourChamberProcess:
     def __init__(self, path2points: str, origin_spacing: dict, CONSTANTS:Labels, debug=False):
         self._path2points = path2points
         self._origin_spacing = origin_spacing
         self._is_mri = False
+        self._ref_image_mri = None
         self.CONSTANTS = CONSTANTS
         self._debug = debug
         self._save_seg_steps = True
@@ -47,6 +50,15 @@ class FourChamberProcess:
     @property 
     def is_mri(self):
         return self._is_mri
+    
+    @property
+    def ref_image_mri(self):
+        return self._ref_image_mri
+    
+    @ref_image_mri.setter
+    def ref_image_mri(self, value):
+        self._ref_image_mri = value
+        self._is_mri = True
     
     def DIR(self, x):
         return os.path.join(self.path2points, x)
@@ -84,6 +96,22 @@ class FourChamberProcess:
                 img.convert_to_nrrd(self.path2points, filename_nii)
 
         return os.path.exists(self.DIR(filename))
+    
+    def world_to_voxel(self, x,origin,spacing):
+        sub=(np.array(x)-np.array(origin))
+        res = [int(i) for i in np.divide(sub,spacing)]
+        return res
+    
+    def this_world_to_voxel(self, x):
+        origin, spacing = self.get_origin_spacing()
+        return self.world_to_voxel(x, origin, spacing)
+    
+    def convert_world_to_voxel(self, world_coord_json) :
+        origin, spacing = self.get_origin_spacing()
+        points_voxels=[]
+        for key in world_coord_json:
+            points_voxels.append(self.world_to_voxel(world_coord_json[key],origin,spacing))
+        return points_voxels
     
     def cylinder_process(self, seg_array: np.array, points, plane_name, slicer_radius, slicer_height) -> np.array:
         origin, spacing = self.get_origin_spacing()
@@ -168,6 +196,15 @@ class FourChamberProcess:
         self.logger.info("Saving...")
         # seg_array_cylinder = np.swapaxes(seg_array_cylinder, 0, 2)
         ima.save_itk(seg_array_cylinder, origin, spacing, plane_name, self.swap_axes)
+
+    def cylinder_in_mm(self, segname, points, plane_name, slicer_radius_mm, slicer_height_mm):
+        self.logger.info(f"Generating cylinder: {plane_name}")
+        _, spacing = self.get_origin_spacing()
+
+        slicer_radius = int(np.ceil(np.min(spacing)*slicer_radius_mm))
+        slicer_height = int(np.ceil(np.min(spacing)*slicer_height_mm)) 
+
+        self.cylinder(segname, points, plane_name, slicer_radius, slicer_height)
     
     def create_and_save_svc_ivc(self, seg_name: str, svc_name: str, ivc_name: str, output_name: str):
 
@@ -192,7 +229,10 @@ class FourChamberProcess:
         # Format and save the segmentation
         # ----------------------------------------------------------------------------------------------
         self.logger.info(' ## Formatting and saving the segmentation ##')
-        ima.save_itk(seg_s2a_array, origin, spacings, output_file, self.swap_axes)
+        if self.is_mri:
+            self.ref_image_mri = ima.load_sitk_image(self.DIR(seg_name))
+            
+        ima.save_itk(seg_s2a_array, origin, spacings, output_file, self.swap_axes, ref_image=self.ref_image_mri)
 
         self.logger.info(" ## Saved segmentation with SVC/IVC added ##")
     
@@ -537,7 +577,7 @@ class FourChamberProcess:
         return seg_new_array
     
 
-    def extract_distmap_and_threshold(self, seg_array, labels:list, dm_name, th_name, dmap_array=None): 
+    def extract_distmap_and_threshold(self, seg_array: np.ndarray, labels:list, dm_name, th_name, dmap_array=None): 
         """
         Extracts a distance map and threshold array from a segmentation array.
 
@@ -748,13 +788,279 @@ class FourChamberProcess:
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
         origin, spacings = self.get_origin_spacing()
 
-        ima.save_itk(array, origin, spacings, self.DIR(filename), self.swap_axes)
+        ima.save_itk(array, origin, spacings, self.DIR(filename), self.swap_axes, ref_image=self.ref_image_mri)
 
-    def save_if_seg_steps(self, array:np.array, filename:str, saving_itk=True):
+    def save_if_seg_steps(self, array:np.array, filename:str):
         if self.save_seg_steps:
-            if saving_itk:
-                origin, spacings = self.get_origin_spacing()
-                ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
-                ima.save_itk(array, origin, spacings, self.DIR(filename), self.swap_axes)
-            else:
-                self.save_image_array(array, filename)
+            self.save_image_array(array, filename)
+
+    ### Create myocardium functions - might be helpful to streamline the code in process_handler 
+    def myo_lv_outflow_tract(self, seg_array: np.ndarray, outname = 'seg_s3a.nrrd') -> np.ndarray:
+        """
+        Create the left ventricle outflow tract from the segmented array
+        """
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        C=self.CONSTANTS
+        _, myo_array = self.extract_distmap_and_threshold(seg_array, [C.LV_BP_label, C.LV_neck_WT], 'LV_DistMap', 'LV_neck.nrrd')
+        myo_array = ima.add_masks_replace(myo_array, myo_array, C.LV_neck_label)
+
+        seg_new_array = ima.add_masks(seg_array, myo_array, C.LV_myo_label) 
+
+        self.save_if_seg_steps(seg_new_array, outname)
+
+        return seg_new_array
+    
+    def myo_aortic_wall(self, seg_array: np.ndarray, outname = 'seg_s3b.nrrd') -> np.ndarray:
+        """
+        Create the aortic wall from the segmented array
+        """
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        C=self.CONSTANTS
+        _, myo_array = self.extract_distmap_and_threshold(seg_array, [C.Ao_BP_label, C.Ao_WT], 'Ao_DistMap', 'Ao_wall.nrrd')
+        myo_array = ima.add_masks_replace(myo_array, myo_array, C.Ao_wall_label)
+
+        seg_new_array = ima.add_masks_replace_except(seg_array, myo_array, C.Ao_wall_label, [C.LV_BP_label, C.LV_myo_label]) 
+
+        self.save_if_seg_steps(seg_new_array, outname)
+
+        return seg_new_array
+    
+    
+    def myo_pulmonary_artery(self, seg_array: np.ndarray, outname = 'seg_s3c.nrrd', push_in_bool = True) -> np.ndarray:
+        """
+        Create the pulmonary artery from the segmented array
+        """
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        C=self.CONSTANTS
+        _, myo_array = self.extract_distmap_and_threshold(seg_array, [C.PArt_BP_label, C.PArt_WT], 'PArt_DistMap', 'PArt_wall.nrrd')
+        myo_array = ima.add_masks_replace(myo_array, myo_array, C.PArt_wall_label)
+
+        seg_new_array = ima.add_masks_replace_except(seg_array, myo_array, C.PArt_wall_label, [C.RV_BP_label, C.Ao_wall_label, C.Ao_BP_label]) 
+
+        self.save_if_seg_steps(seg_new_array, outname)
+
+        # pushing in 
+        if push_in_bool:
+            seg_new_array = self.pushing_in(seg_new_array,  C.Ao_wall_label, C.PArt_wall_label, C.PArt_BP_label, C.PArt_WT)
+            self.save_if_seg_steps(seg_new_array, 'seg_s3d.nrrd')
+
+        return seg_new_array
+    
+    def myo_crop_veins(self, seg_array: np.ndarray, aorta_slicer: np.ndarray, part_slicer: np.ndarray, outname = 'seg_s3e.nrrd') -> np.ndarray : 
+        """
+        Crop the veins from the segmented array
+        """
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        C=self.CONSTANTS
+
+        seg_new_array = ima.add_masks_replace_only(seg_array, aorta_slicer, ZERO_LABEL, C.Ao_wall_label)
+        seg_new_array = ima.add_masks_replace_only(seg_new_array, part_slicer, ZERO_LABEL, C.PArt_wall_label)
+
+        self.save_if_seg_steps(seg_new_array, outname)
+
+        return seg_new_array
+    
+    def myo_intermediate_cc_process(self, seg_array: np.ndarray, points_data:dict, outname = 'seg_s3f.nrrd') -> np.ndarray:
+        """
+        Intermediate connected component process
+        """
+        C=self.CONSTANTS
+
+        seg_new_array = self.connected_component_process(seg_array, points_data['Ao_tip'], C.Ao_BP_label, outname)
+        seg_new_array = self.connected_component_process(seg_array, points_data['PArt_tip'], C.PArt_BP_label, outname)
+
+        return seg_new_array
+    
+    def myo_right_ventricle(self, seg_array: np.ndarray, outname = 'seg_s3g.nrrd') -> np.ndarray:
+        """
+        Create the right ventricle from the segmented array
+        """
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        C=self.CONSTANTS
+        _, myo_array = self.extract_distmap_and_threshold(seg_array, [C.RV_BP_label, C.RV_WT], 'RV_BP_DistMap', 'RV_myo.nrrd')
+        myo_array = ima.add_masks_replace(myo_array, myo_array, C.RV_myo_label)
+
+        seg_new_array = ima.add_masks_replace_only(seg_array, myo_array, C.RV_myo_label, C.Ao_wall_label) 
+
+        self.save_if_seg_steps(seg_new_array, outname)
+
+        return seg_new_array
+    
+    def myo_left_atrium(self, seg_array: np.ndarray, outname = 'seg_s3h.nrrd') -> np.ndarray:
+        """
+        Create the left atrium from the segmented array
+        """
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        C=self.CONSTANTS
+        _, myo_array = self.extract_distmap_and_threshold(seg_array, [C.LA_BP_label, C.LA_WT], 'LA_BP_DistMap', 'LA_myo.nrrd')
+        myo_array = ima.add_masks_replace(myo_array, myo_array, C.LA_myo_label)
+
+        seg_new_array = ima.add_masks_replace_only(seg_array, myo_array, C.LA_myo_label, C.RA_BP_label)
+        seg_new_array = ima.add_masks_replace_only(seg_new_array, myo_array, C.LA_myo_label, C.SVC_label)
+
+        self.save_if_seg_steps(seg_new_array, outname)
+
+        return seg_new_array
+    
+    def myo_right_atrium(self, seg_array: np.ndarray, outname = 'seg_s3i.nrrd') -> np.ndarray:
+        """
+        Create the right atrium from the segmented array
+        """
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        C=self.CONSTANTS
+        _, myo_array = self.extract_distmap_and_threshold(seg_array, [C.RA_BP_label, C.RA_WT], 'RA_BP_DistMap', 'RA_myo.nrrd')
+        myo_array = ima.add_masks_replace(myo_array, myo_array, C.RA_myo_label)
+
+        seg_new_array = ima.add_masks_replace_only(seg_array, myo_array, C.RA_myo_label, C.RPV1_label)
+
+        self.save_if_seg_steps(seg_new_array, outname)
+
+        return seg_new_array
+    
+    def helper_push_in_bulk(self, seg_array: np.ndarray, pushing_label_collection: list, l:list) -> np.ndarray:
+        
+        outname = lambda x: f'seg_s3{x}.nrrd'
+        ix = 0
+        seg_new_array = seg_array
+        for pusher, pushed, bp, wt in pushing_label_collection:
+            seg_new_array = self.pushing_in(seg_new_array, pusher, pushed, bp, wt)
+            self.save_if_seg_steps(seg_new_array, outname(l[ix])) 
+            ix += 1
+        
+        return seg_new_array
+
+    def myo_push_in_ra(self, seg_array: np.ndarray) -> np.ndarray:
+        """
+        Push in the right atrium
+        """
+        C=self.CONSTANTS
+        pushing_label_collection = [
+            # pusher_wall,   pushed_wall,    pushed_bp,     pushed_wt
+            (C.LA_myo_label, C.RA_myo_label, C.RA_BP_label, C.RA_WT),
+            (C.Ao_wall_label, C.RA_myo_label, C.RA_BP_label, C.RA_WT),
+            (C.LV_myo_label, C.RA_myo_label, C.SVC_label, C.RA_WT),
+            (C.LV_myo_label, C.RA_myo_label, C.RA_BP_label, C.RA_WT)
+        ]
+        l = ['j', 'k', 'k', 'l']
+        
+        return self.helper_push_in_bulk(seg_array, pushing_label_collection, l)
+    
+    def myo_push_in_la(self, seg_array: np.ndarray) -> np.ndarray:
+        """
+        Push in the left atrium
+        """
+        C=self.CONSTANTS
+        pushing_label_collection = [
+            # pusher_wall,   pushed_wall,       pushed_bp,       pushed_wt
+            (C.Ao_wall_label, C.LA_myo_label, C.LA_BP_label, C.LA_WT)
+        ]
+        l = ['m']
+
+        return self.helper_push_in_bulk(seg_array, pushing_label_collection, l)
+    
+    def myo_push_in_part(self, seg_array: np.ndarray) -> np.ndarray:
+        """
+        Push in the pulmonary artery
+        """
+        C=self.CONSTANTS
+        pushing_label_collection = [
+            # pusher_wall,   pushed_wall,       pushed_bp,       pushed_wt
+            (C.Ao_wall_label, C.PArt_wall_label, C.PArt_BP_label, C.PArt_WT),
+            (C.LV_myo_label, C.PArt_wall_label, C.PArt_BP_label, C.PArt_WT)
+        ]
+        l = ['n', 'o']
+
+        return self.helper_push_in_bulk(seg_array, pushing_label_collection, l)
+    
+    def myo_push_in_rv(self, seg_array: np.ndarray) -> np.ndarray:
+        """
+        Push in the right ventricle
+        """
+        C=self.CONSTANTS
+        pushing_label_collection = [
+            # pusher_wall,   pushed_wall,       pushed_bp,       pushed_wt
+            (C.Ao_wall_label, C.RV_myo_label, C.RV_BP_label, C.RV_WT)
+        ]
+        l = ['p']
+
+        return self.helper_push_in_bulk(seg_array, pushing_label_collection, l)
+    
+    ### Create valve planes functions 
+    def valves_cropping_major_vessels(self, seg_array_name:str, points_data:dict, outname = 'seg_s3s.nrrd') -> np.ndarray:
+        """
+        Crop the major vessels from the segmented array
+        """
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        C=self.CONSTANTS
+
+        self.get_connected_component_and_save('seg_s3p.nrrd', points_data['Ao_WT_tip'], C.Ao_wall_label, 'seg_s3r.nrrd')
+        self.get_connected_component_and_save('seg_s3r.nrrd', points_data['PArt_WT_tip'], C.PArt_wall_label, outname)
+
+        return self.load_image_array(outname)
+    
+    def helper_extract_struct_in_bulk(self, seg_array: np.ndarray, labels_collection: list, names_collection:list, dmap_reuse_list:list) -> list:
+        seg_output_tuple_list = []
+        ix = 0
+        for labels, names in zip(labels_collection, names_collection):
+            output_tuple = self.extract_structure(seg_array, list(labels), names[0], names[1], names[2], dmap_reuse_list[ix])
+            seg_output_tuple_list.append(output_tuple)
+        
+        return seg_output_tuple_list
+    def valves_mitral_valve(self, seg_array: np.ndarray) -> np.ndarray:
+        """
+        Create the mitral valve from the segmented array
+        """
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        C=self.CONSTANTS
+        
+        labels_collection = [
+            # distmap_label, thres_label, intrsct_label1, intrsct_label2, replace_label
+            (C.LA_BP_label,  C.valve_WT,  C.LV_BP_label,  C.MV_label,     C.MV_label),
+            (C.LV_myo_label, C.LA_WT,     C.LA_BP_label,  C.LA_myo_label, C.LA_myo_label)
+        ]
+        names_collection = [
+            ("LA_BP_DistMap", "LA_BP_thresh", "seg_s4a.nrrd"),
+            ("LV_myo_DistMap", "LV_myo_thresh", "seg_s4b.nrrd")
+        ]
+
+        return self.helper_extract_struct_in_bulk(seg_array, labels_collection, names_collection, [None, None])
+    
+    def valves_tricuspid_valve(self, seg_array: np.ndarray) -> np.ndarray:
+        """
+        Create the tricuspid valve from the segmented array
+        """
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        C=self.CONSTANTS
+        
+        labels_collection = [
+            # distmap_label, thres_label, intrsct_label1, intrsct_label2, replace_label
+            (C.RA_BP_label,  C.valve_WT,  C.RV_BP_label,  C.TV_label,     C.TV_label),
+            (C.RV_myo_label, C.RA_WT,     C.RA_BP_label,  C.RA_myo_label, C.RA_myo_label)
+        ]
+        names_collection = [
+            ("RA_BP_DistMap", "RA_BP_thresh", "seg_s4c.nrrd"),
+            ("RV_myo_DistMap", "RV_myo_thresh", "seg_s4d.nrrd")
+        ]
+
+        return self.helper_extract_struct_in_bulk(seg_array, labels_collection, names_collection, [None, None])
+    
+    def valves_aortic_valve(self, seg_array: np.ndarray, lv_myo_distmap) -> np.ndarray:
+        """
+        Create the aortic valve from the segmented array
+        """
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        C=self.CONSTANTS
+        
+        labels_collection = [
+            # distmap_label, thres_label, intrsct_label1, intrsct_label2, replace_label
+            (C.Ao_BP_label,  C.valve_WT,  C.LV_BP_label,  C.AV_label,     C.AV_label),
+            (-1, C.Ao_WT,    C.Ao_BP_label, C.Ao_wall_label, C.Ao_wall_label),
+            (C.AV_label,     2*C.valve_WT, C.MV_label, C.LV_myo_label, C.LV_myo_label)
+        ]
+        names_collection = [
+            ("Ao_BP_DistMap", "AV.nrrd", "seg_s4e.nrrd"),
+            ("LV_myo_DistMap", "Ao_wall_extra", "seg_s4f.nrrd"),
+            ("AV_DistMap", "AV_sep.nrrd", "seg_s4f.nrrd")
+        ]
+
+        return self.helper_extract_struct_in_bulk(seg_array, labels_collection, names_collection, [None, lv_myo_distmap, None])
