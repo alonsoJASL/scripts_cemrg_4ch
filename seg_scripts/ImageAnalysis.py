@@ -522,10 +522,10 @@ class ImageAnalysis:
         
         img = self.array2itk(img_array, origin, spacing)
 
-        if ref_image is not None:
-            sitk.WriteImage(img, filename)
-        else: # save the image keeping header 
+        if ref_image is not None: # save the image keeping header 
             self.save_itk_keeping_header(img_obj=img, reference_img_obj=ref_image, filename=filename) 
+        else: 
+            sitk.WriteImage(img, filename)
     
     def save_itk_like_image(self, img:sitk.Image, reference_img:sitk.Image, filename, img_orient='LPS') -> None:
         """

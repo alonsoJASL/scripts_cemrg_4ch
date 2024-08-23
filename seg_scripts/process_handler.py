@@ -158,9 +158,9 @@ def create_cylinders_general(path2points:str, path2ptsjson:str, path2originjson:
         logger.info(f"Generating cylinder: {name}\n Radius: {radius}, Height: {height}")
 
         if is_mm :
-            fcp.cylinder_in_mm(segmentation_name, points, fcp.DIR(name), radius, height)
+            fcp.cylinder_in_mm(segmentation_name, points, fcp.DIR(f'{name}.nrrd'), radius, height)
         else : 
-            fcp.cylinder(segmentation_name, points, fcp.DIR(name), radius, height)
+            fcp.cylinder(segmentation_name, points, fcp.DIR(f'{name}.nrrd'), radius, height)
     
 
 def create_cylinders(path2points:str, path2ptsjson="", path2originjson="", segmentation_name="seg_corrected.nrrd") : 

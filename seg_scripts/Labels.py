@@ -3,7 +3,7 @@ import numpy as np
 
 class Labels:
     def __init__(self, filename=None, thickness_file=None, spacings=0.39844) :
-        self.scale_factor = np.ceil(1/spacings[0])
+        self.scale_factor = np.ceil(1/spacings)
         
         self.valve_WT_multiplier = 4
         self.valve_WT_svc_ivc_multiplier = 4
