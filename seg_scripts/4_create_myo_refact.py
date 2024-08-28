@@ -110,7 +110,7 @@ if __name__ == '__main__' :
 
     labels_group = parser.add_argument_group("labels")
     labels_group.add_argument("--labels-file", '-labels-file', type=str, required=False, default=None, help="Name of the json file containing custom labels")
-    labels_group.add_argument("--thickness-file", '-thickness-file', type=str, required=False, default="thickness.json", help="Name of the json file containing custom labels")
+    labels_group.add_argument("--thickness-file", '-thickness-file', type=str, required=False, default=None, help="Name of the json file containing custom labels")
     labels_group.add_argument("--LV_BP_label", "-LV_BP_label", help="LV_BP_label", type=int, default=CONSTANTS.LV_BP_label)
     labels_group.add_argument("--LV_myo_label", "-LV_myo_label", help="LV_myo_label", type=int, default=CONSTANTS.LV_myo_label)
     labels_group.add_argument("--LV_neck_label", "-LV_neck_label", help="LV_neck_label", type=int, default=CONSTANTS.LV_neck_label)

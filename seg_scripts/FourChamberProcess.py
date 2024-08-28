@@ -51,6 +51,10 @@ class FourChamberProcess:
     def is_mri(self):
         return self._is_mri
     
+    @is_mri.setter
+    def is_mri(self, value:bool):
+        self._is_mri = value
+    
     @property
     def ref_image_mri(self):
         return self._ref_image_mri
@@ -632,19 +636,20 @@ class FourChamberProcess:
             four_chamber = FourChamberProcess(path2points, origin_spacing, CONSTANTS)
             seg_array_new = four_chamber.intersect_and_replace(seg_array, thresh_array, intrsct_label1, intrsct_label2, replace_label)
         """
-        origin, spacings = self.get_origin_spacing()
+        print(f'seg_size {np.shape(seg_array)} thresh_size {np.shape(thresh_array)}')
+
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
 
-        self.logger.debug(f"Intersecting structures with labels {intrsct_label1} and {intrsct_label2}")
+        # self.logger.info(f"Intersecting structures with labels {intrsct_label1} and {intrsct_label2}")
         struct_array = ima.and_filter(seg_array, thresh_array, intrsct_label1, intrsct_label2)
 
-        self.logger.debug(f"AND filter unique values: {np.unique(struct_array)}")
+        # self.logger.info(f"AND filter unique values: {np.unique(struct_array)}")
 
-        self.logger.debug(f"Replacing intersected structures with label {replace_label}")
+        # self.logger.info(f"Replacing intersected structures with label {replace_label}")
         seg_array_new = ima.add_masks_replace(seg_array, struct_array, replace_label)
 
         if outname != "":
-            self.logger.debug(f"Saving intersected and replaced segmentation array to {outname}", exc_info=self.debug)
+            self.logger.info(f"Saving intersected and replaced segmentation array to {outname}")
             self.save_if_seg_steps(seg_array_new, outname)
 
         return seg_array_new, struct_array
@@ -783,6 +788,10 @@ class FourChamberProcess:
     def load_image_array(self, filename:str) -> np.array:
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
         return ima.load_image_array(self.DIR(filename))
+    
+    def load_from_tmp(self, filename:str) -> np.array:
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        return ima.load_image_array(self.TMP(filename))
     
     def save_image_array(self, array:np.array, filename:str):
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
@@ -999,18 +1008,27 @@ class FourChamberProcess:
         return self.load_image_array(outname)
     
     def helper_extract_struct_in_bulk(self, seg_array: np.ndarray, labels_collection: list, names_collection:list, dmap_reuse_list:list) -> list:
-        seg_output_tuple_list = []
+        seg_output_dict_list = []
         ix = 0
+        seg_new_array = seg_array
         for labels, names in zip(labels_collection, names_collection):
-            output_tuple = self.extract_structure(seg_array, list(labels), names[0], names[1], names[2], dmap_reuse_list[ix])
-            seg_output_tuple_list.append(output_tuple)
-        
-        return seg_output_tuple_list
+            output_tuple = self.extract_structure(seg_new_array, list(labels), names[0], names[1], names[2], dmap_reuse_list[ix])
+            struct_dict = {
+                'seg_array': output_tuple[0],
+                'distmap_array': output_tuple[1],
+                'thresh_array': output_tuple[2],
+                'struct_array': output_tuple[3]
+            }
+            seg_new_array = struct_dict['seg_array']
+            seg_output_dict_list.append(struct_dict)
+
+        # output tuple list contains the following tuples:
+        # (seg_array_new, distmap_array, thresh_array, struct_array)
+        return seg_output_dict_list
     def valves_mitral_valve(self, seg_array: np.ndarray) -> np.ndarray:
         """
         Create the mitral valve from the segmented array
         """
-        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
         C=self.CONSTANTS
         
         labels_collection = [
@@ -1023,13 +1041,18 @@ class FourChamberProcess:
             ("LV_myo_DistMap", "LV_myo_thresh", "seg_s4b.nrrd")
         ]
 
-        return self.helper_extract_struct_in_bulk(seg_array, labels_collection, names_collection, [None, None])
+        output_dict_list = self.helper_extract_struct_in_bulk(seg_array, labels_collection, names_collection, [None, None])
+        
+        la_bp_thresh = output_dict_list[0]['thresh_array']
+        seg_new_array = output_dict_list[1]['seg_array'] 
+        lv_myo_distmap = output_dict_list[1]['distmap_array']
+
+        return seg_new_array, la_bp_thresh, lv_myo_distmap
     
     def valves_tricuspid_valve(self, seg_array: np.ndarray) -> np.ndarray:
         """
         Create the tricuspid valve from the segmented array
         """
-        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
         C=self.CONSTANTS
         
         labels_collection = [
@@ -1042,25 +1065,146 @@ class FourChamberProcess:
             ("RV_myo_DistMap", "RV_myo_thresh", "seg_s4d.nrrd")
         ]
 
-        return self.helper_extract_struct_in_bulk(seg_array, labels_collection, names_collection, [None, None])
+        output_dict_list = self.helper_extract_struct_in_bulk(seg_array, labels_collection, names_collection, [None, None])
+        ra_bp_distmap = output_dict_list[0]['distmap_array']
+        rv_myo_distmap = output_dict_list[1]['distmap_array']
+        seg_new_array = output_dict_list[1]['seg_array']
+
+        return seg_new_array, ra_bp_distmap, rv_myo_distmap
     
     def valves_aortic_valve(self, seg_array: np.ndarray, lv_myo_distmap) -> np.ndarray:
         """
         Create the aortic valve from the segmented array
         """
-        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
         C=self.CONSTANTS
         
         labels_collection = [
             # distmap_label, thres_label, intrsct_label1, intrsct_label2, replace_label
             (C.Ao_BP_label,  C.valve_WT,  C.LV_BP_label,  C.AV_label,     C.AV_label),
             (-1, C.Ao_WT,    C.Ao_BP_label, C.Ao_wall_label, C.Ao_wall_label),
-            (C.AV_label,     2*C.valve_WT, C.MV_label, C.LV_myo_label, C.LV_myo_label)
+            (C.AV_label,     2*C.valve_WT, C.MV_label, C.LV_myo_label, C.LV_myo_label),
+            (C.LV_myo_label, C.LA_WT, C.LA_BP_label, C.LA_myo_label, C.LA_myo_label)
         ]
         names_collection = [
             ("Ao_BP_DistMap", "AV.nrrd", "seg_s4e.nrrd"),
             ("LV_myo_DistMap", "Ao_wall_extra", "seg_s4f.nrrd"),
-            ("AV_DistMap", "AV_sep.nrrd", "seg_s4f.nrrd")
+            ("AV_DistMap", "AV_sep.nrrd", "seg_s4f.nrrd"), 
+            ("LV_myo_DistMap", "LV_myo_extra", "seg_s4ff.nrrd")
         ]
 
-        return self.helper_extract_struct_in_bulk(seg_array, labels_collection, names_collection, [None, lv_myo_distmap, None])
+        output_dict_list = self.helper_extract_struct_in_bulk(seg_array, labels_collection, names_collection, [None, lv_myo_distmap, None])
+        new_lv_myo_distmap = output_dict_list[3]['distmap_array']
+        seg_new_array = output_dict_list[3]['seg_array']
+
+        return seg_new_array, new_lv_myo_distmap
+    
+    def valves_pulmonary_valve(self, seg_array: np.ndarray, rv_myo_distmap) -> np.ndarray :
+        """
+        Create the pulmonary valve from the segmented array
+        """
+        C=self.CONSTANTS
+
+        labels_collection = [
+            (C.PArt_BP_label, C.valve_WT, C.RV_BP_label, C.PV_label, C.PV_label),
+            (-1, C.PArt_WT, C.PArt_BP_label, C.PArt_wall_label, C.PArt_wall_label)
+        ]
+
+        names_collection = [
+            ("PArt_BP_DistMap", "PV.nrrd", "seg_s4g.nrrd"),
+            ("PArt_WT", "PArt_wall_extra", "seg_s4h.nrrd")
+        ]
+
+        output_dict_list = self.helper_extract_struct_in_bulk(seg_array, labels_collection, names_collection, [None, rv_myo_distmap])
+        seg_new_array = output_dict_list[1]['seg_array']
+
+        return seg_new_array
+    
+    def valves_vein_rings_dmaps(self, seg_array: np.ndarray) :
+        """
+        Create the vein rings and distance maps from the segmented array
+        """
+        C=self.CONSTANTS
+
+        _, la_myo_thresh = self.extract_distmap_and_threshold(seg_array, [C.LA_myo_label, C.ring_thickness], "LA_myo_DistMap", "LA_myo_thresh.nrrd")
+        _, ra_myo_thresh = self.extract_distmap_and_threshold(seg_array, [C.RA_myo_label, C.ring_thickness], "RA_myo_DistMap", "RA_myo_thresh.nrrd")
+
+        return la_myo_thresh, ra_myo_thresh
+    
+    def helper_create_ring (self, seg_array: np.ndarray, seg_aux_array: np.ndarray, atrium_myo_thresh, name, label, ring_label, replace_only_list) :
+        C = self.CONSTANTS
+        dmap_name = f'{name}_DistMap'
+        th_name = f'{name}_thresh.nrrd'
+        labels = [label, C.ring_thickness]
+        outname = f'seg_s4_{name.lower()}.nrrd'
+
+        _, vein_ring = self.extract_distmap_and_threshold(seg_aux_array, labels, dmap_name, th_name)
+        seg_new_array, seg_aux_updated = self.extract_atrial_rings(seg_array, seg_aux_array, vein_ring, atrium_myo_thresh, ring_label, outname, replace_only_list)
+
+        return seg_new_array, seg_aux_updated
+        
+
+    def valves_vein_rings(self, seg_array: np.ndarray, seg_aux_array: np.ndarray, la_myo_thresh, ra_myo_thresh) -> np.ndarray:
+        """
+        Create the vein rings from the segmented array
+        """
+        C = self.CONSTANTS
+        collection = [
+            ('LPV1', C.LPV1_label, C.LPV1_ring_label), 
+            ('LPV2', C.LPV2_label, C.LPV2_ring_label),
+            ('RPV1', C.RPV1_label, C.RPV1_ring_label),
+            ('RPV2', C.RPV2_label, C.RPV2_ring_label),
+            ('LAA', C.LAA_label, C.LAA_ring_label),
+            ('SVC', C.SVC_label, C.SVC_ring_label),
+            ('IVC', C.IVC_label, C.IVC_ring_label)
+        ]
+
+        replace_only_label_dict = {
+            'LPV1' : [] ,
+            'LPV2' : [] ,
+            'RPV1' : [C.SVC_label] ,
+            'RPV2' : [] ,
+            'LAA' : [] ,
+            'SVC' : [C.Ao_wall_label, C.LA_myo_label, C.RPV1_ring_label, C.RPV1_label, C.RPV2_ring_label, C.RPV2_label],
+            'IVC' : []
+        }
+
+        seg_new_array = seg_array
+        seg_aux  = seg_aux_array
+        for vein, label, ring_label in collection : 
+            rol = replace_only_label_dict[vein]
+            myo_thresh = ra_myo_thresh if vein in ['SVC', 'IVC'] else la_myo_thresh
+            seg_new_array, seg_aux = self.helper_create_ring(seg_new_array, seg_aux, myo_thresh, vein, label, ring_label, rol)
+
+        return seg_new_array, seg_aux
+    
+    def valves_planes(self, seg_array: np.ndarray, la_bp_thresh, ra_bp_distmap) : 
+        """
+        Create the valve planes from the segmented array
+        """
+        C=self.CONSTANTS
+
+        self.logger.info(f"seg_size {np.shape(seg_array)} la_bp_size {np.shape(la_bp_thresh)} ra_bp_size {np.shape(ra_bp_distmap)}")
+
+        collection = [
+            ('LPV1', C.LPV1_label, C.plane_LPV1_label, C.plane_LPV1_label), 
+            ('LPV2', C.LPV2_label, C.plane_LPV2_label, C.plane_LPV2_label), 
+            ('RPV1', C.RPV1_label, C.plane_RPV1_label, C.plane_RPV1_label), 
+            ('RPV2', C.RPV2_label, C.plane_RPV2_label, C.plane_RPV2_label), 
+            ('LAA', C.LAA_label, C.plane_LAA_label, C.plane_LAA_label)
+        ]
+
+        seg_new_array = seg_array
+        for vein, label, plane_label, replace_label in collection : 
+            seg_new_array, _ = self.intersect_and_replace(seg_new_array, la_bp_thresh, label, plane_label, replace_label, f'seg_s4j_{vein.lower()}.nrrd')
+        
+        _, ra_bp_2mm = self.extract_distmap_and_threshold(seg_new_array, [-1, 2*C.valve_WT_svc_ivc], 'RA_BP_DistMap', 'RA_BP_thresh_2mm.nrrd', ra_bp_distmap)
+
+        collection = [
+            ('SVC', C.SVC_label, C.plane_SVC_label, C.plane_SVC_label),
+            ('SVC_EXTRA', C.RPV1_ring_label, C.plane_SVC_label, C.plane_SVC_label),
+            ('IVC', C.IVC_label, C.plane_IVC_label, C.plane_IVC_label)
+        ]
+        for vein, label, plane_label, replace_label in collection : 
+            seg_new_array, _ = self.intersect_and_replace(seg_new_array, ra_bp_2mm, label, plane_label, replace_label, f'seg_s4j_{vein.lower()}.nrrd')
+        
+        return seg_new_array

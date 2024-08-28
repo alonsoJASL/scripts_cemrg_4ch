@@ -106,6 +106,8 @@ class ImageAnalysis:
         distance_map_filter.InputIsBinaryOff()
         distance_map_filter.SquaredDistanceOff()
         distance_map_filter.UseImageSpacingOff()
+
+        thresholded_img = sitk.Cast(thresholded_img, sitk.sitkUInt8)
         DistMap = distance_map_filter.Execute(thresholded_img)
 
         if self.debug:
@@ -186,7 +188,11 @@ class ImageAnalysis:
             np.ndarray: The resulting image array after applying the 'and' filter.
 
         """
-        self.logger.debug(f"Applying AND filter to values where imga_array == {label_a} setting to {new_label}")
+
+        if imga_array.shape != imgb_array.shape:
+            imgb_array = np.swapaxes(imgb_array, 0, 2)
+            # raise ValueError("Input arrays must have the same shape")
+        
         # Get indices where imgb_array is nonzero
         imgb_indices = np.transpose(np.nonzero(imgb_array))
 

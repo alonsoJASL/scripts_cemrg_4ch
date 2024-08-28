@@ -16,6 +16,7 @@ import seg_scripts.cut_labels as cuts
 
 logger = configure_logging(log_name=__name__)
 ZERO_LABEL = 0
+USE_NEW_IMPLEMENTATION = False
 
 def parse_input_parameters(path2points:str, path2originjson:str, path2ptsjson:str = "", labels_file=None, set_debug=False) :
 
@@ -370,8 +371,6 @@ def create_myocardium_refact(path2points:str, path2ptsjson:str, path2originjson:
     fcp.is_mri = is_mri
     fcp.ref_image_mri = fcp.load_image_array('seg_s2a.nrrd') if fcp.is_mri else None
 
-    new_implemetation = True
-
     input_seg_array = fcp.load_image_array('seg_s2f.nrrd')
     logger.info("<Step 1/10> Creating myocardium for the LV outflow tract")
     seg_new_array = fcp.myo_lv_outflow_tract(input_seg_array, 'seg_s3a.nrrd')
@@ -379,16 +378,16 @@ def create_myocardium_refact(path2points:str, path2ptsjson:str, path2originjson:
     logger.info("<Step 2/10> Creating the aortic wall")
     seg_new_array = fcp.myo_aortic_wall(seg_new_array, 'seg_s3b.nrrd')
     
-    if new_implemetation :
+    if USE_NEW_IMPLEMENTATION :
         seg_new_array = myo_helper_open_artery(fcp, seg_new_array, cut_ratio=0.95, basename='seg_s3b', suffix='aorta')
 
     logger.info("<Step 3/10> Creating the pulmonary artery wall")
     seg_new_array = fcp.myo_pulmonary_artery(seg_new_array, 'seg_s3c.nrrd')
 
-    if new_implemetation :
+    if USE_NEW_IMPLEMENTATION :
         seg_new_array = myo_helper_open_artery(fcp, seg_new_array, cut_ratio=0.85, basename='seg_s3c', suffix='PA')
 
-    if not new_implemetation :
+    if not USE_NEW_IMPLEMENTATION :
         logger.info("<Step 4/10> Cropping veins")
             
         aorta_slicer_array = fcp.load_image_array('aorta_slicer.nrrd')
@@ -419,25 +418,43 @@ def create_valve_planes_refact(path2points:str, path2ptsjson:str, path2originjso
     logger.info("Creating valve planes")
     fcp, _, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file, set_debug=mydebug)
     fcp.save_seg_steps = True
+    fcp.debug = True
     fcp.swap_axes = True
     fcp.is_mri = is_mri
     fcp.ref_image_mri = fcp.load_image_array('seg_s2a.nrrd') if fcp.is_mri else None
 
-    new_implemetation = True
-
-    if new_implemetation :
+    if USE_NEW_IMPLEMENTATION :
         input_seg_array = fcp.load_image_array('seg_s3p.nrrd')
     else:
         logger.info("<Step 1/8> Cropping major vessels")
         input_seg_array = fcp.valves_cropping_major_vessels('seg_s3p.nrrd', points_data, 'seg_s3s.nrrd')
     
     logger.info("<Step 2/8> Creating the mitral valve")
-    output_tuple = fcp.valves_mitral_valve(input_seg_array)
-    # select outputs
+    seg_new_array, la_bp_thresh, lv_myo_distmap = fcp.valves_mitral_valve(input_seg_array)
 
     logger.info("<Step 3/8> Creating the tricuspid valve")
-    output_tuple = fcp.valves_tricuspid_valve(seg_new_array)
-    # select outputs
+    seg_new_array, ra_bp_distmap, rv_myo_distmap = fcp.valves_tricuspid_valve(seg_new_array)
+    
+    logger.info("<Step 4/8> Creating the aortic valve")
+    seg_new_array, lv_myo_distmap = fcp.valves_aortic_valve(seg_new_array, lv_myo_distmap)
+
+    logger.info("<Step 5/8> Creating the pulmonary valve")
+    seg_new_array = fcp.valves_pulmonary_valve(seg_new_array, rv_myo_distmap)
+    seg_h_array = seg_new_array
+
+    logger.info("<Step 6/8> Create the distance maps needed to cut the vein rings")
+    la_myo_thresh, ra_myo_thresh = fcp.valves_vein_rings_dmaps(seg_new_array)
+
+    logger.info("<Step 7/8> Cutting the vein rings")
+    seg_new_array, seg_i_array = fcp.valves_vein_rings(seg_new_array, seg_h_array, la_myo_thresh, ra_myo_thresh)
+    fcp.save_if_seg_steps(seg_new_array, 'seg_s4j.nrrd')
+
+    logger.info("<Step 8/8> Creating the valve planes")
+    seg_new_array = fcp.valves_planes(seg_new_array, la_bp_thresh, ra_bp_distmap) 
+    fcp.save_image_array(seg_new_array, fcp.DIR('seg_s4k.nrrd'))
+
+    logger.info("Valve planes created")
+
     
 
 def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, mydebug=False) :

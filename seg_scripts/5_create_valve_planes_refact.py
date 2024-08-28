@@ -13,7 +13,7 @@ from seg_scripts.common import configure_logging
 logger = configure_logging(log_name=__name__)
 
 import seg_scripts.Labels as L
-from process_handler import create_valve_planes
+from process_handler import create_valve_planes_refact
 # ----------------------------------------------------------------------------------------------
 # Define the wall thickness
 # ----------------------------------------------------------------------------------------------
@@ -128,7 +128,7 @@ def main(args) :
 
         C.save(filename=labels_file)
     
-    create_valve_planes(path2points, path2ptsjson, path2originjson, labels_file)
+    create_valve_planes_refact(path2points, path2ptsjson, path2originjson, labels_file, is_mri=args.is_mri)
 
 if __name__ == '__main__' : 
     parser = argparse.ArgumentParser(description='To run: python3 create_valve_planes.py [path_to_points]')
@@ -137,6 +137,7 @@ if __name__ == '__main__' :
     parser.add_argument("--origin-spacing-json", "-origin-spacing", type=str, required=False, default="", help="Name of the json file containing the origin and spacing")
     parser.add_argument("--labels-file", '-labels-file', type=str, required=False, default=None, help="Name of the json file containing custom labels")
     parser.add_argument("--thickness-file", '-thickness-file', type=str, required=False, default=None, help="Name of the json file containing custom thickness")
+    parser.add_argument("--is-mri", '-is-mri', action='store_true', help="Flag to indicate if the input is MRI data")
 
     bp_group = parser.add_argument_group('Bloodpool labels')
     bp_group.add_argument('--LV_BP_label', help='LV_BP_label', default=CONSTANTS.LV_BP_label, metavar='VALUE')
