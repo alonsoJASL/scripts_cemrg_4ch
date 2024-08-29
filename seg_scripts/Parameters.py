@@ -1,14 +1,19 @@
 import json 
 import numpy as np
 
-# Utility function to load data from a file
+# Utility functions
 def load_from_file(filename, defaults):
-    with open(filename) as f:
-        data = json.load(f)
-    # Return a dictionary with the loaded data, using defaults where necessary
-    return {key: data.get(key, default) for key, default in defaults.items()}
+    try:
+        with open(filename) as f:
+            data = json.load(f)
+        return {key: data.get(key, default) for key, default in defaults.items()}
+    except FileNotFoundError:
+        print(f"File {filename} not found. Using defaults.")
+        return defaults
+    except json.JSONDecodeError:
+        print(f"Error decoding {filename}. Using defaults.")
+        return defaults
 
-# Utility function to save data to a file
 def save_to_file(filename, data):
     with open(filename, 'w') as f:
         json.dump(data, f)
@@ -169,6 +174,9 @@ class Labels:
     def back_to_default(self):
         # Reset all labels to their default values
         self.labels = Labels.DEFAULT_VALUES.copy()
+
+    def get_attribute_list(self) :
+        return list(self.labels.keys())
     
     def __getattr__(self, name):
         if name in self.labels:
@@ -281,6 +289,9 @@ class WallThickness:
         # Update the thickness parameters based on the new multipliers
         for key in self.thickness_params:
             self.update_multiplier(key)
+
+    def get_attribute_list(self) :
+        return ['scale_factor']  + list(self.multipliers.keys()) + list(self.thickness_params.keys()) 
     
     def __getattr__(self, name):
         # Handle dynamic access to multipliers and thickness parameters
@@ -309,6 +320,23 @@ class Parameters:
         self.labels = Labels(filename=label_file)
         self.thickness = WallThickness(thickness_file=thickness_file, spacings=spacings)
 
+    def __getattr__(self, name):
+        # Delegate attribute access to labels or thickness objects if the attribute exists in them
+        if name in self.labels.labels:
+            return getattr(self.labels, name)
+        elif name in self.thickness.multipliers or name in self.thickness.thickness_params:
+            return getattr(self.thickness, name)
+        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+
+    def __setattr__(self, name, value):
+        # Delegate attribute setting to labels or thickness objects if the attribute exists in them
+        if 'labels' in self.__dict__ and name in self.labels.labels:
+            setattr(self.labels, name, value)
+        elif 'thickness' in self.__dict__ and (name in self.thickness.multipliers or name in self.thickness.thickness_params):
+            setattr(self.thickness, name, value)
+        else:
+            super().__setattr__(name, value)
+
     def save_labels(self, filename):
         # Save the labels to a file
         self.labels.save(filename)
@@ -335,3 +363,6 @@ class Parameters:
         # Reset all labels and thickness parameters to their default values
         self.labels.back_to_default()
         self.thickness.back_to_default()
+
+    def get_attribute_list(self) :
+        return self.labels.get_attribute_list() + self.thickness.get_attribute_list()

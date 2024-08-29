@@ -10,7 +10,7 @@ import os
 
 import seg_scripts.Labels as L
 from seg_scripts.common import parse_txt_to_json, get_json_data
-from seg_scripts.common import configure_logging
+from seg_scripts.common import configure_logging, initialize_parameters
 logger = configure_logging(log_name=__name__)
 
 from process_handler import create_svc_ivc
@@ -30,22 +30,10 @@ def main(args) :
         --SVC_label [SVC_label] 
         --IVC_label [IVC_label]
     """
-    path2points = args.path_to_points
-    path2originjson = args.origin_spacing_json
+    
+    path2points, _, path2originjson, labels_file, _ = initialize_parameters(args) 
     seg_name = args.seg_name
     output_name = "seg_s2a.nrrd"
-
-    labels_file = args.labels_file
-    C = L.Labels(filename=labels_file)
-    if labels_file is None :
-        logger.info("Creating labels file")
-        labels_file = os.path.join(path2points, "custom_labels.json")
-
-        C.RPV1_label = args.RPV1_label
-        C.SVC_label = args.SVC_label
-        C.IVC_label = args.IVC_label
-
-        C.save(filename=labels_file)
 
     create_svc_ivc(path2points, path2originjson, seg_name, output_name, labels_file)
     

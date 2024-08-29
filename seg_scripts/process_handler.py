@@ -8,7 +8,7 @@ from seg_scripts.common import configure_logging, add_file_handler
 from seg_scripts.common import parse_txt_to_json, get_json_data, make_tmp, mycp
 
 import seg_scripts.img as img
-import seg_scripts.Labels as L
+from seg_scripts.parameters import Parameters
 import seg_scripts.FourChamberProcess as FOURCH
 from seg_scripts.ImageAnalysis import ImageAnalysis
 from seg_scripts.ImageAnalysis import MaskOperationMode as MM
@@ -16,9 +16,12 @@ import seg_scripts.cut_labels as cuts
 
 logger = configure_logging(log_name=__name__)
 ZERO_LABEL = 0
-USE_NEW_IMPLEMENTATION = False
+USE_NEW_IMPLEMENTATION = True
 
-def parse_input_parameters(path2points:str, path2originjson:str, path2ptsjson:str = "", labels_file=None, set_debug=False) :
+if USE_NEW_IMPLEMENTATION :
+    logger.info("USING NEW IMPLEMENTATION")
+
+def parse_input_parameters(path2points:str, path2originjson:str, path2ptsjson:str = "", labels_file=None, thickness_file=None, set_debug=False) :
 
     if path2ptsjson is not None: 
         points_output_file = parse_txt_to_json(path2points, path2ptsjson, "points", "labels")
@@ -29,7 +32,7 @@ def parse_input_parameters(path2points:str, path2originjson:str, path2ptsjson:st
     origin_spacing_output_file = parse_txt_to_json(path2points, path2originjson, "origin_spacing", "origin_spacing_labels")
     origin_data = get_json_data(origin_spacing_output_file)
 
-    C = L.Labels(filename=labels_file)
+    C = Parameters(label_file=labels_file, thickness_file=thickness_file)
     fcp = FOURCH.FourChamberProcess(path2points, origin_data, CONSTANTS=C, debug=set_debug)
 
     return fcp, C, points_data
@@ -246,12 +249,12 @@ def crop_svc_ivc(path2points:str, path2ptsjson:str, path2originjson:str, labels_
     fcp.flatten_vessel_base('seg_s2d.nrrd', 'seg_s2e.nrrd', SVC_seed, C.SVC_label)
     fcp.flatten_vessel_base('seg_s2e.nrrd', 'seg_s2f.nrrd', IVC_seed, C.IVC_label)
 
-def cut_vessels(path2points:str, vcjointjson:str, seg_name='seg_s2a.nrrd', labels_file=None, cut_percentage=0.75) :
+def cut_vessels(path2points:str, vcjointjson:str, seg_name='seg_s2a.nrrd', labels_file=None, thickness_file=None, cut_percentage=0.75) :
     logger.info("Cutting vessels")
     with open(os.path.join(path2points, vcjointjson)) as f:
         vc_cutoff = json.load(f)
-
-    C = L.Labels(filename=labels_file)
+    
+    C = Parameters(label_file=labels_file, thickness_file=thickness_file)
     basename = seg_name.split(".")[0]
 
     input_seg = os.path.join(path2points, seg_name)
@@ -267,7 +270,7 @@ def cut_vessels(path2points:str, vcjointjson:str, seg_name='seg_s2a.nrrd', label
     cuts.reassign_vessels(input_seg, C.SVC_label, C.RA_BP_label, vc_cutoff["SVC"], output_seg)
 
     input_seg = output_seg
-    output_seg = os.path.join(path2points, f"{basename}_IVC.nrrd")
+    output_seg = os.path.join(path2points, "seg_s2f.nrrd")
     cuts.reassign_vessels(input_seg, C.IVC_label, C.RA_BP_label, vc_cutoff["IVC"], output_seg)
 
     
@@ -363,9 +366,9 @@ def myo_helper_open_artery(fourch_object: FOURCH.FourChamberProcess, seg_array:n
     seg_new_array = fourch_object.load_image_array(f'{basename}_{suffix}.nrrd')
     return seg_new_array
 
-def create_myocardium_refact(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, is_mri=False, mydebug=False) :
+def create_myocardium_refact(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, thickness_file=None, is_mri=False, mydebug=False) :
     logger.info("Creating myocardium")
-    fcp, _, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file, set_debug=mydebug)
+    fcp, _, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file, thickness_file=thickness_file, set_debug=mydebug)
     fcp.save_seg_steps = True
     fcp.swap_axes = True
     fcp.is_mri = is_mri
@@ -414,20 +417,21 @@ def create_myocardium_refact(path2points:str, path2ptsjson:str, path2originjson:
     logger.info("<Step 10/10> RV myo: Pushing the right ventricle with the aorta")
     seg_new_array = fcp.myo_push_in_rv(seg_new_array)
 
-def create_valve_planes_refact(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, is_mri=False, mydebug=False) :
+    fcp.save_image_array(seg_new_array, fcp.DIR('seg_s3p.nrrd'))
+
+def create_valve_planes_refact(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, thickness_file=None, is_mri=False, mydebug=False) :
     logger.info("Creating valve planes")
-    fcp, _, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file, set_debug=mydebug)
+    fcp, _, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file, thickness_file=thickness_file, set_debug=mydebug)
     fcp.save_seg_steps = True
     fcp.debug = True
     fcp.swap_axes = True
     fcp.is_mri = is_mri
     fcp.ref_image_mri = fcp.load_image_array('seg_s2a.nrrd') if fcp.is_mri else None
 
-    if USE_NEW_IMPLEMENTATION :
-        input_seg_array = fcp.load_image_array('seg_s3p.nrrd')
-    else:
+    input_seg_array = fcp.load_image_array('seg_s3p.nrrd')
+    if not USE_NEW_IMPLEMENTATION :
         logger.info("<Step 1/8> Cropping major vessels")
-        input_seg_array = fcp.valves_cropping_major_vessels('seg_s3p.nrrd', points_data, 'seg_s3s.nrrd')
+        input_seg_array = fcp.valves_cropping_major_vessels_return(input_seg_array, points_data)
     
     logger.info("<Step 2/8> Creating the mitral valve")
     seg_new_array, la_bp_thresh, lv_myo_distmap = fcp.valves_mitral_valve(input_seg_array)
@@ -454,8 +458,6 @@ def create_valve_planes_refact(path2points:str, path2ptsjson:str, path2originjso
     fcp.save_image_array(seg_new_array, fcp.DIR('seg_s4k.nrrd'))
 
     logger.info("Valve planes created")
-
-    
 
 def create_valve_planes(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, mydebug=False) :
     logger.info("Creating valve planes")
@@ -581,5 +583,31 @@ def clean_segmentation(path2points:str, path2ptsjson:str, path2originjson:str, l
     
     fcp.save_image_array(seg_new_array, fcp.DIR(output_image))
     
+def clean_segmentation_refact(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, thickness_file=None, is_mri=False, mydebug=False) :  
+    logger.info("Cleaning segmentation")
+    fcp, C, _ = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file, thickness_file=thickness_file)
+
+    input_image = 'seg_s4k.nrrd'
+    output_image = 'seg_s5.nrrd'
+
+    list_of_corrections1 = [(C.RPV1_ring_label,C.RPV2_ring_label,C.RPV2_label,C.ring_thickness),
+                            (C.LPV1_ring_label,C.LPV2_ring_label,C.LPV2_label,C.ring_thickness),
+                            (C.LPV1_ring_label,C.LAA_ring_label,C.LAA_label,C.ring_thickness),
+                            (C.RV_myo_label,C.Ao_wall_label,C.Ao_BP_label,C.Ao_WT),
+                            (C.SVC_ring_label,C.LA_myo_label,C.LA_BP_label,C.LA_WT)]
+    
+    seg_new_array = fcp.load_image_array(input_image)
+
+    
+    for pusher_wall_lab,pushed_wall_lab,pushed_BP_lab, pushed_WT in list_of_corrections1 : 
+        seg_new_array = fcp.pushing_in(seg_new_array, pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT)
+        print(f'Shape after pushing in {pusher_wall_lab} to {pushed_wall_lab}: {seg_new_array.shape}')
+
+    
+    labels=[C.RV_BP_label, C.PArt_WT, C.PArt_wall_label, C.RV_myo_label, C.RV_myo_label]
+    seg_new_array, _, _, _ = fcp.extract_structure(seg_new_array, labels, "RV_myo_DistMap", "RV_myo_extra.nrrd", "seg_s5.nrrd")
+
+    fcp.save_image_array(seg_new_array, fcp.DIR(output_image))
+
 
 

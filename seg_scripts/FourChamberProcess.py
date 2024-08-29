@@ -9,14 +9,15 @@ from seg_scripts.ImageAnalysis import ImageAnalysis
 
 from seg_scripts.common import configure_logging, big_print, make_tmp
 
-import seg_scripts.Labels as Labels
+# import seg_scripts.Labels as Labels
+from seg_scripts.parameters import Parameters as Params
 
 DISTANCE_MAP_KEY = 'distance_map'
 THRESHOLD_KEY = 'threshold'
 ZERO_LABEL = 0
 
 class FourChamberProcess:
-    def __init__(self, path2points: str, origin_spacing: dict, CONSTANTS:Labels, debug=False):
+    def __init__(self, path2points: str, origin_spacing: dict, CONSTANTS:Params, debug=False):
         self._path2points = path2points
         self._origin_spacing = origin_spacing
         self._is_mri = False
@@ -275,8 +276,9 @@ class FourChamberProcess:
         seg_array = ima.add_masks_replace_only(seg_array, new_RA_array, C.RA_BP_label, C.IVC_label)
     
         self.logger.info(' ## Formatting and saving the segmentation ##')
-        seg_array = np.swapaxes(seg_array, 0, 2)
-        ima.save_itk(seg_array, origin, spacings, self.DIR(output_name), self.swap_axes)
+        # seg_array = np.swapaxes(seg_array, 0, 2)
+        # ima.save_itk(seg_array, origin, spacings, self.DIR(output_name), self.swap_axes)
+        self.save_image_array(seg_array, output_name)
     
     def flatten_vessel_base(self, input_name, output_name, seed, label):
         """
@@ -344,9 +346,9 @@ class FourChamberProcess:
             DISTANCE_MAP_KEY: 'LV_DistMap.nrrd',
             THRESHOLD_KEY: 'LV_neck.nrrd'
         }       
-        labels = { # get these from Labels.py
-            DISTANCE_MAP_KEY: Labels.LV_BP_label,
-            THRESHOLD_KEY: Labels.LV_neck_WT
+        labels = { # get these from parameters.py
+            DISTANCE_MAP_KEY: Params.LV_BP_label,
+            THRESHOLD_KEY: Params.LV_neck_WT
         } 
 
         skip_processed: if True, will skip the processing of the distance map calculation if exists
@@ -383,9 +385,9 @@ class FourChamberProcess:
             DISTANCE_MAP_KEY: 'LV_DistMap.nrrd',
             THRESHOLD_KEY: 'LV_neck.nrrd'
         }       
-        labels = { # get these from Labels.py
-            DISTANCE_MAP_KEY: Labels.LV_BP_label,
-            THRESHOLD_KEY: Labels.LV_neck_WT
+        labels = { # get these from parameters.py
+            DISTANCE_MAP_KEY: Params.LV_BP_label,
+            THRESHOLD_KEY: Params.LV_neck_WT
         } 
         """
         origin, spacings = self.get_origin_spacing()
@@ -424,9 +426,9 @@ class FourChamberProcess:
             DISTANCE_MAP_KEY: 'LV_DistMap.nrrd',
             THRESHOLD_KEY: 'LV_neck.nrrd'
         }       
-        labels = { # get these from Labels.py
-            DISTANCE_MAP_KEY: Labels.LV_BP_label,
-            THRESHOLD_KEY: Labels.LV_neck_WT
+        labels = { # get these from parameters.py
+            DISTANCE_MAP_KEY: Params.LV_BP_label,
+            THRESHOLD_KEY: Params.LV_neck_WT
         } 
         """
         origin, spacings = self.get_origin_spacing()
@@ -598,7 +600,7 @@ class FourChamberProcess:
         Example Usage:
             four_chamber = FourChamberProcess(path2points, origin_spacing, CONSTANTS)
             seg_array = ...
-            labels = [label1, label2] # get labels from Labels.py
+            labels = [label1, label2] # get labels from parameters.py
             dm_name = "distance_map.nrrd"
             th_name = "threshold.nrrd"
             distmap_array, thresh_array = four_chamber.extract_distmap_and_threshold(seg_array, labels, dm_name, th_name)
@@ -636,8 +638,7 @@ class FourChamberProcess:
             four_chamber = FourChamberProcess(path2points, origin_spacing, CONSTANTS)
             seg_array_new = four_chamber.intersect_and_replace(seg_array, thresh_array, intrsct_label1, intrsct_label2, replace_label)
         """
-        print(f'seg_size {np.shape(seg_array)} thresh_size {np.shape(thresh_array)}')
-
+        
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
 
         # self.logger.info(f"Intersecting structures with labels {intrsct_label1} and {intrsct_label2}")
@@ -995,6 +996,26 @@ class FourChamberProcess:
         return self.helper_push_in_bulk(seg_array, pushing_label_collection, l)
     
     ### Create valve planes functions 
+    def connected_component_array(self, seg_array: np.ndarray, seed, layer, keep=False) -> np.ndarray:
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        origin, spacings = self.get_origin_spacing()
+        C = self.CONSTANTS
+        seg_itk = ima.array2itk(seg_array, origin, spacings)
+
+        return ima.connected_component(seg_itk, seed, layer, keep)
+    def valves_cropping_major_vessels_return(self, seg_array: np.ndarray, points_data) -> np.ndarray:
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        C = self.CONSTANTS
+        
+        seg_new_array = self.connected_component_array(seg_array, points_data['Ao_WT_tip'], C.Ao_wall_label) 
+        self.save_if_seg_steps(seg_new_array, 'seg_s3r.nrrd')
+
+        seg_new_array = self.connected_component_array(seg_new_array, points_data['PArt_WT_tip'], C.PArt_wall_label)
+        self.save_if_seg_steps(seg_new_array, 'seg_s3s.nrrd')
+
+        return seg_new_array
+
+
     def valves_cropping_major_vessels(self, seg_array_name:str, points_data:dict, outname = 'seg_s3s.nrrd') -> np.ndarray:
         """
         Crop the major vessels from the segmented array

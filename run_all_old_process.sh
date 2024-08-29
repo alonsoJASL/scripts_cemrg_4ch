@@ -15,10 +15,11 @@ ORIGIN_SPACING_JSON=$BASE_DIR/origin_spacing.json
 
 RUN_1_CYLINDERS=0
 RUN_2_SVC_IVC=0
-RUN_3_CUT_VESSELS=0
-RUN_4_MYO=1
-RUN_5_VALVES=0
-RUN_6_CLEAN=0
+RUN_3_SLICERS=0
+RUN_4_CROP=0
+RUN_5_MYO=0
+RUN_6_VALVES=0
+RUN_7_CLEAN=0
 
 if [ $RUN_1_CYLINDERS -eq 1 ] ; then
     echo "===== CREATE CYLINDERS ======"
@@ -30,23 +31,30 @@ if [ $RUN_2_SVC_IVC -eq 1 ] ; then
     python $SCRIPTS_DIR/2_create_svc_ivc_refact.py $BASE_DIR --origin-spacing-json $ORIGIN_SPACING_JSON --seg-name $SEGNAME
 fi
 
-if [ $RUN_3_CUT_VESSELS -eq 1  ] ; then
-    echo "===== CUT VESSELS ======"
-    python $SCRIPTS_DIR/3_cut_vessels_refact.py $BASE_DIR --seg-name seg_s2a.nrrd --vc-joint-json vc_joint.json --cut-percentage 0.75
+if [ $RUN_3_SLICERS -eq 1  ] ; then
+    echo "===== CREATE SLICERS ======"
+    python $SCRIPTS_DIR/create_slicers.py $BASE_DIR --points-json $POINTS_JSON --origin-spacing-json $ORIGIN_SPACING_JSON --seg-name seg_s2a.nrrd
 fi
 
-if [ $RUN_4_MYO -eq 1 ] ; then
+if [ $RUN_4_CROP -eq 1 ] ; then
+    echo "===== CROP ======"
+    python $SCRIPTS_DIR/crop_svc_ivc.py $BASE_DIR --origin-spacing-json $ORIGIN_SPACING_JSON --points-json $POINTS_JSON 
+fi
+
+if [ $RUN_5_MYO -eq 1 ] ; then
     echo "===== CREATE MYO ======"
     python $SCRIPTS_DIR/4_create_myo_refact.py $BASE_DIR --origin-spacing-json $ORIGIN_SPACING_JSON --points-json $POINTS_JSON 
 fi
 
-if [ $RUN_5_VALVES -eq 1 ] ; then
+if [ $RUN_6_VALVES -eq 1 ] ; then
     echo "===== CREATE VALVES ======"
     python $SCRIPTS_DIR/5_create_valve_planes_refact.py $BASE_DIR --origin-spacing-json $ORIGIN_SPACING_JSON --points-json $POINTS_JSON 
 fi
 
-if [ $RUN_6_CLEAN -eq 1 ] ; then
+if [ $RUN_7_CLEAN -eq 1 ] ; then
     echo "===== CLEAN SEGMENTATION ======"
     python $SCRIPTS_DIR/6_clean_seg_refact.py $BASE_DIR --points-json $POINTS_JSON --origin-spacing-json $ORIGIN_SPACING_JSON
 fi
+
+
 
