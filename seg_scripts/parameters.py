@@ -313,12 +313,68 @@ class WallThickness:
         else:
             super().__setattr__(name, value)
 
+class VeinCutoff : 
+    DEFAULT_VALUES = {
+        'SVC_cutoff' : 0.2, 
+        'IVC_cutoff' : 0.2, 
+        'Aorta_cutoff' : 0.75, 
+        'PArt_cutoff' : 0.75
+    }
+
+    def __init__(self, filename=None):
+        self.vein_cutoff = VeinCutoff.DEFAULT_VALUES.copy()
+        if filename is not None:
+            self.load(filename)
+
+        @classmethod
+        def __init_subclass__(cls):
+            for tag_name in cls.DEFAULT_VALUES.keys():
+                def getter(self, label_name=tag_name):
+                    return self.vein_cutoff[label_name]
+                
+                def setter(self, value, label_name=tag_name):
+                    self.vein_cutoff[label_name] = value
+                
+                setattr(cls, tag_name, property(getter, setter))
+        
+    def get_default_label_value(self, label_name):
+        return VeinCutoff.DEFAULT_VALUES.get(label_name, None)
+    
+    def save(self, filename):
+        save_to_file(filename, self.vein_cutoff)
+
+    def load(self, filename):
+        self.vein_cutoff = load_from_file(filename, self.vein_cutoff)
+
+    def get_dictionary(self):
+        return self.vein_cutoff     
+    
+    def back_to_default(self):
+        self.vein_cutoff = VeinCutoff.DEFAULT_VALUES.copy()
+    
+    def get_attribute_list(self) :
+        return list(self.vein_cutoff.keys())
+    
+    def __getattr__(self, name):
+        if name in self.vein_cutoff:
+            return self.vein_cutoff[name]
+        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+    
+    def __setattr__(self, name, value):
+        if name in ('vein_cutoff'):
+            super().__setattr__(name, value)
+        elif name in self.vein_cutoff:
+            self.vein_cutoff[name] = value
+        else:
+            super().__setattr__(name, value)  
+
 
 class Parameters:
-    def __init__(self, label_file=None, thickness_file=None, spacings=0.39844):
+    def __init__(self, label_file=None, thickness_file=None, spacings=0.39844, vein_cutoff_file=None):
         # Create instances of Labels and Thickness
         self.labels = Labels(filename=label_file)
         self.thickness = WallThickness(thickness_file=thickness_file, spacings=spacings)
+        self.vein_cutoff = VeinCutoff(filename=vein_cutoff_file)
 
     def __getattr__(self, name):
         # Delegate attribute access to labels or thickness objects if the attribute exists in them
@@ -326,6 +382,8 @@ class Parameters:
             return getattr(self.labels, name)
         elif name in self.thickness.multipliers or name in self.thickness.thickness_params:
             return getattr(self.thickness, name)
+        elif name in self.vein_cutoff.vein_cutoff:
+            return getattr(self.vein_cutoff, name)
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     def __setattr__(self, name, value):
@@ -334,6 +392,8 @@ class Parameters:
             setattr(self.labels, name, value)
         elif 'thickness' in self.__dict__ and (name in self.thickness.multipliers or name in self.thickness.thickness_params):
             setattr(self.thickness, name, value)
+        elif 'vein_cutoff' in self.__dict__ and name in self.vein_cutoff.vein_cutoff:
+            setattr(self.vein_cutoff, name, value)
         else:
             super().__setattr__(name, value)
 
@@ -344,6 +404,9 @@ class Parameters:
     def save_thickness(self, filename):
         # Save the thickness parameters to a file
         self.thickness.save(filename)
+
+    def save_vein_cutoff(self, filename):
+        self.vein_cutoff.save(filename)
 
     def set_scale_factor(self, spacings, ceiling=False):
         # Set the scale factor for thickness parameters
@@ -359,10 +422,15 @@ class Parameters:
         for key, value in self.thickness.get_dictionary().items():
             print(f"{key}: {value}")
 
+        print("\nVein Cutoff:")
+        for key, value in self.vein_cutoff.get_dictionary().items():
+            print(f"{key}: {value}")
+
     def back_to_default(self):
         # Reset all labels and thickness parameters to their default values
         self.labels.back_to_default()
         self.thickness.back_to_default()
+        self.vein_cutoff.back_to_default()
 
     def get_attribute_list(self) :
-        return self.labels.get_attribute_list() + self.thickness.get_attribute_list()
+        return self.labels.get_attribute_list() + self.thickness.get_attribute_list() + self.vein_cutoff.get_attribute_list()

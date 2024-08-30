@@ -13,13 +13,30 @@ SEGNAME="seg_corrected.nrrd"
 POINTS_JSON=$BASE_DIR/points.json
 ORIGIN_SPACING_JSON=$BASE_DIR/origin_spacing.json
 
-RUN_1_CYLINDERS=1
+RUN_1_CYLINDERS=0
 RUN_2_SVC_IVC=0
 RUN_3_SLICERS=0
 RUN_4_CROP=0
 RUN_5_MYO=0
 RUN_6_VALVES=0
 RUN_7_CLEAN=0
+
+if [ $# -ge 2 ] ; then
+    FUNCTION_NUM=$2
+    if ! [[ "$FUNCTION_NUM" =~ ^[1-7]$ ]] ; then
+        >&2 echo 'Second argument must be a number between 1 and 7'
+        exit 1
+    fi
+    case $FUNCTION_NUM in
+        1) RUN_1_CYLINDERS=1 ;;
+        2) RUN_2_SVC_IVC=1 ;;
+        3) RUN_3_SLICERS=1 ;;
+        4) RUN_4_CROP=1 ;;
+        5) RUN_5_MYO=1 ;;
+        6) RUN_6_VALVES=1 ;;
+        7) RUN_7_CLEAN=1 ;;
+    esac
+fi
 
 if [ $RUN_1_CYLINDERS -eq 1 ] ; then
     echo "===== CREATE CYLINDERS ======"

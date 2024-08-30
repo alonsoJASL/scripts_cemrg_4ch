@@ -24,7 +24,9 @@ def main(args) :
 
     
     """
-    path2points, path2ptsjson, path2originjson, labels_file, thickness_file = initialize_parameters(args) 
+    path2points, path2ptsjson, path2originjson, files_dict = initialize_parameters(args) 
+    labels_file = files_dict["labels_file"]
+    thickness_file = files_dict["thickness_file"]
     
     create_valve_planes_refact(path2points, path2ptsjson, path2originjson, labels_file, thickness_file, is_mri=args.is_mri)
 

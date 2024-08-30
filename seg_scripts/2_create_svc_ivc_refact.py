@@ -1,5 +1,4 @@
 import argparse
-import os
 
 from seg_scripts.parameters import Parameters
 
@@ -20,7 +19,8 @@ def main(args) :
         --labels-file [labels_file]
         --modify-label [key=value]
     """
-    path2points, _, path2originjson, labels_file, _ = initialize_parameters(args) 
+    path2points, _, path2originjson, files_dict = initialize_parameters(args) 
+    labels_file = files_dict["labels_file"]
     
     seg_name = args.seg_name
     output_name = "seg_s2a.nrrd"

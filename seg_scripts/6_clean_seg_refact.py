@@ -1,11 +1,3 @@
-import img
-import SimpleITK as sitk
-
-import numpy as np
-import nrrd
-# import pylab
-import json
-import os
 import argparse
 
 from seg_scripts.common import configure_logging, initialize_parameters
@@ -24,7 +16,9 @@ def main(args) :
         --thickness-file [thickness_file]
         --modify-label [key1=value1] [key2=value2] ... [keyN=valueN]
     """
-    path2points, path2ptsjson, path2originjson, labels_file, thickness_file = initialize_parameters(args) 
+    path2points, path2ptsjson, path2originjson, files_dict = initialize_parameters(args) 
+    labels_file = files_dict["labels_file"]
+    thickness_file = files_dict["thickness_file"]
 
     clean_segmentation_refact(path2points, path2ptsjson, path2originjson, labels_file, thickness_file=thickness_file, is_mri=args.is_mri)
 

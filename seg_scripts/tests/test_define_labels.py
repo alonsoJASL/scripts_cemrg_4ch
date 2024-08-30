@@ -1,10 +1,8 @@
-from seg_scripts.parameters import Labels, WallThickness, Parameters
+from seg_scripts.parameters import Labels, WallThickness, VeinCutoff, Parameters
 
 def main():
     # 1. Create a Labels object with default values
     labels = Labels()
-    print("Initial Labels:")
-    labels.print_label_explanation()
 
     # Save the default labels to a file
     labels_file = 'labels.json'
@@ -13,16 +11,23 @@ def main():
 
     # 2. Create a WallThickness object with default values
     wall_thickness = WallThickness(spacings=0.39844)
-    print("Initial Wall Thickness:")
-    print(wall_thickness.get_dictionary())
 
     # Save the default thickness values to a file
     thickness_file = 'thickness.json'
     wall_thickness.save(thickness_file)
     print(f"Default wall thickness saved to {thickness_file}\n")
 
+    # 3. Create a VeinCuttoff
+    vein_cutoff = VeinCutoff()
+
+    # Save the default vein cutoff values to a file
+    vein_cutoff_file = 'vein_cutoff.json'
+    vein_cutoff.save(vein_cutoff_file)
+    print(f"Default vein cutoff saved to {vein_cutoff_file}\n")
+
+
     # 3. Create a Parameters object using the saved files
-    params = Parameters(label_file=labels_file, thickness_file=thickness_file)
+    params = Parameters(label_file=labels_file, thickness_file=thickness_file, vein_cutoff_file=vein_cutoff_file)
     print("Initial Parameters (Labels and Thickness):")
     params.print_all()
 
@@ -38,6 +43,10 @@ def main():
     params.LAA_WT = 30.0  # Example modification
     params.ring_thickness_multiplier = 0.001  # Example modification
 
+    # Modify vein cutoff parameters
+    params.vein_cutoff.SVC_cutoff = 0.5  # Example modification
+    params.PArt_cutoff = 0.3  # Example modification
+
     # 5. Print the modified parameters to the console
     print("\nModified Parameters (Labels and Thickness):")
     params.print_all()
@@ -45,7 +54,8 @@ def main():
     # 6. Save the modified values back to the files
     params.save_labels(labels_file)
     params.save_thickness(thickness_file)
-    print(f"\nModified labels and thickness saved to {labels_file} and {thickness_file}")
+    params.save_vein_cutoff(vein_cutoff_file)
+    print(f"\nModified labels and thickness saved to {labels_file}, {thickness_file}, and {vein_cutoff_file}\n")
 
 
 if __name__ == '__main__' : 

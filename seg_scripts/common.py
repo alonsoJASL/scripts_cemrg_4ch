@@ -92,7 +92,7 @@ def apply_label_modifications(label_object, modifications):
         for modification in modifications:
             try:
                 key, value = modification.split('=')
-                value = int(value)  # Assuming all labels are integers, convert value to int
+                value = float(value) if '.' in value else int(value) 
                 if hasattr(label_object, key):
                     setattr(label_object, key, value)
                     print(f"[common] Set {key} to {value} in the label object.")
@@ -124,9 +124,10 @@ def initialize_parameters(args):
     
     labels_file = getattr(args, 'labels_file', None)
     thickness_file = getattr(args, 'thickness_file', None)
+    vein_cutoff_file = getattr(args, 'vein_cutoff_file', None)
 
     # Initialize Parameters object with the provided files
-    params = Parameters(label_file=labels_file, thickness_file=thickness_file)
+    params = Parameters(label_file=labels_file, thickness_file=thickness_file, vein_cutoff_file=vein_cutoff_file)
 
     # Apply any label modifications
     apply_label_modifications(params, getattr(args, 'modify_label', []))
@@ -142,5 +143,16 @@ def initialize_parameters(args):
         print("[common] Creating thickness file")
         thickness_file = os.path.join(path2points, "custom_thickness.json")
         params.save_thickness(thickness_file)
+		
+    if vein_cutoff_file is None and path2points is not None:
+        print("[common] Creating vein cutoff file")
+        vein_cutoff_file = os.path.join(path2points, "custon_vein_cutoff.json")
+        params.save_vein_cutoff(vein_cutoff_file)
+		
+    files_dict = {
+        "labels_file": labels_file,
+        "thickness_file": thickness_file,
+        "vein_cutoff_file": vein_cutoff_file
+    }
 
-    return path2points, path2ptsjson, path2originjson, labels_file, thickness_file
+    return path2points, path2ptsjson, path2originjson, files_dict

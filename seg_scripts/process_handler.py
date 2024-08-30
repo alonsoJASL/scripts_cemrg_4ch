@@ -249,29 +249,27 @@ def crop_svc_ivc(path2points:str, path2ptsjson:str, path2originjson:str, labels_
     fcp.flatten_vessel_base('seg_s2d.nrrd', 'seg_s2e.nrrd', SVC_seed, C.SVC_label)
     fcp.flatten_vessel_base('seg_s2e.nrrd', 'seg_s2f.nrrd', IVC_seed, C.IVC_label)
 
-def cut_vessels(path2points:str, vcjointjson:str, seg_name='seg_s2a.nrrd', labels_file=None, thickness_file=None, cut_percentage=0.75) :
+def cut_vessels(path2points:str, seg_name='seg_s2a.nrrd', labels_file=None, thickness_file=None, vein_cutoff_file=None) :
     logger.info("Cutting vessels")
-    with open(os.path.join(path2points, vcjointjson)) as f:
-        vc_cutoff = json.load(f)
     
-    C = Parameters(label_file=labels_file, thickness_file=thickness_file)
+    C = Parameters(label_file=labels_file, thickness_file=thickness_file, vein_cutoff_file=vein_cutoff_file)
     basename = seg_name.split(".")[0]
 
     input_seg = os.path.join(path2points, seg_name)
     output_seg = os.path.join(path2points, f"{basename}_aorta.nrrd")
-    cuts.cut_vessels(input_seg, C.Ao_BP_label, C.LV_BP_label, cut_percentage, output_seg)
+    cuts.cut_vessels(input_seg, C.Ao_BP_label, C.LV_BP_label, C.Aorta_cutoff, output_seg)
 
     input_seg = output_seg
     output_seg = os.path.join(path2points, f"{basename}_PA.nrrd")
-    cuts.cut_vessels(input_seg, C.PArt_BP_label, C.RV_BP_label, cut_percentage, output_seg)
+    cuts.cut_vessels(input_seg, C.PArt_BP_label, C.RV_BP_label, C.PArt_cutoff, output_seg)
 
     input_seg = output_seg
     output_seg = os.path.join(path2points, f"{basename}_SVC.nrrd")
-    cuts.reassign_vessels(input_seg, C.SVC_label, C.RA_BP_label, vc_cutoff["SVC"], output_seg)
+    cuts.reassign_vessels(input_seg, C.SVC_label, C.RA_BP_label, C.SVC_cutoff, output_seg)
 
     input_seg = output_seg
     output_seg = os.path.join(path2points, "seg_s2f.nrrd")
-    cuts.reassign_vessels(input_seg, C.IVC_label, C.RA_BP_label, vc_cutoff["IVC"], output_seg)
+    cuts.reassign_vessels(input_seg, C.IVC_label, C.RA_BP_label, C.IVC_cutoff, output_seg)
 
     
 def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, mydebug=False) :
