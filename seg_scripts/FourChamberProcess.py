@@ -948,7 +948,7 @@ class FourChamberProcess:
             # pusher_wall,   pushed_wall,    pushed_bp,     pushed_wt
             (C.LA_myo_label, C.RA_myo_label, C.RA_BP_label, C.RA_WT),
             (C.Ao_wall_label, C.RA_myo_label, C.RA_BP_label, C.RA_WT),
-            (C.LV_myo_label, C.RA_myo_label, C.SVC_label, C.RA_WT),
+            (C.Ao_wall_label, C.RA_myo_label, C.SVC_label, C.RA_WT),
             (C.LV_myo_label, C.RA_myo_label, C.RA_BP_label, C.RA_WT)
         ]
         l = ['j', 'k', 'k', 'l']
