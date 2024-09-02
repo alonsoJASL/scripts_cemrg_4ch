@@ -257,19 +257,19 @@ def cut_vessels(path2points:str, seg_name='seg_s2a.nrrd', labels_file=None, thic
 
     input_seg = os.path.join(path2points, seg_name)
     output_seg = os.path.join(path2points, f"{basename}_aorta.nrrd")
-    cuts.cut_vessels(input_seg, C.Ao_BP_label, C.LV_BP_label, C.Aorta_cutoff, output_seg)
+    cuts.cut_vessels(input_seg, C.Ao_BP_label, C.LV_BP_label, C.Aorta_bp_cutoff, output_seg)
 
     input_seg = output_seg
     output_seg = os.path.join(path2points, f"{basename}_PA.nrrd")
-    cuts.cut_vessels(input_seg, C.PArt_BP_label, C.RV_BP_label, C.PArt_cutoff, output_seg)
+    cuts.cut_vessels(input_seg, C.PArt_BP_label, C.RV_BP_label, C.PArt_bp_cutoff, output_seg)
 
     input_seg = output_seg
     output_seg = os.path.join(path2points, f"{basename}_SVC.nrrd")
-    cuts.reassign_vessels(input_seg, C.SVC_label, C.RA_BP_label, C.SVC_cutoff, output_seg)
+    cuts.reassign_vessels(input_seg, C.SVC_label, C.RA_BP_label, C.SVC_bp_cutoff, output_seg)
 
     input_seg = output_seg
     output_seg = os.path.join(path2points, "seg_s2f.nrrd")
-    cuts.reassign_vessels(input_seg, C.IVC_label, C.RA_BP_label, C.IVC_cutoff, output_seg)
+    cuts.reassign_vessels(input_seg, C.IVC_label, C.RA_BP_label, C.IVC_bp_cutoff, output_seg)
 
     
 def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, mydebug=False) :
@@ -351,32 +351,16 @@ def create_myocardium(path2points:str, path2ptsjson:str, path2originjson:str, la
     seg_new_array = fcp.pushing_in(seg_new_array, C.Ao_wall_label, C.RV_myo_label, C.RV_BP_label, C.RV_WT)
     fcp.save_if_seg_steps(seg_new_array, 'seg_s3p.nrrd')
 
-def myo_helper_open_artery(fourch_object: FOURCH.FourChamberProcess, seg_array:np.ndarray, cut_ratio:float, basename:str, suffix:str) : 
-    # tO-DO: ?Move this in FourChanberProcess
-    # tO-DO: ?Modify to use the PArt or Aorta, dpepending on the suffix 
-    C = fourch_object.CONSTANTS
-
-    seg_name = f'{basename}.nrrd'
-    seg_path = fourch_object.DIR(seg_name)
-
-    if not os.path.exists(seg_path) : 
-        fourch_object.save_image_array(seg_array, seg_name)
-    
-    wall_label = C.Ao_wall_label if suffix == 'aorta' else C.PArt_wall_label
-    BP_label = C.Ao_BP_label if suffix == 'aorta' else C.PArt_BP_label
-    V_label = C.LV_BP_label if suffix == 'aorta' else C.RV_BP_label
-
-    cuts.open_artery(seg_path, wall_label, BP_label, V_label, cut_ratio, fourch_object.DIR(f'{basename}_{suffix}.nrrd'))
-    seg_new_array = fourch_object.load_image_array(f'{basename}_{suffix}.nrrd')
-    return seg_new_array
-
-def create_myocardium_refact(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, thickness_file=None, is_mri=False, mydebug=False) :
+def create_myocardium_refact(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, thickness_file=None, vein_cutoff_file=None, is_mri=False, mydebug=False) :
     logger.info("Creating myocardium")
     fcp, _, points_data = parse_input_parameters(path2points, path2originjson, path2ptsjson, labels_file=labels_file, thickness_file=thickness_file, set_debug=mydebug)
     fcp.save_seg_steps = True
     fcp.swap_axes = True
     fcp.is_mri = is_mri
     fcp.ref_image_mri = fcp.load_image_array('seg_s2a.nrrd') if fcp.is_mri else None
+
+    fcp.CONSTANTS.load_vein_cutoff(vein_cutoff_file)
+    C=fcp.CONSTANTS
 
     input_seg_array = fcp.load_image_array('seg_s2f.nrrd')
     logger.info("<Step 1/10> Creating myocardium for the LV outflow tract")
@@ -386,13 +370,15 @@ def create_myocardium_refact(path2points:str, path2ptsjson:str, path2originjson:
     seg_new_array = fcp.myo_aortic_wall(seg_new_array, 'seg_s3b.nrrd')
     
     if USE_NEW_IMPLEMENTATION :
-        seg_new_array = myo_helper_open_artery(fcp, seg_new_array, cut_ratio=0.8, basename='seg_s3b', suffix='aorta')
+        logger.info(f'Aorta open cutoff: {C.Aorta_open_cutoff}')
+        seg_new_array = fcp.myo_helper_open_artery(seg_new_array, cut_ratio=C.Aorta_open_cutoff, basename='seg_s3b', suffix='aorta')
 
     logger.info("<Step 3/10> Creating the pulmonary artery wall")
     seg_new_array = fcp.myo_pulmonary_artery(seg_new_array, 'seg_s3c.nrrd')
 
     if USE_NEW_IMPLEMENTATION :
-        seg_new_array = myo_helper_open_artery(fcp, seg_new_array, cut_ratio=0.2, basename='seg_s3c', suffix='PA')
+        logger.info(f'PArt open cutoff: {C.PArt_open_cutoff}')
+        seg_new_array = fcp.myo_helper_open_artery(seg_new_array, cut_ratio=C.PArt_open_cutoff, basename='seg_s3c', suffix='PA')
 
     if not USE_NEW_IMPLEMENTATION :
         logger.info("<Step 4/10> Cropping veins")
@@ -402,26 +388,26 @@ def create_myocardium_refact(path2points:str, path2ptsjson:str, path2originjson:
         seg_new_array = fcp.myo_crop_veins(seg_new_array, aorta_slicer_array, PArt_slicer_array, 'seg_s3e.nrrd')
         seg_new_array = fcp.myo_intermediate_cc_process(seg_new_array, points_data, 'seg_s3f.nrrd')
 
-    # logger.info("<Step 5/10> Creating the right ventricular myocardium")
-    # seg_new_array = fcp.myo_right_ventricle(seg_new_array, 'seg_s3g.nrrd')
+    logger.info("<Step 5/10> Creating the right ventricular myocardium")
+    seg_new_array = fcp.myo_right_ventricle(seg_new_array, 'seg_s3g.nrrd')
 
-    # logger.info("<Step 6/10> Creating the left atrial myocardium")
-    # seg_new_array = fcp.myo_left_atrium(seg_new_array, 'seg_s3h.nrrd')
+    logger.info("<Step 6/10> Creating the left atrial myocardium")
+    seg_new_array = fcp.myo_left_atrium(seg_new_array, 'seg_s3h.nrrd')
 
-    # logger.info("<Step 7/10> Creating the right atrial myocardium")
-    # seg_new_array = fcp.myo_right_atrium(seg_new_array, 'seg_s3i.nrrd')
-    # seg_new_array = fcp.myo_push_in_ra(seg_new_array)
+    logger.info("<Step 7/10> Creating the right atrial myocardium")
+    seg_new_array = fcp.myo_right_atrium(seg_new_array, 'seg_s3i.nrrd')
+    seg_new_array = fcp.myo_push_in_ra(seg_new_array)
 
-    # logger.info("<Step 8/10> LA myo: Pushing the left atrium with the aorta")
-    # seg_new_array = fcp.myo_push_in_la(seg_new_array)
+    logger.info("<Step 8/10> LA myo: Pushing the left atrium with the aorta")
+    seg_new_array = fcp.myo_push_in_la(seg_new_array)
 
-    # logger.info("<Step 9/10> PArt wall: Pushing the pulmonary artery with the aorta")
-    # seg_new_array = fcp.myo_push_in_part(seg_new_array)
+    logger.info("<Step 9/10> PArt wall: Pushing the pulmonary artery with the aorta")
+    seg_new_array = fcp.myo_push_in_part(seg_new_array)
 
-    # logger.info("<Step 10/10> RV myo: Pushing the right ventricle with the aorta")
-    # seg_new_array = fcp.myo_push_in_rv(seg_new_array)
+    logger.info("<Step 10/10> RV myo: Pushing the right ventricle with the aorta")
+    seg_new_array = fcp.myo_push_in_rv(seg_new_array)
 
-    # fcp.save_image_array(seg_new_array, fcp.DIR('seg_s3p.nrrd'))
+    fcp.save_image_array(seg_new_array, fcp.DIR('seg_s3p.nrrd'))
 
 def create_valve_planes_refact(path2points:str, path2ptsjson:str, path2originjson:str, labels_file=None, thickness_file=None, is_mri=False, mydebug=False) :
     logger.info("Creating valve planes")

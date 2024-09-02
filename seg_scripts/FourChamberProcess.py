@@ -6,6 +6,7 @@ import SimpleITK as sitk
 import seg_scripts.img as img
 from seg_scripts.ImageAnalysis import MaskOperationMode as MM
 from seg_scripts.ImageAnalysis import ImageAnalysis 
+import seg_scripts.cut_labels as cuts
 
 from seg_scripts.common import configure_logging, big_print, make_tmp
 
@@ -27,6 +28,8 @@ class FourChamberProcess:
         self._save_seg_steps = True
         self.swap_axes = True
         self.logger = configure_logging(log_name=__name__, is_debug=self._debug)
+        ## helper image for creating vein rings (set in function)
+        self.seg_vein_rings_ref = None
         
     @property 
     def path2points(self):
@@ -700,53 +703,6 @@ class FourChamberProcess:
         
         return seg_array_new, distmap_array, thresh_array, struct_array
     
-    def extract_atrial_rings(self, seg_array, acc_array, ring_array, atrial_myo_thresh, pv_ring_label, outname, replace_only_label:list=[]) : 
-        """
-        Extracts the atrial rings from the segmentation array by adding or replacing the ring array.
-        
-        Args:
-            seg_array (np.array): The segmentation array.
-            acc_array (np.array): The array representing the finsl output of all the veins (seg_s4j)
-            ring_array (np.array): The array representing the atrial rings.
-            atrial_myo_thresh (float): The threshold value for the left atrial myocardium.
-            pv_ring_label (int): The label value of the pulmonary vein ring.
-            outname (str): The name of the output file to save the modified segmentation array.
-            replace_only_label (list, optional): A list of label values for which the ring array should be replaced instead of added. Defaults to [].
-        
-        Returns:
-            np.array: The modified segmentation array with the atrial rings added or replaced.
-        
-        Example Usage:
-            four_chamber = FourChamberProcess(path2points, origin_spacing, CONSTANTS)
-            seg_array = ...
-            ring_array = ...
-            atrial_myo_thresh = ...
-            pv_ring_label = ...
-            outname = ...
-            replace_only_label = ...
-            result = four_chamber.extract_atrial_rings(seg_array, ring_array, atrial_myo_thresh, pv_ring_label, outname, replace_only_label)
-        """
-        origin, spacings = self.get_origin_spacing()
-        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
-
-        # intermediate_array = ima.add_masks(seg_array, ring_array, pv_ring_label) 
-        if not replace_only_label :
-            intermediate_array = ima.add_masks(seg_array, ring_array, pv_ring_label)
-        else:
-            # in LA: only for rpv1 where replace_only_label == [SVC_label]
-            # in RA: only for SVC where replace_only_label == [Ao_wall_label, LA_myo_label, RPV1_ring_label, RPV1_label, RPV2_ring_label, RPV2_label]
-            for label in replace_only_label:
-                intermediate_array = ima.add_masks_replace_only(seg_array, ring_array, pv_ring_label, label)
-        
-        # seg_array_new, _ = self.intersect_and_replace(intermediate_array, atrial_myo_thresh, pv_ring_label, pv_ring_label, pv_ring_label)
-        ring_array = ima.and_filter(intermediate_array, atrial_myo_thresh, pv_ring_label, pv_ring_label)
-        seg_array_new = ima.add_masks_replace(acc_array, ring_array, pv_ring_label)
-
-
-        self.save_if_seg_steps(intermediate_array, outname)
-
-        return seg_array_new, intermediate_array
-    
     def create_myocardium(self, seg_array: np.ndarray, labels: list, mode:MM, mode_labels, seg_out, mode2: MM = None, mode2_labels = None, dmname="", thname="") -> np.array:
         """
     Create myocardium segmentation based on the input segmentation array.
@@ -833,6 +789,26 @@ class FourChamberProcess:
 
         self.save_if_seg_steps(seg_new_array, outname)
 
+        return seg_new_array
+    
+    def myo_helper_open_artery(self, seg_array:np.ndarray, cut_ratio:float, basename:str, suffix:str) : 
+        """
+        Helper function for open_artery
+        """
+        C = self.CONSTANTS
+
+        seg_name = f'{basename}.nrrd'
+        seg_path = self.DIR(seg_name)
+
+        if not os.path.exists(seg_path) : 
+            self.save_image_array(seg_array, seg_name)
+
+        wall_label = C.Ao_wall_label if suffix == 'aorta' else C.PArt_wall_label
+        BP_label = C.Ao_BP_label if suffix == 'aorta' else C.PArt_BP_label
+        V_label = C.LV_BP_label if suffix == 'aorta' else C.RV_BP_label
+
+        cuts.open_artery(seg_path, wall_label, BP_label, V_label, cut_ratio, self.DIR(f'{basename}_{suffix}.nrrd'))
+        seg_new_array = self.load_image_array(f'{basename}_{suffix}.nrrd')
         return seg_new_array
     
     
@@ -1152,14 +1128,40 @@ class FourChamberProcess:
         return la_myo_thresh, ra_myo_thresh
     
     def helper_create_ring (self, seg_array: np.ndarray, seg_aux_array: np.ndarray, atrium_myo_thresh, name, label, ring_label, replace_only_list) :
+        """
+
+        Explanation based on old scripts: 
+            + seg_array = seg_s4j this is the last segmentation output from this step
+            + seg_aux_array = seg_s4i these are the intermediate steps that get updated 
+            + self.seg_vein_rings_ref = seg_s4h this is the reference for the vein rings
+        """
         C = self.CONSTANTS
+        if self.seg_vein_rings_ref is None:
+            self.logger.error("Vein rings not created yet. Please run the valves_vein_rings function first.")
+            raise ValueError("Vein rings not created yet. Please run the valves_vein_rings function first.")
+        
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        origin, spacings = self.get_origin_spacing()
         dmap_name = f'{name}_DistMap'
         th_name = f'{name}_thresh.nrrd'
         labels = [label, C.ring_thickness]
-        outname = f'seg_s4_{name.lower()}.nrrd'
+        outname = lambda x: f'seg_s4{x}_{name.lower()}.nrrd'
 
-        _, vein_ring = self.extract_distmap_and_threshold(seg_aux_array, labels, dmap_name, th_name)
-        seg_new_array, seg_aux_updated = self.extract_atrial_rings(seg_array, seg_aux_array, vein_ring, atrium_myo_thresh, ring_label, outname, replace_only_list)
+        seg_aux_itk = ima.array2itk(self.seg_vein_rings_ref, origin, spacings)
+        distmap_itk = ima.distance_map(seg_aux_itk, label, dmap_name)
+        ring_array = ima.threshold_filter_array(distmap_itk, 0, C.ring_thickness, th_name) # mitten on the vein
+
+        if not replace_only_list : 
+            seg_aux_updated = ima.add_masks(seg_aux_array, ring_array, ring_label)
+        else :
+            for label in replace_only_list:
+                seg_aux_updated = ima.add_masks_replace_only(seg_aux_array, ring_array, ring_label, label)
+        
+        ring_array = ima.and_filter(seg_aux_updated, atrium_myo_thresh, ring_label, ring_label) # no longer a mitten
+        seg_new_array = ima.add_masks_replace(seg_array, ring_array, ring_label)
+
+        self.save_if_seg_steps(seg_new_array, outname('j'))
+        self.save_if_seg_steps(seg_aux_updated, outname('i'))
 
         return seg_new_array, seg_aux_updated
         
@@ -1169,6 +1171,7 @@ class FourChamberProcess:
         Create the vein rings from the segmented array
         """
         C = self.CONSTANTS
+        self.seg_vein_rings_ref = seg_aux_array.copy() 
         collection = [
             ('LPV1', C.LPV1_label, C.LPV1_ring_label), 
             ('LPV2', C.LPV2_label, C.LPV2_ring_label),
@@ -1192,6 +1195,7 @@ class FourChamberProcess:
         seg_new_array = seg_array
         seg_aux  = seg_aux_array
         for vein, label, ring_label in collection : 
+            print(f'    {vein}: label-{label} Ring_label-{ring_label}')
             rol = replace_only_label_dict[vein]
             myo_thresh = ra_myo_thresh if vein in ['SVC', 'IVC'] else la_myo_thresh
             seg_new_array, seg_aux = self.helper_create_ring(seg_new_array, seg_aux, myo_thresh, vein, label, ring_label, rol)
@@ -1218,7 +1222,7 @@ class FourChamberProcess:
         for vein, label, plane_label, replace_label in collection : 
             seg_new_array, _ = self.intersect_and_replace(seg_new_array, la_bp_thresh, label, plane_label, replace_label, f'seg_s4j_{vein.lower()}.nrrd')
         
-        _, ra_bp_2mm = self.extract_distmap_and_threshold(seg_new_array, [-1, 2*C.valve_WT_svc_ivc], 'RA_BP_DistMap', 'RA_BP_thresh_2mm.nrrd', ra_bp_distmap)
+        _, ra_bp_2mm = self.extract_distmap_and_threshold(seg_new_array, [-1, C.valve_WT_svc_ivc], 'RA_BP_DistMap', 'RA_BP_thresh_2mm.nrrd', ra_bp_distmap)
 
         collection = [
             ('SVC', C.SVC_label, C.plane_SVC_label, C.plane_SVC_label),

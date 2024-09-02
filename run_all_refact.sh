@@ -48,12 +48,12 @@ fi
 
 if [ $RUN_3_CUT_VESSELS -eq 1  ] ; then
     echo "===== CUT VESSELS ======"
-    python $SCRIPTS_DIR/3_cut_vessels_refact.py $BASE_DIR --seg-name seg_s2a.nrrd --modify-label SVC_cutoff=0.3 IVC_cutoff=0.5 Aorta_cutoff=0.6 PArt_cutoff=0.6
+    python $SCRIPTS_DIR/3_cut_vessels_refact.py $BASE_DIR --seg-name seg_s2a.nrrd --modify-label SVC_bp_cutoff=0.3 IVC_bp_cutoff=0.5 Aorta_bp_cutoff=0.75 PArt_bp_cutoff=0.6
 fi
 
 if [ $RUN_4_MYO -eq 1 ] ; then
     echo "===== CREATE MYO ======"
-    python $SCRIPTS_DIR/4_create_myo_refact.py $BASE_DIR --origin-spacing-json $ORIGIN_SPACING_JSON --points-json $POINTS_JSON 
+    python $SCRIPTS_DIR/4_create_myo_refact.py $BASE_DIR --origin-spacing-json $ORIGIN_SPACING_JSON --points-json $POINTS_JSON --modify-label Aorta_open_cutoff=0.85 PArt_open_cutoff=0.5
 fi
 
 if [ $RUN_5_VALVES -eq 1 ] ; then

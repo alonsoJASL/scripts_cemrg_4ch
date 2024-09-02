@@ -3,6 +3,8 @@ import numpy as np
 
 # Utility functions
 def load_from_file(filename, defaults):
+    if filename is None:
+        return defaults
     try:
         with open(filename) as f:
             data = json.load(f)
@@ -196,7 +198,7 @@ class WallThickness:
     DEFAULT_MULTIPLIERS = {
         'valve_WT_multiplier': 4,
         'valve_WT_svc_ivc_multiplier': 4,
-        'ring_thickness_multiplier': 4,
+        'ring_thickness_multiplier': 2,
         'LV_neck_WT_multiplier': 2.00,
         'RV_WT_multiplier': 3.50,
         'LA_WT_multiplier': 2.00,
@@ -315,10 +317,12 @@ class WallThickness:
 
 class VeinCutoff : 
     DEFAULT_VALUES = {
-        'SVC_cutoff' : 0.2, 
-        'IVC_cutoff' : 0.2, 
-        'Aorta_cutoff' : 0.75, 
-        'PArt_cutoff' : 0.75
+        'SVC_bp_cutoff' : 0.2, 
+        'IVC_bp_cutoff' : 0.2, 
+        'Aorta_bp_cutoff' : 0.75, 
+        'PArt_bp_cutoff' : 0.75, 
+        'Aorta_open_cutoff' : 0.95, 
+        'PArt_open_cutoff' : 0.85
     }
 
     def __init__(self, filename=None):
@@ -411,6 +415,17 @@ class Parameters:
     def set_scale_factor(self, spacings, ceiling=False):
         # Set the scale factor for thickness parameters
         self.thickness.set_scale_factor(spacings, ceiling)
+
+    def load_labels(self, filename):
+        # Load the labels from a file
+        self.labels.load(filename)
+
+    def load_thickness(self, filename):
+        # Load the thickness parameters from a file
+        self.thickness.load_from_file(filename)
+
+    def load_vein_cutoff(self, filename):
+        self.vein_cutoff.load(filename)
 
     def print_all(self):
         # Print all labels and thickness parameters
