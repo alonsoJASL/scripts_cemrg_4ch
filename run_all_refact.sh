@@ -48,7 +48,7 @@ fi
 
 if [ $RUN_3_CUT_VESSELS -eq 1  ] ; then
     echo "===== CUT VESSELS ======"
-    python $SCRIPTS_DIR/3_cut_vessels_refact.py $BASE_DIR --seg-name seg_s2a.nrrd --modify-label SVC_cutoff=0.3 IVC_cutoff=0.5 Aorta_cutoff=0.5 PArt_cutoff=0.45
+    python $SCRIPTS_DIR/3_cut_vessels_refact.py $BASE_DIR --seg-name seg_s2a.nrrd --modify-label SVC_cutoff=0.3 IVC_cutoff=0.5 Aorta_cutoff=0.6 PArt_cutoff=0.6
 fi
 
 if [ $RUN_4_MYO -eq 1 ] ; then
