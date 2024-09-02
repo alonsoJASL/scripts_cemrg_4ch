@@ -224,6 +224,9 @@ class WallThickness:
         self.scale_factor = 1 / spacings
         if ceiling:
             self.scale_factor = np.ceil(self.scale_factor)
+        
+        if self.scale_factor < 0.5: 
+            print(f'WARNING: Spacing is too large for the scale factor to be meaningful, might cause problems.\n Scale factor: {self.scale_factor}')
         for key in self.multipliers:
             self.update_thickness_param(key.replace('_multiplier', ''))
 

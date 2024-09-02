@@ -28,8 +28,14 @@ class FourChamberProcess:
         self._save_seg_steps = True
         self.swap_axes = True
         self.logger = configure_logging(log_name=__name__, is_debug=self._debug)
+        
         ## helper image for creating vein rings (set in function)
         self.seg_vein_rings_ref = None
+
+        ## set spacing in CONSTANTS from spacing info  
+        _, spacing = self.get_origin_spacing()
+        min_spacing = np.min(spacing)
+        self.CONSTANTS.set_scale_factor(spacings=min_spacing, ceiling=False)
         
     @property 
     def path2points(self):
