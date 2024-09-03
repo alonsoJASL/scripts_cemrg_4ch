@@ -1,11 +1,10 @@
 import os
-import sys
 import glob
 import numpy as np
 import json
 
-from seg_scripts.common import configure_logging, add_file_handler
-from seg_scripts.common import parse_txt_to_json, get_json_data, make_tmp, mycp
+from seg_scripts.common import configure_logging
+from seg_scripts.common import parse_txt_to_json, get_json_data
 
 import seg_scripts.img as img
 from seg_scripts.parameters import Parameters

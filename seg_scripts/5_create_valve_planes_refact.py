@@ -12,6 +12,7 @@ import argparse
 from seg_scripts.common import configure_logging, initialize_parameters 
 logger = configure_logging(log_name=__name__)
 
+from seg_scripts.FourChamberProcess import FourChamberProcess
 from seg_scripts.parameters import Parameters
 from process_handler import create_valve_planes_refact
 
@@ -27,8 +28,15 @@ def main(args) :
     path2points, path2ptsjson, path2originjson, files_dict = initialize_parameters(args) 
     labels_file = files_dict["labels_file"]
     thickness_file = files_dict["thickness_file"]
+    vein_cutoff_file = files_dict["vein_cutoff_file"]
+
+    # params = Parameters(label_file=labels_file, thickness_file=thickness_file, vein_cutoff_file=vein_cutoff_file)
+    # FOURCH = FourChamberProcess(path2points=path2points, path2originjson=path2originjson, CONSTANTS=params)
+    # FOURCH.is_mri = args.is_mri
+    # create_valve_planes_refact(FOURCH, path2points)
     
     create_valve_planes_refact(path2points, path2ptsjson, path2originjson, labels_file, thickness_file, is_mri=args.is_mri)
+
 
 if __name__ == '__main__' : 
     parser = argparse.ArgumentParser(description='To run: python3 create_valve_planes.py [path_to_points]')

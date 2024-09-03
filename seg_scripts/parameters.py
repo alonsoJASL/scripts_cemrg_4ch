@@ -20,6 +20,12 @@ def save_to_file(filename, data):
     with open(filename, 'w') as f:
         json.dump(data, f)
 
+def save_update_file(filename, data, defaults) : 
+    existing_data = load_from_file(filename, defaults)
+    existing_data.update(data)
+
+    save_to_file(filename, existing_data)
+
 class Labels:
     # Dictionary to hold label names and their corresponding explanations
     LABELS_INFO = {
@@ -165,6 +171,10 @@ class Labels:
         # Save the label data to a file
         save_to_file(filename, self.labels)
 
+    def update(self, filename):
+        # Update the label data in a file
+        save_update_file(filename, self.labels, Labels.DEFAULT_VALUES)
+
     def load(self, filename):
         # Load the label data from a file
         self.labels = load_from_file(filename, self.labels)
@@ -269,12 +279,24 @@ class WallThickness:
     def save(self, filename):
         # Save both the multipliers and the thickness parameters to a file
         save_to_file(filename, self.get_dictionary())
-    
+
+    def update(self, filename):
+        # Update the multipliers and thickness parameters in a file
+        save_update_file(filename, self.get_dictionary(), self.get_default_dictionary())
+
     def get_dictionary(self):
         # Return both multipliers and thickness parameters as a dictionary
         data = {**self.multipliers, **self.thickness_params}
         data['scale_factor'] = self.scale_factor
         return data
+    
+    def get_default_dictionary(self):
+        default_data = WallThickness.DEFAULT_MULTIPLIERS.copy()
+        default_data.update({key.replace('_multiplier', ''): self.scale_factor * multiplier
+                                for key, multiplier in WallThickness.DEFAULT_MULTIPLIERS.items()})
+        default_data['scale_factor'] = self.scale_factor
+
+        return default_data
     
     def update_thickness_param(self, param_name):
         # Update the thickness parameter based on the corresponding multiplier and scale factor
@@ -350,6 +372,9 @@ class VeinCutoff :
     def save(self, filename):
         save_to_file(filename, self.vein_cutoff)
 
+    def update(self, filename):
+        save_update_file(filename, self.vein_cutoff, VeinCutoff.DEFAULT_VALUES)
+
     def load(self, filename):
         self.vein_cutoff = load_from_file(filename, self.vein_cutoff)
 
@@ -387,7 +412,7 @@ class Parameters:
         # Delegate attribute access to labels or thickness objects if the attribute exists in them
         if name in self.labels.labels:
             return getattr(self.labels, name)
-        elif name in self.thickness.multipliers or name in self.thickness.thickness_params:
+        elif name in self.thickness.multipliers or name in self.thickness.thickness_params or name == 'scale_factor':
             return getattr(self.thickness, name)
         elif name in self.vein_cutoff.vein_cutoff:
             return getattr(self.vein_cutoff, name)
@@ -414,6 +439,17 @@ class Parameters:
 
     def save_vein_cutoff(self, filename):
         self.vein_cutoff.save(filename)
+
+    def update_labels(self, filename):
+        # Update the labels in a file
+        self.labels.update(filename)
+
+    def update_thickness(self, filename):
+        # Update the thickness parameters in a file
+        self.thickness.update(filename)
+
+    def update_vein_cutoff(self, filename):
+        self.vein_cutoff.update(filename)
 
     def set_scale_factor(self, spacings, ceiling=False):
         # Set the scale factor for thickness parameters

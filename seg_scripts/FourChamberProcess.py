@@ -36,6 +36,7 @@ class FourChamberProcess:
         _, spacing = self.get_origin_spacing()
         min_spacing = np.min(spacing)
         self.CONSTANTS.set_scale_factor(spacings=min_spacing, ceiling=False)
+        self.logger.info(f'Scale factor set to {self.CONSTANTS.scale_factor}')
         
     @property 
     def path2points(self):
