@@ -789,14 +789,14 @@ class FourChamberProcess:
         """
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
         C=self.CONSTANTS
-        _, myo_array = self.extract_distmap_and_threshold(seg_array, [C.Ao_BP_label, C.Ao_WT], 'Ao_DistMap', 'Ao_wall.nrrd')
+        dist_map, myo_array = self.extract_distmap_and_threshold(seg_array, [C.Ao_BP_label, C.Ao_WT], 'Ao_DistMap', 'Ao_wall.nrrd')
         myo_array = ima.add_masks_replace(myo_array, myo_array, C.Ao_wall_label)
 
         seg_new_array = ima.add_masks_replace_except(seg_array, myo_array, C.Ao_wall_label, [C.LV_BP_label, C.LV_myo_label]) 
 
         self.save_if_seg_steps(seg_new_array, outname)
 
-        return seg_new_array
+        return seg_new_array, dist_map
     
     def myo_helper_open_artery(self, seg_array:np.ndarray, cut_ratio:float, basename:str, suffix:str) : 
         """
@@ -908,7 +908,7 @@ class FourChamberProcess:
 
         self.save_if_seg_steps(seg_new_array, outname)
 
-        return seg_new_array
+        return seg_new_array, myo_array
     
     def helper_push_in_bulk(self, seg_array: np.ndarray, pushing_label_collection: list, l:list) -> np.ndarray:
         
@@ -921,22 +921,56 @@ class FourChamberProcess:
             ix += 1
         
         return seg_new_array
+    
+    def helper_replace_a_mask(self, seg_array: np.ndarray, mask_array: np.ndarray, mask_label, label_in_seg, overwrite_label) -> np.ndarray:
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        intermediate_mask = ima.add_masks_replace(mask_array, mask_array, mask_label)
+        seg_new_array = ima.add_masks_replace_only(seg_array, intermediate_mask, label_in_seg, overwrite_label)
 
-    def myo_push_in_ra(self, seg_array: np.ndarray) -> np.ndarray:
+        return seg_new_array
+        
+
+    def myo_push_in_ra(self, seg_array: np.ndarray, ra_myo_array: np.ndarray, ao_distmap: np.ndarray) -> np.ndarray:
         """
         Push in the right atrium
         """
         C=self.CONSTANTS
-        pushing_label_collection = [
+        origin, spacings = self.get_origin_spacing()
+        pushing_label_collection_1 = [
             # pusher_wall,   pushed_wall,    pushed_bp,     pushed_wt
             (C.LA_myo_label, C.RA_myo_label, C.RA_BP_label, C.RA_WT),
-            (C.Ao_wall_label, C.RA_myo_label, C.RA_BP_label, C.RA_WT),
-            (C.Ao_wall_label, C.RA_myo_label, C.SVC_label, C.RA_WT),
+            (C.Ao_wall_label, C.RA_myo_label, C.RA_BP_label, C.RA_WT)
+        ]
+        l = ['j', 'k']
+
+        seg_new_array = self.helper_push_in_bulk(seg_array, pushing_label_collection_1, l)
+
+        # SVC ring fix 
+        self.logger.info("SVC ring fix")
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        aux_label = C.SVC_label+100
+
+        SVC_disk = ima.and_filter(seg_new_array, ra_myo_array, C.SVC_label, aux_label)
+        ao_distmap_img = ima.array2itk(ao_distmap, origin, spacings)
+        dilated_aorta = ima.threshold_filter_array(ao_distmap_img, ZERO_LABEL, C.Ao_WT + C.ring_thickness, "aorta_distmap_svc_ring.nrrd")
+
+        intersected_disk_array = ima.and_filter(SVC_disk, dilated_aorta, aux_label, C.RA_myo_label)
+        seg_new_array = self.helper_replace_a_mask(seg_new_array, intersected_disk_array, C.RA_myo_label, C.RA_myo_label, C.SVC_label)
+
+        intersected_svc_array = ima.and_filter(seg_new_array, dilated_aorta, C.SVC_label, ZERO_LABEL)
+        seg_new_array = self.helper_replace_a_mask(seg_new_array, intersected_svc_array, C.SVC_label, ZERO_LABEL, C.SVC_label)
+
+        self.save_if_seg_steps(seg_new_array, 'seg_s3k.nrrd')
+        # SVC ring fix
+
+        pushing_label_collection_2 = [
+            # pusher_wall,   pushed_wall,    pushed_bp,     pushed_wt
+            # (C.Ao_wall_label, C.RA_myo_label, C.SVC_label, C.RA_WT), # previous implementation
             (C.LV_myo_label, C.RA_myo_label, C.RA_BP_label, C.RA_WT)
         ]
-        l = ['j', 'k', 'k', 'l']
+        l = ['l']
         
-        return self.helper_push_in_bulk(seg_array, pushing_label_collection, l)
+        return self.helper_push_in_bulk(seg_new_array, pushing_label_collection_2, l)
     
     def myo_push_in_la(self, seg_array: np.ndarray) -> np.ndarray:
         """

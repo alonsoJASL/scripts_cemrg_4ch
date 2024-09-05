@@ -344,10 +344,10 @@ class VeinCutoff :
     DEFAULT_VALUES = {
         'SVC_bp_cutoff' : 0.2, 
         'IVC_bp_cutoff' : 0.2, 
-        'Aorta_bp_cutoff' : 0.75, 
-        'PArt_bp_cutoff' : 0.75, 
-        'Aorta_open_cutoff' : 0.95, 
-        'PArt_open_cutoff' : 0.85
+        'Aorta_bp_cutoff' : 1, 
+        'PArt_bp_cutoff' : 1, 
+        'Aorta_open_cutoff' : 0.65, 
+        'PArt_open_cutoff' : 0.7
     }
 
     def __init__(self, filename=None):

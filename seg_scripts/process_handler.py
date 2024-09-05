@@ -366,7 +366,7 @@ def create_myocardium_refact(path2points:str, path2ptsjson:str, path2originjson:
     seg_new_array = fcp.myo_lv_outflow_tract(input_seg_array, 'seg_s3a.nrrd')
 
     logger.info("<Step 2/10> Creating the aortic wall")
-    seg_new_array = fcp.myo_aortic_wall(seg_new_array, 'seg_s3b.nrrd')
+    seg_new_array, ao_distmap = fcp.myo_aortic_wall(seg_new_array, 'seg_s3b.nrrd')
     
     if USE_NEW_IMPLEMENTATION :
         logger.info(f'Aorta open cutoff: {C.Aorta_open_cutoff}')
@@ -394,8 +394,8 @@ def create_myocardium_refact(path2points:str, path2ptsjson:str, path2originjson:
     seg_new_array = fcp.myo_left_atrium(seg_new_array, 'seg_s3h.nrrd')
 
     logger.info("<Step 7/10> Creating the right atrial myocardium")
-    seg_new_array = fcp.myo_right_atrium(seg_new_array, 'seg_s3i.nrrd')
-    seg_new_array = fcp.myo_push_in_ra(seg_new_array)
+    seg_new_array, ra_myo_array = fcp.myo_right_atrium(seg_new_array, 'seg_s3i.nrrd')
+    seg_new_array = fcp.myo_push_in_ra(seg_new_array, ra_myo_array, ao_distmap)
 
     logger.info("<Step 8/10> LA myo: Pushing the left atrium with the aorta")
     seg_new_array = fcp.myo_push_in_la(seg_new_array)
