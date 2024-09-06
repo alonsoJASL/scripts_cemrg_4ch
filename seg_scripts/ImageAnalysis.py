@@ -85,6 +85,7 @@ class ImageAnalysis:
             np.ndarray: The padded image array.
 
         """
+        #TO-DO: check for refactored version where the origin is taken care of
         constant_pad_values = ((pad_value, pad_value), (pad_value, pad_value), (pad_value, pad_value))
         padded_img_array = np.pad(img_array, ((pad_x, pad_x), (pad_y, pad_y), (pad_z, pad_z)), mode='constant', constant_values=constant_pad_values)
         return padded_img_array

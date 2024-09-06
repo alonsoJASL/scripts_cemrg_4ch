@@ -2,6 +2,9 @@ import SimpleITK as sitk
 import numpy as np
 import skimage.morphology as morph
 
+# to-do: someday refactor to work on images abd arrays instead of paths 
+# to-do: screen for repeated functions 
+
 from seg_scripts.common import configure_logging
 logger = configure_logging(log_name=__name__)
 

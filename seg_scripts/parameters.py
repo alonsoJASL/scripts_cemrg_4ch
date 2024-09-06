@@ -407,6 +407,7 @@ class Parameters:
         self.labels = Labels(filename=label_file)
         self.thickness = WallThickness(thickness_file=thickness_file, spacings=spacings)
         self.vein_cutoff = VeinCutoff(filename=vein_cutoff_file)
+        self.aux_labels = []
 
     def __getattr__(self, name):
         # Delegate attribute access to labels or thickness objects if the attribute exists in them
@@ -488,3 +489,16 @@ class Parameters:
 
     def get_attribute_list(self) :
         return self.labels.get_attribute_list() + self.thickness.get_attribute_list() + self.vein_cutoff.get_attribute_list()
+    
+    def create_non_existing_label(self) : 
+        """
+        Returns a new label that is not in the current labels
+        """
+        for label in range(1, 1000) : 
+            if label not in self.labels.labels.values() and label not in self.aux_labels : 
+                self.aux_labels.append(label)
+                return label
+        return None 
+    
+    def rm_aux_labels(self) :
+        self.aux_labels = []

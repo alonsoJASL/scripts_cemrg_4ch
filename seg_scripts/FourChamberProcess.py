@@ -948,17 +948,22 @@ class FourChamberProcess:
         # SVC ring fix 
         self.logger.info("SVC ring fix")
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
-        aux_label = C.SVC_label+100
+        disk_label = C.create_non_existing_label() #C.SVC_label+100
 
-        SVC_disk = ima.and_filter(seg_new_array, ra_myo_array, C.SVC_label, aux_label)
+        SVC_disk = ima.and_filter(seg_new_array, ra_myo_array, C.SVC_label, disk_label)
         ao_distmap_img = ima.array2itk(ao_distmap, origin, spacings)
         dilated_aorta = ima.threshold_filter_array(ao_distmap_img, ZERO_LABEL, C.Ao_WT + C.ring_thickness, "aorta_distmap_svc_ring.nrrd")
 
-        intersected_disk_array = ima.and_filter(SVC_disk, dilated_aorta, aux_label, C.RA_myo_label)
+        intersected_disk_array = ima.and_filter(SVC_disk, dilated_aorta, disk_label, C.RA_myo_label)
         seg_new_array = self.helper_replace_a_mask(seg_new_array, intersected_disk_array, C.RA_myo_label, C.RA_myo_label, C.SVC_label)
 
-        intersected_svc_array = ima.and_filter(seg_new_array, dilated_aorta, C.SVC_label, ZERO_LABEL)
-        seg_new_array = self.helper_replace_a_mask(seg_new_array, intersected_svc_array, C.SVC_label, ZERO_LABEL, C.SVC_label)
+        svc_chunk_label = C.create_non_existing_label() #C.SVC_label+200
+        intersected_svc_array = ima.and_filter(seg_new_array, dilated_aorta, C.SVC_label, svc_chunk_label)
+        seg_new_array = self.helper_replace_a_mask(seg_new_array, intersected_svc_array, C.SVC_label, svc_chunk_label, C.SVC_label)
+        
+        seg_new_array = ima.remove_filter(seg_new_array, seg_new_array, svc_chunk_label)
+
+        C.rm_aux_labels()
 
         self.save_if_seg_steps(seg_new_array, 'seg_s3k.nrrd')
         # SVC ring fix

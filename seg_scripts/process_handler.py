@@ -357,6 +357,7 @@ def create_myocardium_refact(path2points:str, path2ptsjson:str, path2originjson:
     fcp.swap_axes = True
     fcp.is_mri = is_mri
     fcp.ref_image_mri = fcp.load_image_array('seg_s2a.nrrd') if fcp.is_mri else None
+    fcp.debug = True
 
     fcp.CONSTANTS.load_vein_cutoff(vein_cutoff_file)
     C=fcp.CONSTANTS

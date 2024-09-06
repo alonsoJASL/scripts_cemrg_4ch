@@ -1,6 +1,0 @@
-{
-    "ventricles": [1,2],
-    "atria": [3,4],
-    "fast_endo": [25],
-    "bachmann_bundle":[26] 
-}

@@ -53,7 +53,7 @@ fi
 
 if [ $RUN_4_MYO -eq 1 ] ; then
     echo "===== CREATE MYO ======"
-    python $SCRIPTS_DIR/4_create_myo_refact.py $BASE_DIR --origin-spacing-json $ORIGIN_SPACING_JSON --points-json $POINTS_JSON --modify-label Aorta_open_cutoff=0.65 PArt_open_cutoff=0.7
+    python $SCRIPTS_DIR/4_create_myo_refact.py $BASE_DIR --origin-spacing-json $ORIGIN_SPACING_JSON --points-json $POINTS_JSON --modify-label Aorta_open_cutoff=0.9 PArt_open_cutoff=0.6
 fi
 
 if [ $RUN_5_VALVES -eq 1 ] ; then
