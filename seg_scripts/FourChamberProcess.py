@@ -660,7 +660,6 @@ class FourChamberProcess:
         seg_array_new = ima.add_masks_replace(seg_array, struct_array, replace_label)
 
         if outname != "":
-            self.logger.info(f"Saving intersected and replaced segmentation array to {outname}")
             self.save_if_seg_steps(seg_array_new, outname)
 
         return seg_array_new, struct_array
@@ -961,7 +960,7 @@ class FourChamberProcess:
         intersected_svc_array = ima.and_filter(seg_new_array, dilated_aorta, C.SVC_label, svc_chunk_label)
         seg_new_array = self.helper_replace_a_mask(seg_new_array, intersected_svc_array, C.SVC_label, svc_chunk_label, C.SVC_label)
         
-        seg_new_array = ima.remove_filter(seg_new_array, seg_new_array, svc_chunk_label)
+        seg_new_array = ima.remove_label_filter(seg_new_array, svc_chunk_label)
 
         C.rm_aux_labels()
 
@@ -1241,7 +1240,6 @@ class FourChamberProcess:
         seg_new_array = seg_array
         seg_aux  = seg_aux_array
         for vein, label, ring_label in collection : 
-            print(f'    {vein}: label-{label} Ring_label-{ring_label}')
             rol = replace_only_label_dict[vein]
             myo_thresh = ra_myo_thresh if vein in ['SVC', 'IVC'] else la_myo_thresh
             seg_new_array, seg_aux = self.helper_create_ring(seg_new_array, seg_aux, myo_thresh, vein, label, ring_label, rol)

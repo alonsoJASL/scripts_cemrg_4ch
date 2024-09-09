@@ -226,6 +226,17 @@ class ImageAnalysis:
         
         return imga_array_new
     
+    def remove_list_of_labels(self, imga_array: np.ndarray, label_remove_list: list, inplace=False) -> np.ndarray:
+        if not inplace:
+            imga_array = copy.deepcopy(imga_array)
+
+        imga_array[np.isin(imga_array, label_remove_list)] = ZERO_LABEL
+        
+        return imga_array
+    
+    def remove_label_filter(self, imga_array: np.ndarray, label_remove, inplace=False) -> np.ndarray:
+        return self.remove_list_of_labels(imga_array, [label_remove], inplace)
+    
     def add_masks_mode(self, imga_array: np.ndarray, imgb_array: np.ndarray, mode: MaskOperationMode, newmask, special_case_labels = None) -> np.ndarray:
         switcher = {
             MaskOperationMode.REPLACE_EXCEPT: self.add_masks_replace_except,
