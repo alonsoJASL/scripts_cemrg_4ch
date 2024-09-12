@@ -44,6 +44,7 @@ if __name__ == '__main__' :
     parameters_group = parser.add_argument_group("labels")
     parameters_group.add_argument("--labels-file", '-labels-file', type=str, required=False, default=None, help="Name of the json file containing custom labels")
     parameters_group.add_argument("--thickness-file", '-thickness-file', type=str, required=False, default=None, help="Name of the json file containing custom thickness")
+    parameters_group.add_argument("--vein-cutoff-file", "-vein-cutoff-file", type=str, default=None, help="Name of the json file containing vein cutoff")
     parameters_group.add_argument("--modify-label", "-modify-label", nargs='*', help="Modify label in the format key=value, e.g., --modify-label SVC_label=5 IVC_label=6 RA_BP_label=10")
     
     args = parser.parse_args()

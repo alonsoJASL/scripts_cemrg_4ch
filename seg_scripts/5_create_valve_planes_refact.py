@@ -28,7 +28,7 @@ def main(args) :
     path2points, path2ptsjson, path2originjson, files_dict = initialize_parameters(args) 
     labels_file = files_dict["labels_file"]
     thickness_file = files_dict["thickness_file"]
-    vein_cutoff_file = files_dict["vein_cutoff_file"]
+    # vein_cutoff_file = files_dict["vein_cutoff_file"]
 
     # params = Parameters(label_file=labels_file, thickness_file=thickness_file, vein_cutoff_file=vein_cutoff_file)
     # FOURCH = FourChamberProcess(path2points=path2points, path2originjson=path2originjson, CONSTANTS=params)
