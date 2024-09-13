@@ -2,6 +2,8 @@ import nrrd
 import numpy as np
 import copy
 import os
+import json 
+
 import SimpleITK as sitk
 import seg_scripts.img as img
 from seg_scripts.ImageAnalysis import MaskOperationMode as MM
@@ -89,6 +91,15 @@ class FourChamberProcess:
         spacing = self._origin_spacing["spacing"]
         return origin, spacing
     
+    def set_origin_spacing(self, new_origin, new_spacing):
+        self._origin_spacing = {"origin": new_origin, "spacing": new_spacing}
+
+    def save_origin_spacing(self, filename, full_path=False):
+        save_path = self.DIR(filename) if not full_path else filename
+
+        with open(save_path, 'w') as f:
+            json.dump(self._origin_spacing, f)
+    
     def get_dimensions(self) : 
         if "dimensions" in self._origin_spacing:
             return self._origin_spacing["dimensions"]
@@ -127,6 +138,19 @@ class FourChamberProcess:
         for key in world_coord_json:
             points_voxels.append(self.world_to_voxel(world_coord_json[key],origin,spacing))
         return points_voxels
+    
+    def pad_image(self, seg_array: np.ndarray, pad_size=10) -> np.ndarray:
+        origin, spacing = self.get_origin_spacing()
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+
+        padded_array = ima.pad_image(seg_array, pad_size, pad_size, pad_size, 0)
+        
+        for ix in range(3):
+            origin[ix] = origin[ix] - pad_size * spacing[ix]
+        
+        self.set_origin_spacing(origin, spacing)
+        return padded_array
+
     
     def cylinder_process(self, seg_array: np.array, points, plane_name, slicer_radius, slicer_height) -> np.array:
         origin, spacing = self.get_origin_spacing()
