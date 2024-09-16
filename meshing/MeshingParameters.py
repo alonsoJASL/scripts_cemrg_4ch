@@ -24,7 +24,7 @@ class MeshingParameters:
         'verbose': 1,
     }
     DEFAULT_OTHERS = {
-        'eval_thickness': 1,
+        'eval_thickness': 0,
     }
     DEFAULT_OUTPUT = {
         'outdir': './myocardium_OUT',

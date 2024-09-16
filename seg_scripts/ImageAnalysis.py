@@ -116,8 +116,19 @@ class ImageAnalysis:
             outname += ".nrrd" if not outname.endswith(".nrrd") else ""
             save_path = self.TMP(outname)
             sitk.WriteImage(DistMap, save_path)
+            self.helper_save_flipped_itk(DistMap, outname)
 
         return DistMap
+    
+    def helper_save_flipped_itk(self, img: sitk.Image, outname):
+        save_filpped = self.TMP(f"flipped_{outname}")
+        # swap axes and save
+        img_array = sitk.GetArrayFromImage(img)
+        img_array = np.swapaxes(img_array, 0, 2)
+        img_flipped = sitk.GetImageFromArray(img_array)
+        img_flipped.SetOrigin(img.GetOrigin())
+        img_flipped.SetSpacing(img.GetSpacing())
+        sitk.WriteImage(img_flipped, save_filpped)
 
     def threshold_filter(self, img: sitk.Image, lower, upper, outname="", binarise=False) -> sitk.Image: 
         """
@@ -154,6 +165,9 @@ class ImageAnalysis:
             make_tmp(self.TMP())
             save_path = self.TMP(outname)
             sitk.WriteImage(thresholded_img, save_path)
+
+            self.helper_save_flipped_itk(thresholded_img, outname)
+
 
         return thresholded_img
     

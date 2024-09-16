@@ -146,7 +146,7 @@ def initialize_parameters(args):
 		
     if vein_cutoff_file is None and path2points is not None:
         print("[common] Creating vein cutoff file")
-        vein_cutoff_file = os.path.join(path2points, "custon_vein_cutoff.json")
+        vein_cutoff_file = os.path.join(path2points, "custom_vein_cutoff.json")
         params.save_vein_cutoff(vein_cutoff_file)
 		
     files_dict = {
