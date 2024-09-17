@@ -80,6 +80,18 @@ def get_origin_and_spacing(path2points:str, segmentation_name = "seg_corrected.n
             f.write(f'origin\n')
             f.write(f'spacing\n')
 
+def pad_image(fcp: FOURCH.FourChamberProcess, path2originjson:str, seg_name:str, output_name:str, pad_size:int) :
+    logger.info(f"Padding image {seg_name} by {pad_size}")
+
+    seg_array = fcp.load_image_array(seg_name)
+    
+    fcp.save_origin_spacing(f'{path2originjson}.bak', True) # overwrite the origin and spacing
+
+    padded_array = fcp.pad_image(seg_array, pad_size)
+    
+    fcp.save_origin_spacing(path2originjson, True) # overwrite the origin and spacing
+    fcp.save_image_array(padded_array, output_name)
+
 VEIN_CHOICES = ['LSPV', 'LIPV', 'RSPV', 'RIPV', 'LAA']
 def create_extra_veins(path2points:str, path2veinpoints, path2originjson:str, seg_name='seg_corrected.nrrd', which_vein='LIPV', sl_height=15, sl_radius=5, labels_file=None) :
     fcp, _, _ = parse_input_parameters(path2points, path2originjson, path2ptsjson=None, labels_file=labels_file)
