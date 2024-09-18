@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 import argparse
+import json
 
 SOURCE_LABELS = { "LV" : 2 , "RV" : 103 , "LA" : 104 , "RA" : 105 , "Ao" : 106 , 
                  "PArt" : 107 , "MV" : 201 , "TV" : 202 , "AV" : 203 , "PV" : 204 ,
@@ -37,47 +38,32 @@ CORRECT_ORDER = [
     ]
 
 
+def simple_read_elem(meshname) : 
+      mesh_elem = pd.read_csv(f'{meshname}.elem', sep=" ", header=0, names=['colA','colB','colC','colD','colE','colF'])
+      label_col = mesh_elem['colF']
+      other_cols = mesh_elem[['colA','colB','colC','colD','colE']]
+      return label_col, other_cols
+
 def relabel_mesh(args) : 
       heart_folder = args.directory
-      mesh=os.path.join(heart_folder, args.file)
-      labels_to_replace = TO_REPLACE[args.labels_from]
+      mesh=os.path.join(heart_folder, args.input_mesh)
+      if args.replace_labels != '':
+         with open(args.replace_labels) as f:
+            labels_to_replace = json.load(f)
+      else :
+            labels_to_replace = TO_REPLACE[args.labels_from]
 
       os.system(f"cp -n {mesh}.elem {mesh}_old_labels.elem")
       
       print('Reading mesh...')
-      mesh_elem = pd.read_csv(f'{mesh}.elem', sep=" ", header=0, names=['colA','colB','colC','colD','colE','colF'])
-      label_col = mesh_elem['colF']
-      other_cols = mesh_elem[['colA','colB','colC','colD','colE']]
+      label_col, other_cols = simple_read_elem(mesh)
       print('Done')
       
       print('Relabelling mesh...')
       for label in CORRECT_ORDER:
             if label in labels_to_replace:
+                  print(f'[{label}] Replacing {labels_to_replace[label]} with {TARGET_LABELS[label]}')
                   label_col.replace(to_replace=labels_to_replace[label], value=TARGET_LABELS[label], inplace=True)
-      # label_col.replace(to_replace=2,value=1,inplace=True) # LV
-      # label_col.replace(to_replace=103,value=2,inplace=True) # RV
-      # label_col.replace(to_replace=104,value=3,inplace=True) # LA
-      # label_col.replace(to_replace=105,value=4,inplace=True) # RA
-      # label_col.replace(to_replace=106,value=5,inplace=True) # Ao
-      # label_col.replace(to_replace=107,value=6,inplace=True) # PArt
-      # label_col.replace(to_replace=201,value=7,inplace=True) # MV
-      # label_col.replace(to_replace=202,value=8,inplace=True) # TV
-      # label_col.replace(to_replace=203,value=9,inplace=True) # AV
-      # label_col.replace(to_replace=204,value=10,inplace=True) # PV
-      # label_col.replace(to_replace=205,value=11,inplace=True) # LPV1
-      # label_col.replace(to_replace=206,value=12,inplace=True) # LPV2
-      # label_col.replace(to_replace=207,value=13,inplace=True) # RPV1
-      # label_col.replace(to_replace=208,value=14,inplace=True) # RPV2
-      # label_col.replace(to_replace=209,value=15,inplace=True) # LAA
-      # label_col.replace(to_replace=210,value=16,inplace=True) # SVC
-      # label_col.replace(to_replace=211,value=17,inplace=True) # IVC
-      # label_col.replace(to_replace=225,value=18,inplace=True) # LAA_ring
-      # label_col.replace(to_replace=226,value=19,inplace=True) # SVC_ring
-      # label_col.replace(to_replace=227,value=20,inplace=True) # IVC_ring
-      # label_col.replace(to_replace=221,value=21,inplace=True) # LPV1_ring
-      # label_col.replace(to_replace=222,value=22,inplace=True) # LPV2_ring
-      # label_col.replace(to_replace=223,value=23,inplace=True) # RPV1_ring
-      # label_col.replace(to_replace=224,value=24,inplace=True) # RPV2_ring
       
       mesh_elem_no_header = pd.concat([other_cols,label_col],axis=1)
       print('Done')
@@ -122,8 +108,9 @@ def main(args) :
 if __name__ == '__main__':
       parser = argparse.ArgumentParser(description='To run: python3 relabel_mesh.py [heart_folder]')
       parser.add_argument('-dir', '--directory', type=str, required=True, help='Path to the folder with mesh files') 
-      parser.add_argument('-f', '--file', type=str, help='Name of the mesh file (No extension)', default='myocardium')
+      parser.add_argument('-msh', '--input-mesh', type=str, help='Name of the mesh file (No extension)', default='myocardium')
       parser.add_argument('-labels', '--labels-from', type=str, choices=['original', 'mri'], default='original', help='Labels to replace')
+      parser.add_argument('-replace-labels', '--replace-labels', type=str, help='File with labels to replace, default empty, uses common segmentation labels', default='')
       parser.add_argument('-print', '--print', action='store_true', help='Print the tags to get from the mesh')
       
       args = parser.parse_args()

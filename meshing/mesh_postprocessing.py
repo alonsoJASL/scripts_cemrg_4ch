@@ -4,7 +4,7 @@ import os
 import json 
 import argparse
 
-from generic_relabel import SOURCE_LABELS, SOURCE_LABELS_SLICER, TARGET_LABELS, TO_REPLACE, CORRECT_ORDER, get_tags
+from generic_relabel import TO_REPLACE, get_tags, relabel_mesh
 
 def main(args) :     
     heart_folder = args.directory   
@@ -30,17 +30,21 @@ def main(args) :
         os.system(cmd)
     
     input_mesh = 'myocardium_clean' if args.simplify_topology else 'myocardium'
-    cmd = f'meshtool smooth mesh -msh={heart_folder}/{input_mesh} {tags} -smth=0.15 -outmsh=${heart_folder}/myocardium_smooth -ifmt=carp_txt -ofmt=carp_txt'
+    cmd = f'meshtool smooth mesh -msh={heart_folder}/{input_mesh} {tags} -smth=0.15 -outmsh={heart_folder}/myocardium_smooth -ifmt=carp_txt -ofmt=carp_txt'
     print(cmd)
     os.system(cmd)
 
-    cmd = f'meshtool extract surface -msh=${heart_folder}/myocardium_smooth -surf=${heart_folder}/whole_surface -ofmt=vtk'
+    cmd = f'meshtool extract surface -msh={heart_folder}/myocardium_smooth -surf={heart_folder}/whole_surface -ofmt=vtk'
     print(cmd)
     os.system(cmd)
 
-    cmd = f'meshtool extract unreachable -msh=${heart_folder}/whole_surface.surfmesh.vtk -submsh=${heart_folder}/whole_surface_CC -ofmt=vtk'
+    cmd = f'meshtool extract unreachable -msh={heart_folder}/whole_surface.surfmesh.vtk -submsh={heart_folder}/whole_surface_CC -ofmt=vtk'
     print(cmd)
     os.system(cmd)
+
+    # relabel the mesh
+    # args.input_mesh = 'myocardium_smooth'
+    # relabel_mesh(args)
     
   
 if __name__ == '__main__':
@@ -49,7 +53,7 @@ if __name__ == '__main__':
       parser.add_argument('-msh', '--input-mesh', type=str, help='Name of the mesh file (No extension)', default='heart_mesh')
 
       parser.add_argument('-labels', '--labels-from', type=str, choices=['original', 'mri'], default='original', help='Labels to replace')
-      parser.add_argument('-replace-labels', '--replace-labels', type=str, help='Labels to replace', default='')
+      parser.add_argument('-replace-labels', '--replace-labels', type=str, help='File with labels to replace, default empty, uses common segmentation labels', default='')
       parser.add_argument('-print', '--print', action='store_true', help='Print the tags to get from the mesh')
 
       meshtool_group = parser.add_argument_group('Meshtool options')
