@@ -135,6 +135,7 @@ def docker_create_svc_ivc(args, help=False) :
         origin_spacing_json: name of the json file containing the origin and spacing
         labels_file: name of the json file containing the labels
         modify_label: modify label in the format key=value, e.g., --modify-label RPV1_label=5 SVC_label=6
+        
     """
 
     path2points, _, path2originjson, files_dict = initialize_parameters(args)
