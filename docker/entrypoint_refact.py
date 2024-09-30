@@ -2,11 +2,15 @@
 
 import argparse
 import os
+import json
 
-from seg_scripts.common import configure_logging, add_file_handler
+from seg_scripts.common import configure_logging, add_file_handler, initialize_parameters
 logger = configure_logging(log_name=__name__)
 
 import seg_scripts.Labels as L
+from seg_scripts.FourChamberProcess import FourChamberProcess
+from seg_scripts.parameters import Parameters
+import seg_scripts.process_handler as process 
 # ----------------------------------------------------------------------------------------------
 # Define the wall thickness
 # ----------------------------------------------------------------------------------------------
@@ -46,57 +50,99 @@ def docker_origin_and_spacing(args, help=False) :
 
     get_origin_and_spacing(path2points, seg_name, dicom_dir, output_file)
 
+def docker_pad_image(args, help=False) :
+    """
+    Pad image. You can call this through 'pad' mode.
+
+    USAGE: 
+        docker run --rm --volume=[path2points]:/data cermg/seg-4ch pad --origin-spacing-json [origin_spacing_json] --seg-name [seg_name] --output-name [output_name] --pad-size [pad_size] --is-mri
+    
+    ARGUMENTS:
+        path2points: path to the main directory
+        origin_spacing_json: name of the json file containing the origin and spacing
+        seg_name: name of the segmentation file
+        output_name: name of the output file
+        pad_size: size of the padding
+        is_mri: if the input is MRI
+    """
+
+    from seg_scripts.process_handler import pad_image
+    if(help) : 
+        print(docker_pad_image.__doc__)
+        return
+    
+    with open(args.origin_spacing_json, 'r') as f:
+        loaded_origin_spacing = json.load(f)
+
+    params = Parameters()
+    fourch = FourChamberProcess(path2points=args.path_to_points, origin_spacing=loaded_origin_spacing, CONSTANTS=params)
+    fourch.is_mri = args.is_mri
+    outname = args.seg_name if args.output_name == '' else args.output_name
+
+    pad_image(fourch, args.origin_spacing_json, args.seg_name, outname, pad_size=args.pad_size)
+
 def docker_create_cylinders(args, help=False) :
     """
     Create cylinders. You can call this through 'cylinders' mode.
 
-    USAGE: 
-        docker run --rm --volume=[path2points]:/data cermg/seg-4ch cylinders [--seg-name [seg_name]] --points-json [points_json] --origin-spacing-json [origin_spacing_json]
+    USAGE:
+        docker run --rm --volume=[path2points]:/data cermg/seg-4ch cylinders [--seg-name [seg_name]] --points-json [points_json] --origin-spacing-json [origin_spacing_json] [--create-cylinder SVC IVC Ao PArt] [--physical-points] [--mm]
 
     ARGUMENTS:
         path2points: path to the main directory
-        seg_name: name of the segmentation file
+        seg_name: name of the segmentation file (default: seg_corrected.nrrd)
         points_json: name of the json file containing the points
         origin_spacing_json: name of the json file containing the origin and spacing
+        create_cylinder: list of cylinders to create: SVC, IVC, Ao, or PArt. Default: [SVC, IVC]
+        physical_points: points file is in physical coordinates 
+        mm: calculate cylinder with mm units 
     """
 
-    from seg_scripts.process_handler import create_cylinders
-    if(help) : 
-        print(docker_create_cylinders.__doc__)
+    which_cylinders = []
+    for entry in args.create_cylinder:
+        lower_entry = entry.lower()
+        if lower_entry in ['svc', 'ivc', 'ao', 'part']:
+            which_cylinders.append(lower_entry)
+        else:
+            logger.error(f"Invalid cylinder name: {entry}. Skipping...")
+    
+    if which_cylinders == []:
+        logger.error("No valid cylinders selected. Exiting...") 
         return
-
+    
     path2points = args.base_dir
-    path2ptsjson = args.points_json
+    path2pointsjson = args.points_json
     path2originjson = args.origin_spacing_json
+
     seg_name = args.seg_name if args.seg_name != "" else "seg_corrected.nrrd"
+    seg_name += ".nrrd" if not seg_name.endswith(".nrrd") else ""
+    physical_points = args.physical_points
 
-    create_cylinders(path2points, path2ptsjson, path2originjson, seg_name)
+    process.create_cylinders_general(path2points, path2pointsjson, path2originjson, which_cylinders, 
+                            segmentation_name=seg_name, is_mm=args.mm, world_coords=physical_points)
 
-def docker_create_svc_ivc(args, help=False) :
+
+def docker_create_svc_ivc(args, help=False) : 
     """
     Create SVC and IVC. You can call this through 'svc_ivc' mode.
 
-    USAGE: 
-        docker run --rm --volume=[path2points]:/data cermg/seg-4ch svc_ivc [--seg-name [seg_name]] --points-json [points_json] --origin-spacing-json [origin_spacing_json]
+    USAGE:
+        docker run --rm --volume=[path2points]:/data cermg/seg-4ch svc_ivc [--seg-name [seg_name]] --origin-spacing-json [origin_spacing_json] [--labels-file FILEPATH] [--modify-label [key=value]]
 
     ARGUMENTS:
         path2points: path to the main directory
         seg_name: name of the segmentation file
-        points_json: name of the json file containing the points
         origin_spacing_json: name of the json file containing the origin and spacing
+        labels_file: name of the json file containing the labels
+        modify_label: modify label in the format key=value, e.g., --modify-label RPV1_label=5 SVC_label=6
     """
-    from seg_scripts.process_handler import create_svc_ivc
-    if(help) : 
-        print(docker_create_svc_ivc.__doc__)
-        return
 
-    _, labels_file = manage_labels_file(args)
+    path2points, _, path2originjson, files_dict = initialize_parameters(args)
 
-    path2points = args.base_dir
-    path2originjson = args.origin_spacing_json
     seg_name = args.seg_name if args.seg_name != "" else "seg_corrected.nrrd"
+    output_name = "seg_s2a.nrrd"
 
-    create_svc_ivc(path2points, path2originjson, seg_name, "seg_s2a.nrrd", labels_file)
+    process.create_svc_ivc(path2points, path2originjson, seg_name, output_name, files_dict["labels"])
 
 def docker_create_slicers(args, help=False) :
     """
@@ -279,14 +325,22 @@ if __name__ == '__main__' :
     parser = argparse.ArgumentParser(description='Docker entrypoint', usage=main.__doc__)
     parser.add_argument("mode", choices=my_choices, help="Mode of operation")
     parser.add_argument("help", nargs='?', type=bool, default=False, help="Help page specific to each mode")
-    parser.add_argument("--labels-file", "-labels-file", type=str, required=False, default=None, help="Name of the json file containing the labels")
-    parser.add_argument("--thickness-file", "-thickness-file", type=str, required=False, default=None, help="Name of the json file containing the thickness")
-    parser.add_argument("--vein-cutoff-file", "-labels-vein-cutoff", type=str, required=False, default=None, help="Name of the json file containing the vein-cutoff")
 
     common_group = parser.add_argument_group('Common arguments two or more modes')
     common_group.add_argument("--seg-name", "-seg-name", type=str, required=False, default="", help="Name of the segmentation file")
     common_group.add_argument("--points-json", "-pts", type=str, required=False, default="", help="Name of the json file containing the points")
     common_group.add_argument("--origin-spacing-json", "-origin-spacing", type=str, required=False, default="", help="Name of the json file containing the origin and spacing")
+
+    params_group = parser.add_argument_group('Parameters arguments')
+    params_group.add_argument("--modify-label", "-modify-label", nargs='*', help="Modify label in the format key=value, e.g., --modify-label RPV1_label=5 SVC_label=6")
+    params_group.add_argument("--labels-file", "-labels-file", type=str, required=False, default=None, help="Name of the json file containing the labels")
+    params_group.add_argument("--thickness-file", "-thickness-file", type=str, required=False, default=None, help="Name of the json file containing the thickness")
+    params_group.add_argument("--vein-cutoff-file", "-labels-vein-cutoff", type=str, required=False, default=None, help="Name of the json file containing the vein-cutoff")
+
+    cylinders_group = parser.add_argument_group('Cylinders arguments')
+    cylinders_group.add_argument('--create-cylinder', '-create', nargs='*', default=['SVC', 'IVC'])
+    cylinders_group.add_argument("--physical-points", action='store_true', help="Points file is in physical coordinates")
+    cylinders_group.add_argument("--mm", "-mm", action='store_true', help="Calculate cylinder with mm units")
 
     os_group = parser.add_argument_group('Origin and spacing arguments')
     os_group.add_argument("--dicom-dir", "-dicom-dir", type=str, required=False, default="ct", help="Name of the dicom directory")

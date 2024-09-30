@@ -104,6 +104,20 @@ def apply_label_modifications(label_object, modifications):
         print("[common] No label modifications were provided.")
 
 
+def find_existing_parameter_file(path2points, file_path, default_name):
+    if path2points is not None:
+        print(f"[common] Using directory: {path2points}")
+        # Create and save labels file if it was not provided
+        if file_path is None:
+            print("[common] Creating labels file")
+            tmp_file_path = os.path.join(path2points, default_name)
+        
+            if os.path.exists(tmp_file_path):
+                print(f"[common] Found existing labels file: {tmp_file_path}. Updating... ")
+                file_path = tmp_file_path
+
+    return file_path
+
 def initialize_parameters(args):
     """
     Initialize Parameters object with optional label and thickness files.
@@ -126,33 +140,42 @@ def initialize_parameters(args):
     thickness_file = getattr(args, 'thickness_file', None)
     vein_cutoff_file = getattr(args, 'vein_cutoff_file', None)
 
+    labels_file = find_existing_parameter_file(path2points, labels_file, "custom_labels.json")
+    thickness_file = find_existing_parameter_file(path2points, thickness_file, "custom_thickness.json")
+    vein_cutoff_file = find_existing_parameter_file(path2points, vein_cutoff_file, "custom_vein_cutoff.json")
+
     # Initialize Parameters object with the provided files
     params = Parameters(label_file=labels_file, thickness_file=thickness_file, vein_cutoff_file=vein_cutoff_file)
 
     # Apply any label modifications
     apply_label_modifications(params, getattr(args, 'modify_label', []))
+	
+    if path2points is not None:
+        print(f"[common] Using points directory: {path2points}")
+        # Create and save labels file if it was not provided
+        if labels_file is None:
+            print("[common] Creating labels file")
+            labels_file = os.path.join(path2points, "custom_labels.json")
+            params.save_labels(labels_file)
 
-    # Create and save labels file if it was not provided
-    if labels_file is None and path2points is not None:
-        print("[common] Creating labels file")
-        labels_file = os.path.join(path2points, "custom_labels.json")
-        params.save_labels(labels_file)
-
-    # Create and save thickness file if it was not provided
-    if thickness_file is None and path2points is not None:
-        print("[common] Creating thickness file")
-        thickness_file = os.path.join(path2points, "custom_thickness.json")
-        params.save_thickness(thickness_file)
-		
-    if vein_cutoff_file is None and path2points is not None:
-        print("[common] Creating vein cutoff file")
-        vein_cutoff_file = os.path.join(path2points, "custom_vein_cutoff.json")
-        params.save_vein_cutoff(vein_cutoff_file)
+        # Create and save thickness file if it was not provided
+        if thickness_file is None:
+            print("[common] Creating thickness file")
+            thickness_file = os.path.join(path2points, "custom_thickness.json")
+            params.save_thickness(thickness_file)
+    
+        if vein_cutoff_file is None:
+            print("[common] Creating vein cutoff file")
+            vein_cutoff_file = os.path.join(path2points, "custom_vein_cutoff.json")
+            params.save_vein_cutoff(vein_cutoff_file)
 		
     files_dict = {
         "labels_file": labels_file,
+		"labels": labels_file,  
         "thickness_file": thickness_file,
-        "vein_cutoff_file": vein_cutoff_file
+		"thickness": thickness_file, 
+        "vein_cutoff_file": vein_cutoff_file,
+		"vein_cutoff": vein_cutoff_file 
     }
 
     return path2points, path2ptsjson, path2originjson, files_dict
