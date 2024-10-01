@@ -23,6 +23,16 @@ def main(args) :
 
     python3 create_valve_planes.py [path_to_points] [--points-json [points_json]] [--origin-spacing-json [origin_spacing_json]] [OPTIONS]
 
+     ARGUMENTS:
+        path2points: path to the main directory
+        points_json: name of the json file containing the points
+        origin_spacing_json: name of the json file containing the origin and spacing
+
+    OPTIONAL ARGUMENTS:
+        --labels-file [labels_file]
+        --thickness-file [thickness_file]
+        --modify-label [key_label=value] [key_thickness=value]
+
     
     """
     path2points, path2ptsjson, path2originjson, files_dict = initialize_parameters(args) 

@@ -7,14 +7,12 @@ import json
 from seg_scripts.common import configure_logging, add_file_handler, initialize_parameters
 logger = configure_logging(log_name=__name__)
 
-import seg_scripts.Labels as L
 from seg_scripts.FourChamberProcess import FourChamberProcess
 from seg_scripts.parameters import Parameters
 import seg_scripts.process_handler as process 
 # ----------------------------------------------------------------------------------------------
 # Define the wall thickness
 # ----------------------------------------------------------------------------------------------
-CONSTANTS = L.Labels()
 
 def manage_labels_file(args) : 
     labels_file = args.labels_file
@@ -58,12 +56,12 @@ def docker_pad_image(args, help=False) :
         docker run --rm --volume=[path2points]:/data cermg/seg-4ch pad --origin-spacing-json [origin_spacing_json] --seg-name [seg_name] --output-name [output_name] --pad-size [pad_size] --is-mri
     
     ARGUMENTS:
-        path2points: path to the main directory
-        origin_spacing_json: name of the json file containing the origin and spacing
-        seg_name: name of the segmentation file
-        output_name: name of the output file
-        pad_size: size of the padding
-        is_mri: if the input is MRI
+        path2points:           path to the main directory
+        origin_spacing_json:   name of the json file containing the origin and spacing
+        seg_name:              name of the segmentation file
+        output_name:           name of the output file
+        pad_size:              size of the padding
+        is_mri:                if the input is MRI
     """
 
     from seg_scripts.process_handler import pad_image
@@ -89,14 +87,18 @@ def docker_create_cylinders(args, help=False) :
         docker run --rm --volume=[path2points]:/data cermg/seg-4ch cylinders [--seg-name [seg_name]] --points-json [points_json] --origin-spacing-json [origin_spacing_json] [--create-cylinder SVC IVC Ao PArt] [--physical-points] [--mm]
 
     ARGUMENTS:
-        path2points: path to the main directory
-        seg_name: name of the segmentation file (default: seg_corrected.nrrd)
-        points_json: name of the json file containing the points
-        origin_spacing_json: name of the json file containing the origin and spacing
-        create_cylinder: list of cylinders to create: SVC, IVC, Ao, or PArt. Default: [SVC, IVC]
-        physical_points: points file is in physical coordinates 
-        mm: calculate cylinder with mm units 
+        path2points:            path to the main directory
+        seg_name:               name of the segmentation file (default: seg_corrected.nrrd)
+        points_json:            name of the json file containing the points
+        origin_spacing_json:    name of the json file containing the origin and spacing
+        create_cylinder:        list of cylinders to create: SVC, IVC, Ao, or PArt. Default: [SVC, IVC]
+        physical_points:        points file is in physical coordinates 
+        mm:                     calculate cylinder with mm units 
     """
+
+    if(help) :
+        print(docker_create_cylinders.__doc__)
+        return
 
     which_cylinders = []
     for entry in args.create_cylinder:
@@ -127,153 +129,132 @@ def docker_create_svc_ivc(args, help=False) :
     Create SVC and IVC. You can call this through 'svc_ivc' mode.
 
     USAGE:
-        docker run --rm --volume=[path2points]:/data cermg/seg-4ch svc_ivc [--seg-name [seg_name]] --origin-spacing-json [origin_spacing_json] [--labels-file FILEPATH] [--modify-label [key=value]]
+        docker run --rm --volume=[path2points]:/data cermg/seg-4ch svc_ivc [--seg-name [seg_name]] --origin-spacing-json JSON_FILE [--labels-file JSON_FILE] [--modify-label [key=value]]
 
     ARGUMENTS:
-        path2points: path to the main directory
-        seg_name: name of the segmentation file
-        origin_spacing_json: name of the json file containing the origin and spacing
-        labels_file: name of the json file containing the labels
-        modify_label: modify label in the format key=value, e.g., --modify-label RPV1_label=5 SVC_label=6
+        path2points:            path to the main directory
+        seg_name:               name of the segmentation file
+        origin_spacing_json:    name of the json file containing the origin and spacing
+        labels_file:            name of the json file containing the labels
+        modify_label:           modify label in the format key=value, e.g., --modify-label RPV1_label=5 SVC_label=6
         
     """
 
-    path2points, _, path2originjson, files_dict = initialize_parameters(args)
+    if help:
+        print(docker_create_svc_ivc.__doc__)
+        return
+
+    path2points, _, path2originjson, const = initialize_parameters(args)
 
     seg_name = args.seg_name if args.seg_name != "" else "seg_corrected.nrrd"
     output_name = "seg_s2a.nrrd"
 
-    process.create_svc_ivc(path2points, path2originjson, seg_name, output_name, files_dict["labels"])
+    process.create_svc_ivc(path2points, path2originjson, seg_name, output_name, const["labels"])
 
-def docker_create_slicers(args, help=False) :
+def docker_cut_vessels(args, help=False) :
     """
-    Create slicers. You can call this through 'slicers' mode.
+    Cut vessels. You can call this through 'cut' mode.
 
     USAGE: 
-        docker run --rm --volume=[path2points]:/data cermg/seg-4ch slicers [--seg-name [seg_name]] --points-json [points_json] --origin-spacing-json [origin_spacing_json]
+        docker run --rm --volume=[path2points]:/data cermg/seg-4ch cut [--seg-name [seg_name]] [OPTIONS]
 
     ARGUMENTS:
-        path2points: path to the main directory
-        seg_name: name of the segmentation file
-        points_json: name of the json file containing the points
-        origin_spacing_json: name of the json file containing the origin and spacing
+        path_to_points: Path to the folder containing the points
+        seg_name: Name of the segmentation file (default: seg_s2a.nrrd)
+
+        --modify-label [key1=value1 key2=value2 ...] Modify label in the format key=value
+
+
+    OPTIONAL ARGUMENTS:
+        --labels-file [labels_file]
+        --thickness-file [thickness_file]
+        --vein-cutoff-file [vein_cutoff_file]
     """
 
-    from seg_scripts.process_handler import create_slicers
     if(help) : 
-        print(docker_create_slicers.__doc__)
+        print(docker_cut_vessels.__doc__)
         return
 
-    path2points = args.base_dir
-    path2ptsjson = args.points_json
-    path2originjson = args.origin_spacing_json
-    seg_name = args.seg_name if args.seg_name != "" else "seg_corrected.nrrd"
+    path2points, _, _, const = initialize_parameters(args)
+    seg_name = args.seg_name if args.seg_name != "" else "seg_s2a.nrrd"
 
-    create_slicers(path2points, path2ptsjson, path2originjson, seg_name)
+    process.cut_vessels(path2points, seg_name, const["labels"], const["thickness"], const["vein_cutoff"])
 
-def docker_crop_svc_ivc(args, help=False) :
-    """
-    Crop SVC and IVC. You can call this through 'crop' mode.
-
-    USAGE: 
-        docker run --rm --volume=[path2points]:/data cermg/seg-4ch crop --points-json [points_json] --origin-spacing-json [origin_spacing_json]
-    
-    ARGUMENTS:
-        path2points: path to the main directory
-        points_json: name of the json file containing the points
-        origin_spacing_json: name of the json file containing the origin and spacing
-    """
-    from seg_scripts.process_handler import crop_svc_ivc
-    if(help) : 
-        print(docker_crop_svc_ivc.__doc__)
-        return
-
-    _, labels_file = manage_labels_file(args)
-
-    path2points = args.base_dir
-    path2ptsjson = args.points_json
-    path2originjson = args.origin_spacing_json
-
-    crop_svc_ivc(path2points, path2ptsjson, path2originjson, labels_file)
 
 def docker_create_myo(args, help=False) :
     """
     Create myocardium. You can call this through 'myo' mode.
 
     USAGE: 
-        docker run --rm --volume=[path2points]:/data cermg/seg-4ch myo --points-json [points_json] --origin-spacing-json [origin_spacing_json]
-    
-    ARGUMENTS:
+        docker run --rm --volume=[path2points]:/data cermg/seg-4ch myo [--points-json [points_json]] [--origin-spacing-json [origin_spacing_json]] [OPTIONS]
+
+    ARGUMENTS;
         path2points: path to the main directory
-        points_json: name of the json file containing the points
-        origin_spacing_json: name of the json file containing the origin and spacing
+        --points-json [points_json]: name of the json file containing the seed points
+        --origin-spacing-json [origin_spacing_json]: name of the json file containing the origin and spacing
+
+    OPTIONAL ARGUMENTS:
+        --labels-file [labels_file]
+        --modify-label [key_label=value] [key_thickness=value]
     """
 
-    from seg_scripts.process_handler import create_myocardium
     if(help) : 
         print(docker_create_myo.__doc__)
         return
-
-    _, labels_file = manage_labels_file(args)
-
-    path2points = args.base_dir
-    path2ptsjson = args.points_json
-    path2originjson = args.origin_spacing_json
-
-    create_myocardium(path2points, path2ptsjson, path2originjson, labels_file, mydebug=args.debug)
+    
+    path2points, path2ptsjson, path2originjson, const = initialize_parameters(args)
+    process.create_myocardium_refact(path2points, path2ptsjson, path2originjson, const["labels"], const["thickness"], const["vein_cutoff"], is_mri=args.is_mri)
 
 
 def docker_create_valve_planes(args, help=False) :
     """
     Create valve planes. You can call this through 'valve_planes' mode.
 
-    USAGE: 
-        docker run --rm --volume=[path2points]:/data cermg/seg-4ch valve_planes --points-json [points_json] --origin-spacing-json [origin_spacing_json]
-    
+    USAGE:
+        docker run --rm --volume=[path2points]:/data cermg/seg-4ch valve_planes [--points-json [points_json]] [--origin-spacing-json [origin_spacing_json]] [OPTIONS]
+
     ARGUMENTS:
         path2points: path to the main directory
-        points_json: name of the json file containing the points
-        origin_spacing_json: name of the json file containing the origin and spacing
+        --points-json: name of the json file containing the points
+        --origin-spacing-json: name of the json file containing the origin and spacing
+
+    OPTIONAL ARGUMENTS:
+        --labels-file [labels_file]
+        --thickness-file [thickness_file]
+        --modify-label [key_label=value] [key_thickness=value]
     """
     
-    from seg_scripts.process_handler import create_valve_planes
     if(help) : 
         print(docker_create_valve_planes.__doc__)
         return
-
-    _, labels_file = manage_labels_file(args)
-
-    path2points = args.base_dir
-    path2ptsjson = args.points_json
-    path2originjson = args.origin_spacing_json
-
-    create_valve_planes(path2points, path2ptsjson, path2originjson, labels_file, mydebug=args.debug)
+    
+    path2points, path2ptsjson, path2originjson, const = initialize_parameters(args)
+    process.create_valve_planes_refact(path2points, path2ptsjson, path2originjson, const["labels"], const["thickness"], is_mri=args.is_mri)
 
 def docker_clean_seg(args, help=False) :
     """
-    Clean segmentation. You can call this through 'clean_seg' mode.
+    Clean segmentation from points. You can call this through 'clean_seg' mode.
 
-    USAGE: 
-        docker run --rm --volume=[path2points]:/data cermg/seg-4ch clean_seg --origin-spacing-json [origin_spacing_json] --points-json [points_json]
-    
+    USAGE:
+        docker run --rm --volume=[path2points]:/data cermg/seg-4ch clean_seg [--points-json [points_json]] [--origin-spacing-json [origin_spacing_json]] [OPTIONS]
+
     ARGUMENTS:
         path2points: path to the main directory
-        origin_spacing_json: name of the json file containing the origin and spacing
-        points_json: name of the json file containing the points
+        --points-json [points_json]: name of the json file containing the points
+        --origin-spacing-json [origin_spacing_json]: name of the json file containing the origin and spacing
+
+    OPTIONAL ARGUMENTS:
+        --labels-file [labels_file]
+        --thickness-file [thickness_file]
+        --modify-label [key1=value1] [key2=value2] ... [keyN=valueN]
     """
 
-    from seg_scripts.process_handler import clean_segmentation
     if(help) : 
         print(docker_clean_seg.__doc__)
         return
-
-    _, labels_file = manage_labels_file(args)
-
-    path2points = args.base_dir
-    path2ptsjson = args.points_json
-    path2originjson = args.origin_spacing_json
-
-    clean_segmentation(path2points, path2ptsjson, path2originjson, labels_file)
+    
+    path2points, path2ptsjson, path2originjson, const = initialize_parameters(args)
+    process.clean_segmentation_refact(path2points, path2ptsjson, path2originjson, const["labels"], const["thickness"], is_mri=args.is_mri)
 
 def main(args):
     """
@@ -303,14 +284,14 @@ def main(args):
     
     if args.mode == 'origin' or args.mode == 'spacing':
         docker_origin_and_spacing(args, help=myhelp)
+    if args.mode == 'pad':
+        docker_pad_image(args, help=myhelp)
     elif args.mode == 'cylinders':
         docker_create_cylinders(args, help=myhelp)
     elif args.mode == 'svc_ivc':
         docker_create_svc_ivc(args, help=myhelp)
-    elif args.mode == 'slicers':
-        docker_create_slicers(args, help=myhelp)
-    elif args.mode == 'crop':
-        docker_crop_svc_ivc(args, help=myhelp)
+    elif args.mode == 'cut' or args.mode == 'cut_vessels':
+        docker_cut_vessels(args, help=myhelp)
     elif args.mode == 'myo':
         docker_create_myo(args, help=myhelp)
     elif args.mode == 'valve_planes':
@@ -318,10 +299,11 @@ def main(args):
     elif args.mode == 'clean_seg':
         docker_clean_seg(args, help=myhelp)
     elif args.mode == 'params':
-        CONSTANTS.print_label_explanation()
+        CONSTANTS = Parameters()
+        CONSTANTS.print_all()
 
 if __name__ == '__main__' :
-    my_choices = ['origin', 'spacing', 'cylinders', 'svc_ivc', 'slicers', 'crop', 'cut', 'myo', 'valve_planes', 'clean_seg', 'params']
+    my_choices = ['origin', 'pad', 'spacing', 'cylinders', 'svc_ivc', 'cut', 'cut_vessels', 'myo', 'valve_planes', 'clean_seg', 'params']
 
     parser = argparse.ArgumentParser(description='Docker entrypoint', usage=main.__doc__)
     parser.add_argument("mode", choices=my_choices, help="Mode of operation")

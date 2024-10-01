@@ -113,7 +113,7 @@ def find_existing_parameter_file(path2points, file_path, default_name):
             tmp_file_path = os.path.join(path2points, default_name)
         
             if os.path.exists(tmp_file_path):
-                print(f"[common] Found existing labels file: {tmp_file_path}. Updating... ")
+                print(f"[common] Found existing labels file: {tmp_file_path}. Loading and updating... ")
                 file_path = tmp_file_path
 
     return file_path

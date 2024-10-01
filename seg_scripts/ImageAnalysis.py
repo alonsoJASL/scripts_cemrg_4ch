@@ -165,7 +165,6 @@ class ImageAnalysis:
             make_tmp(self.TMP())
             save_path = self.TMP(outname)
             sitk.WriteImage(thresholded_img, save_path)
-
             self.helper_save_flipped_itk(thresholded_img, outname)
 
 

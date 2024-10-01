@@ -7,6 +7,23 @@ logger = configure_logging(log_name=__name__)
 from process_handler import cut_vessels
 
 def main(args):
+    """
+    Cut vessels from points
+    USAGE:
+        python3 cut_vessels.py [path_to_points] [--seg-name [seg_name]] [OPTIONS]
+
+    ARGUMENTS:
+        path_to_points: Path to the folder containing the points
+        seg_name: Name of the segmentation file (default: seg_s2a.nrrd)
+
+        --modify-label [key1=value1 key2=value2 ...] Modify label in the format key=value
+
+
+    OPTIONAL ARGUMENTS:
+        --labels-file [labels_file]
+        --thickness-file [thickness_file]
+        --vein-cutoff-file [vein_cutoff_file]
+    """
     path2points, _, _, files_dict = initialize_parameters(args) 
     labels_file = files_dict["labels_file"]
     thickness_file = files_dict["thickness_file"]

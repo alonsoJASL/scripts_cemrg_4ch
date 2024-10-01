@@ -153,6 +153,28 @@ class FourChamberProcess:
 
     
     def cylinder_process(self, seg_array: np.array, points, plane_name, slicer_radius, slicer_height) -> np.array:
+        """
+        Processes a 3D segmentation array to generate a cylindrical region of interest.
+
+        Args:
+            seg_array (np.array): The input 3D segmentation array.
+            points (np.array): An array of points defining the plane.
+            plane_name (str): The name of the plane.
+            slicer_radius (float): The radius of the cylindrical slicer.
+            slicer_height (float): The height of the cylindrical slicer.
+
+        Returns:
+            np.array: A 3D array with the same shape as seg_array, where the cylindrical region is marked.
+
+        Description:
+            This method generates a cylindrical region of interest within a 3D segmentation array. 
+            The cylinder is defined by a set of points, a radius, and a height. The method first 
+            calculates the center of gravity (COG) of the points and the normal vector to the plane 
+            defined by the points. It then constrains the search to a small cube around the COG to 
+            optimize the process. Finally, it iterates through the constrained cube and marks the 
+            points that fall within the cylindrical region.
+
+    """
         origin, spacing = self.get_origin_spacing()
         seg_array_cylinder = np.zeros(seg_array.shape, np.uint8)
 
@@ -732,45 +754,6 @@ class FourChamberProcess:
         self.save_if_seg_steps(seg_array_new, outname)
         
         return seg_array_new, distmap_array, thresh_array, struct_array
-    
-    def create_myocardium(self, seg_array: np.ndarray, labels: list, mode:MM, mode_labels, seg_out, mode2: MM = None, mode2_labels = None, dmname="", thname="") -> np.array:
-        """
-    Create myocardium segmentation based on the input segmentation array.
-
-    Args:
-        seg_array (np.ndarray): The input segmentation array.
-        labels (list): A list of labels to be used for myocardium segmentation.
-            labels[0,1] (int): labels for extracting the distance map and threshold array.
-            labels[2] (int): label for the structure to be added to the segmentation array (add_masks_replace).
-            labels[3] (int): label for the structure to be added to the segmentation array (add_masks_mode:newmask).
-            labels[4] (int): OPTIONAL: label for the structure to be added to the segmentation array (add_masks_mode:newmask).
-        mode (MM): The mode of mask operation to be used.
-        mode_labels: The labels to be used for the mode mask operation.
-        seg_out: The name of the output segmentation file.
-        mode2 (MM, optional): The second mode of mask operation to be used. Defaults to None.
-        mode2_labels (optional): The labels to be used for the second mode mask operation. Defaults to None.
-        dmname (str, optional): The name of the distance map file. Defaults to "".
-        thname (str, optional): The name of the threshold file. Defaults to "".
-
-    Returns:
-        np.array: The myocardium segmentation array.
-"""
-        dmname = dmname if dmname != "" else "myo_distmap.nrrd"
-        thname = thname if thname != "" else "myo_threshold.nrrd"
-        
-        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
-
-        _, myo_array = self.extract_distmap_and_threshold(seg_array, labels, dmname, thname)
-        myo_array = ima.add_masks_replace(myo_array, myo_array, labels[2])
-        seg_new_array = ima.add_masks_mode(seg_array, myo_array, mode, newmask=labels[3], special_case_labels=mode_labels)
-
-        if mode2 is not None and mode2_labels is not None:
-            seg_new_array = ima.add_masks_mode(seg_new_array, myo_array, mode2, newmask=labels[4], special_case_labels=mode2_labels)
-        
-        self.save_if_seg_steps(seg_new_array, seg_out)
-
-        return seg_new_array
-        
     
     def load_image_array(self, filename:str) -> np.array:
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
