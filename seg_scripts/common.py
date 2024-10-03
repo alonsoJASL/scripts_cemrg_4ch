@@ -144,29 +144,39 @@ def initialize_parameters(args):
     thickness_file = find_existing_parameter_file(path2points, thickness_file, "custom_thickness.json")
     vein_cutoff_file = find_existing_parameter_file(path2points, vein_cutoff_file, "custom_vein_cutoff.json")
 
+    labels_not_set = labels_file is None
+    thickness_not_set = thickness_file is None
+    vein_cutoff_not_set = vein_cutoff_file is None
+
     # Initialize Parameters object with the provided files
+    no_mod_params = Parameters(label_file=labels_file, thickness_file=thickness_file, vein_cutoff_file=vein_cutoff_file)
     params = Parameters(label_file=labels_file, thickness_file=thickness_file, vein_cutoff_file=vein_cutoff_file)
 
     # Apply any label modifications
     apply_label_modifications(params, getattr(args, 'modify_label', []))
-	
+
+    labels_modded = not params.labels.equals(no_mod_params.labels)
+    thickness_modded = not params.thickness.equals(no_mod_params.thickness)
+    vein_cutoff_modded = not params.vein_cutoff.equals(no_mod_params.vein_cutoff)
+
+    # if modified, update. 
     if path2points is not None:
         print(f"[common] Using points directory: {path2points}")
         # Create and save labels file if it was not provided
-        if labels_file is None:
+        if labels_not_set or labels_modded:
             print("[common] Creating labels file")
-            labels_file = os.path.join(path2points, "custom_labels.json")
+            labels_file = os.path.join(path2points, "custom_labels.json") if labels_not_set else labels_file
             params.save_labels(labels_file)
 
         # Create and save thickness file if it was not provided
-        if thickness_file is None:
+        if thickness_not_set or thickness_modded:
             print("[common] Creating thickness file")
-            thickness_file = os.path.join(path2points, "custom_thickness.json")
+            thickness_file = os.path.join(path2points, "custom_thickness.json") if thickness_not_set else thickness_file
             params.save_thickness(thickness_file)
     
-        if vein_cutoff_file is None:
+        if vein_cutoff_not_set or vein_cutoff_modded:
             print("[common] Creating vein cutoff file")
-            vein_cutoff_file = os.path.join(path2points, "custom_vein_cutoff.json")
+            vein_cutoff_file = os.path.join(path2points, "custom_vein_cutoff.json") if vein_cutoff_not_set else vein_cutoff_file
             params.save_vein_cutoff(vein_cutoff_file)
 		
     files_dict = {

@@ -12,6 +12,9 @@ from seg_scripts.common import configure_logging, big_print, make_tmp
 
 ZERO_LABEL = 0
 SEG_LABEL = 1
+MAX_THREADS = mp.cpu_count()
+sitk.ProcessObject_SetGlobalDefaultNumberOfThreads(MAX_THREADS)
+
 class MaskOperationMode(Enum):
   REPLACE_EXCEPT = 1
   REPLACE_ONLY = 2
@@ -90,7 +93,7 @@ class ImageAnalysis:
         padded_img_array = np.pad(img_array, ((pad_x, pad_x), (pad_y, pad_y), (pad_z, pad_z)), mode='constant', constant_values=constant_pad_values)
         return padded_img_array
     
-    def distance_map(self, img: sitk.Image, label: int, outname="") -> sitk.Image:
+    def distance_map(self, img: sitk.Image, label: int, outname="", skip_if_possible=False) -> sitk.Image:
         """
         Generate a distance map from an image.
 
@@ -102,6 +105,13 @@ class ImageAnalysis:
             sitk.Image: The distance map.
 
         """
+        if outname != "" and skip_if_possible:
+            outname += ".nrrd" if not outname.endswith(".nrrd") else ""
+            outname_path = self.TMP(outname)
+            if os.path.exists(outname_path):
+                print(f"File {outname} already exists. Skipping distance map generation.")
+                return sitk.ReadImage(outname_path)
+
         thresholded_img = self.threshold_filter(img, label, label)
         distance_map_filter = sitk.DanielssonDistanceMapImageFilter()
         distance_map_filter.InputIsBinaryOff()
@@ -348,7 +358,7 @@ class ImageAnalysis:
             test_value_a = imga_array_new[n[0], n[1], n[2]]
             if test_value_a == ZERO_LABEL or test_value_a == only_override_this:
                 imga_array_new[n[0], n[1], n[2]] = newmask
-            
+
         return imga_array_new
     
     def add_masks_replace_except(self, imga_array: np.ndarray, imgb_array: np.ndarray, newmask, except_these: list) -> np.ndarray:

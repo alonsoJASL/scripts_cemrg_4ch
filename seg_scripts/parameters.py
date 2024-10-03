@@ -190,6 +190,18 @@ class Labels:
     def get_attribute_list(self) :
         return list(self.labels.keys())
     
+    def equals(self, other) :
+        """
+        Compare the current labels with another Labels object
+        """
+        response = True
+        for key in self.labels : 
+            if self.labels[key] != other.labels[key] : 
+                response = False
+                break
+        
+        return response
+    
     def __getattr__(self, name):
         if name in self.labels:
             return self.labels[name]
@@ -320,6 +332,26 @@ class WallThickness:
     def get_attribute_list(self) :
         return ['scale_factor']  + list(self.multipliers.keys()) + list(self.thickness_params.keys()) 
     
+    def equals(self, other) :
+        """
+        Compare the current thickness with another WallThickness object
+        """
+        response = True
+        for key in self.multipliers : 
+            if self.multipliers[key] != other.multipliers[key] : 
+                response = False
+                break
+        
+        for key in self.thickness_params : 
+            if self.thickness_params[key] != other.thickness_params[key] : 
+                response = False
+                break
+        
+        if self.scale_factor != other.scale_factor : 
+            response = False
+        
+        return response
+    
     def __getattr__(self, name):
         # Handle dynamic access to multipliers and thickness parameters
         if name in self.multipliers:
@@ -386,6 +418,18 @@ class VeinCutoff :
     
     def get_attribute_list(self) :
         return list(self.vein_cutoff.keys())
+    
+    def equals(self, other) :
+        """
+        Compare the current vein cutoff with another VeinCutoff object
+        """
+        response = True
+        for key in self.vein_cutoff : 
+            if self.vein_cutoff[key] != other.vein_cutoff[key] : 
+                response = False
+                break
+        
+        return response
     
     def __getattr__(self, name):
         if name in self.vein_cutoff:
@@ -502,3 +546,11 @@ class Parameters:
     
     def rm_aux_labels(self) :
         self.aux_labels = []
+
+    def equals(self, other) : 
+        """
+        Compare the current parameters with another Parameters object
+        """
+        
+        return self.labels.equals(other.labels) and self.thickness.equals(other.thickness) and self.vein_cutoff.equals(other.vein_cutoff) 
+        

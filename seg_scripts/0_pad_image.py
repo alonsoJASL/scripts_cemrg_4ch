@@ -32,7 +32,7 @@ if __name__ == '__main__' :
     parser.add_argument("--origin-spacing-json", "-origin-spacing", type=str, required=False, default="", help="Name of the json file containing the origin and spacing")
     parser.add_argument("--seg-name", "-seg-name", type=str, help="Name of the segmentation file")
     parser.add_argument("--output-name", "-output-name", type=str, default='', help="Name of the output file")
-    parser.add_argument("--pad-size", "-pad-size", type=int, help="Size of the padding")
+    parser.add_argument("--pad-size", "-pad-size", type=int, help="Size of the padding", default=10)
     parser.add_argument("--is-mri", "-mri", action="store_true", help="If the input is MRI")
     
     args = parser.parse_args()

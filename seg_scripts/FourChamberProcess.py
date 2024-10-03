@@ -139,6 +139,24 @@ class FourChamberProcess:
             points_voxels.append(self.world_to_voxel(world_coord_json[key],origin,spacing))
         return points_voxels
     
+    def load_image_array(self, filename:str) -> np.array:
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        return ima.load_image_array(self.DIR(filename))
+    
+    def load_from_tmp(self, filename:str) -> np.array:
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        return ima.load_image_array(self.TMP(filename))
+    
+    def save_image_array(self, array:np.array, filename:str):
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        origin, spacings = self.get_origin_spacing()
+
+        ima.save_itk(array, origin, spacings, self.DIR(filename), self.swap_axes, ref_image=self.ref_image_mri)
+
+    def save_if_seg_steps(self, array:np.array, filename:str):
+        if self.save_seg_steps:
+            self.save_image_array(array, filename)
+    
     def pad_image(self, seg_array: np.ndarray, pad_size=10) -> np.ndarray:
         origin, spacing = self.get_origin_spacing()
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
@@ -296,273 +314,6 @@ class FourChamberProcess:
         ima.save_itk(seg_s2a_array, origin, spacings, output_file, self.swap_axes, ref_image=self.ref_image_mri)
 
         self.logger.info(" ## Saved segmentation with SVC/IVC added ##")
-    
-    def remove_protruding_vessel(self, seed, label, input_name, output_name) :
-    
-        origin, spacings = self.get_origin_spacing()
-        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
-
-        input_array = ima.load_image_array(self.DIR(input_name))
-        input_image = ima.array2itk(input_array, origin, spacings)
-        self.logger.info(f' ## Removing any protruding {label} ## \n')
-        seg_array = ima.connected_component_keep(input_image, seed, label)
-        ima.save_itk(seg_array, origin, spacings, self.DIR(output_name), self.swap_axes)
-    
-    def add_vessel_masks(self, seg_name, output_name, aorta_pair:tuple, PArt_pair:tuple, SVC_name, IVC_name):
-        origin, spacings = self.get_origin_spacing()
-        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
-        C=self.CONSTANTS
-    
-        # Load the segmentation and vessel slicer arrays
-        input_seg_array = ima.load_image_array(self.DIR(seg_name))
-        aorta_slicer_array = ima.load_image_array(self.DIR(aorta_pair[0]))
-        PArt_slicer_array = ima.load_image_array(self.DIR(PArt_pair[0]))
-        SVC_slicer_array = ima.load_image_array(self.DIR(SVC_name))
-        IVC_slicer_array = ima.load_image_array(self.DIR(IVC_name))
-
-        # Add masks for the aorta and pulmonary artery
-        seg_array = ima.add_masks_replace_only(input_seg_array, aorta_slicer_array, aorta_pair[1], C.Ao_BP_label)
-        seg_array = ima.add_masks_replace_only(seg_array, PArt_slicer_array, PArt_pair[1], C.PArt_BP_label)
-
-        # Replace the RA label with the SVC or IVC label
-        new_RA_array = ima.and_filter(seg_array, SVC_slicer_array, C.SVC_label, C.RA_BP_label)
-        seg_array = ima.add_masks_replace_only(seg_array, new_RA_array, C.RA_BP_label, C.SVC_label)
-
-        new_RA_array = ima.and_filter(seg_array, IVC_slicer_array, C.IVC_label, C.RA_BP_label)
-        seg_array = ima.add_masks_replace_only(seg_array, new_RA_array, C.RA_BP_label, C.IVC_label)
-    
-        self.logger.info(' ## Formatting and saving the segmentation ##')
-        # seg_array = np.swapaxes(seg_array, 0, 2)
-        # ima.save_itk(seg_array, origin, spacings, self.DIR(output_name), self.swap_axes)
-        self.save_image_array(seg_array, output_name)
-    
-    def flatten_vessel_base(self, input_name, output_name, seed, label):
-        """
-        Flattens the base of a vessel in a segmentation array.
-
-        Args:
-            input_name (str): The name of the input file containing the segmentation array.
-            output_name (str): The name of the output file to save the flattened segmentation array.
-            seed (int): The seed value used for connected component analysis.
-            label (int): The label value of the vessel to be flattened.
-
-        Returns:
-            None. Modifies the segmentation array and saves it as an ITK file.
-
-        Example Usage:
-            # Initialize the FourChamberProcess object
-            four_chamber = FourChamberProcess(path2points, origin_spacing, CONSTANTS)
-
-            # Call the flatten_vessel_base method
-            four_chamber.flatten_vessel_base(input_name, output_name, seed, label)
-        """
-        input_filename = self.DIR(input_name)
-        output_filename = self.DIR(output_name)
-
-        origin, spacings = self.get_origin_spacing()
-        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
-        C = self.CONSTANTS
-
-        self.logger.info(f' ## Flattening base of {label} ## \n')
-
-        seg_array = img.connected_component(input_filename, seed, label, self.path2points)
-        seg_array = img.add_masks_replace_only(seg_array, seg_array, C.RA_BP_label, label)
-        CC_array, header = nrrd.read(self.TMP('CC.nrrd'))
-
-        seg_array = img.add_masks_replace(seg_array, CC_array, label)
-        seg_array = np.swapaxes(seg_array, 0, 2)
-        img.save_itk(seg_array, origin, spacings, output_filename)
-
-    def get_distance_map_dictionaries(self, dist_label, dmap_name, th_label, th_name) :
-        CDIC = self.CONSTANTS.get_dictionary()
-        ld = {DISTANCE_MAP_KEY: CDIC[dist_label], THRESHOLD_KEY:  CDIC[th_label]}
-        td = {DISTANCE_MAP_KEY: dmap_name, THRESHOLD_KEY: th_name}
-        return ld, td
-    
-    def get_distance_map_tuples(self, mom1:MM, label1, arr1, mom2:MM, label2, arr2) : 
-        return self.get_distance_map_tuples_from_lists([mom1, mom2], [label1, label2], [arr1, arr2])
-    
-    def get_distance_map_tuples_from_lists(self, mom_list, label_list, arr_list) : 
-        return [ (mom, label, arr) for mom, label, arr in zip(mom_list, label_list, arr_list) ]
-
-    def distance_map_and_save(self, input_name, output_name, label) :
-        distance_map = img.distance_map(self.DIR(input_name), label)
-        sitk.WriteImage(distance_map,self.TMP(output_name),True)
-
-    def threshold_and_save(self, input_name, output_name, label) :
-        thresholded_mask = img.threshold_filter_nrrd(self.TMP(input_name),0, label)
-        sitk.WriteImage(thresholded_mask,self.TMP(output_name),True)
-    
-    def threshold_distance_map(self, input_name, labels:dict, tmp_dict:dict, skip_processed=False) -> dict: 
-        """
-        Creates a mask from a distance map and adds it to the segmentation. 
-       
-        tmp_dict contains the names of the distance map and the thresholded mask.
-        tmp_dict = {
-            DISTANCE_MAP_KEY: 'LV_DistMap.nrrd',
-            THRESHOLD_KEY: 'LV_neck.nrrd'
-        }       
-        labels = { # get these from parameters.py
-            DISTANCE_MAP_KEY: Params.LV_BP_label,
-            THRESHOLD_KEY: Params.LV_neck_WT
-        } 
-
-        skip_processed: if True, will skip the processing of the distance map calculation if exists
-        """
-        dmap_name = tmp_dict[DISTANCE_MAP_KEY]
-        thresh_name = tmp_dict[THRESHOLD_KEY]
-
-        if skip_processed and os.path.exists(self.TMP(dmap_name)):
-            self.logger.info(f"Skipping distance map calculation for {dmap_name}")
-        else :
-            self.distance_map_and_save(input_name, dmap_name, labels[DISTANCE_MAP_KEY])
-    
-        self.threshold_and_save(dmap_name, thresh_name, labels[THRESHOLD_KEY])
-
-        outputs_dic = {
-            DISTANCE_MAP_KEY: self.TMP(dmap_name),
-            THRESHOLD_KEY: self.TMP(thresh_name)
-        }
-
-        return outputs_dic
-
-
-    def create_mask_from_distance_map(self, input_name, output_name, labels:dict, tmp_dict:dict, add_mask_list) : 
-        """
-        Creates a mask from a distance map and adds it to the segmentation. 
-        The add_mask_list is a list of tuples with the following information: 
-        For example: 
-         [ 
-        	(MaskOperationMode.REPLACE, newmask, forbid_changes_list ), 
-        	(MaskOperationMode.NO_OVERRIDE, newmask, []) 
-         ]      
-        tmp_dict contains the names of the distance map and the thresholded mask.
-        tmp_dict = {
-            DISTANCE_MAP_KEY: 'LV_DistMap.nrrd',
-            THRESHOLD_KEY: 'LV_neck.nrrd'
-        }       
-        labels = { # get these from parameters.py
-            DISTANCE_MAP_KEY: Params.LV_BP_label,
-            THRESHOLD_KEY: Params.LV_neck_WT
-        } 
-        """
-        origin, spacings = self.get_origin_spacing()
-        C=self.CONSTANTS
-
-        files_dic = self.threshold_distance_map(input_name, labels, tmp_dict)
-
-        thresholded_array, _ = nrrd.read(files_dic[THRESHOLD_KEY])
-        input_array, _ = nrrd.read(self.DIR(input_name)) 
-
-        io_tuple_list = [
-            (thresholded_array, thresholded_array), 
-            (input_array, thresholded_array), 
-        ]
-
-        if len(add_mask_list)>2:
-            io_tuple_list.append((None, thresholded_array))
-
-        output_array = np.empty(input_array.shape, np.uint8)
-
-        for ix, images in enumerate(io_tuple_list): 
-            imga, imgb = images
-            mode, newmask, forbid_list = add_mask_list[ix]
-            if imga is not None:           
-                output_array = img.process_mask(imga, imgb, newmask, mode, forbid_changes=forbid_list)
-            else:
-                output_array = img.process_mask(output_array, imgb, newmask, mode, forbid_changes=forbid_list)            
-    
-        output_array = np.swapaxes(output_array, 0, 2)
-        img.save_itk(output_array, origin, spacings, self.DIR(output_name))
-
-    def extract_structure_w_distance_map(self, image_name, output_name, labels:dict, tmp_dict:dict, label_a, new_label, skip_dmap=False) : 
-        """
-        tmp_dict contains the names of the distance map and the thresholded mask.
-        tmp_dict = {
-            DISTANCE_MAP_KEY: 'LV_DistMap.nrrd',
-            THRESHOLD_KEY: 'LV_neck.nrrd'
-        }       
-        labels = { # get these from parameters.py
-            DISTANCE_MAP_KEY: Params.LV_BP_label,
-            THRESHOLD_KEY: Params.LV_neck_WT
-        } 
-        """
-        origin, spacings = self.get_origin_spacing()
-        C=self.CONSTANTS
-
-        files_dic = self.threshold_distance_map(image_name, labels, tmp_dict, skip_processed=skip_dmap)
-
-        thresholded_array, _ = nrrd.read(files_dic[THRESHOLD_KEY])
-        input_array, _ = nrrd.read(self.DIR(image_name)) 
-
-        thresholded_array = img.and_filter(input_array,thresholded_array,label_a,new_label)
-        seg_array = img.process_mask(input_array, thresholded_array, new_label, MM.REPLACE_ONLY)
-
-        seg_array = np.swapaxes(seg_array, 0, 2)
-        img.save_itk(seg_array, origin, spacings, self.DIR(output_name))
-
-    def creating_vein_rings(self, image_name, output_name_i, output_name_j, list_of_rings, list_of_processes):
-
-        origin, spacings = self.get_origin_spacing()
-        C=self.CONSTANTS
-        CDIC = C.get_dictionary()
-        def convert_labels(labels_str) : 
-            if labels_str == '':
-                return []
-            else :
-                return [CDIC[x] for x in labels_str.split(',')]
-
-        LA_myo_thresh_array, _ = nrrd.read(list_of_rings.pop(0))
-        RA_myo_thresh_array, _ = nrrd.read(list_of_rings.pop(0))
-
-        input_array, _ = nrrd.read(self.DIR(image_name))
-        seg_i_array = copy.deepcopy(input_array)
-        seg_j_array = copy.deepcopy(input_array)
-        #('LPV1_ring_label', mom.NO_OVERRIDE, [], mom.REPLACE, []
-        for ring_path, processable in zip(list_of_rings, list_of_processes):
-            ring_label_str, mode1, forbid_labels_str1 = processable
-            ring_label = CDIC[ring_label_str]
-            ring_array, _ = nrrd.read(ring_path)
-            forbid_labels1 = convert_labels(forbid_labels_str1)
-            mode2 = MM.REPLACE
-
-            for fb_label in forbid_labels1 :
-                seg_i_array = img.process_mask(seg_i_array, ring_array, ring_label, mode1, forbid_changes=[fb_label])
-            ring_array = img.and_filter(seg_i_array, LA_myo_thresh_array, ring_label, ring_label)
-            seg_j_array = img.process_mask(seg_j_array, ring_array, ring_label, mode2, forbid_changes=[])
-        
-        seg_i_array = np.swapaxes(seg_i_array, 0, 2)
-        seg_j_array = np.swapaxes(seg_j_array, 0, 2)
-
-        img.save_itk(seg_i_array, origin, spacings, self.DIR(output_name_i))
-        img.save_itk(seg_j_array, origin, spacings, self.DIR(output_name_j))
-
-    def creating_valve_planes(self, image_name, LA_BP_name, RA_BP_name, output_name, list_of_la_labels, list_of_ra_labels):
-        origin, spacings = self.get_origin_spacing()
-        C=self.CONSTANTS
-        CDIC = C.get_dictionary()
-
-        LA_BP_array, _ = nrrd.read(self.TMP(LA_BP_name))
-        RA_BP_array, _ = nrrd.read(self.TMP(RA_BP_name))
-
-        input_array, _ = nrrd.read(self.DIR(image_name))
-        seg_array = copy.deepcopy(input_array)
-
-        for label, plane_label in list_of_la_labels : 
-            plane_array = img.and_filter(seg_array, LA_BP_array, label, plane_label)
-            seg_array = img.process_mask(seg_array, plane_array, plane_label, MM.REPLACE)
-
-        for label, plane_label in list_of_ra_labels :
-            extra_processing = (label == C.SVC_label)
-            plane_array = img.and_filter(seg_array, RA_BP_array, label, plane_label)
-            if extra_processing : 
-                plane_extra_array = img.and_filter(seg_array, RA_BP_array, C.RPV1_ring_label, plane_label)
-            seg_array = img.process_mask(seg_array, plane_array, plane_label, MM.REPLACE)
-            if extra_processing : 
-                seg_array = img.process_mask(seg_array, plane_extra_array, plane_label, MM.REPLACE)
-
-        seg_array = np.swapaxes(seg_array, 0, 2)
-        img.save_itk(seg_array, origin, spacings, self.DIR(output_name))
 
     def pushing_in(self, img_array: np.ndarray, pusher_wall_lab, pushed_wall_lab, pushed_bp_lab, pushed_wt) -> np.ndarray :
         ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
@@ -571,6 +322,51 @@ class FourChamberProcess:
         
         return ima.push_inside(im, pusher_wall_lab, pushed_wall_lab, pushed_bp_lab, pushed_wt)
 
+
+    def push_in_and_save(self, input_name, pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT, outname='') -> np.ndarray :
+        origin, spacings = self.get_origin_spacing()
+        outname = input_name if outname=='' else outname
+
+        # seg_array = img.push_inside(self.path2points, self.DIR(input_name), pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT) 
+        # seg_array = np.swapaxes(seg_array, 0, 2)
+        # img.save_itk(seg_array, origin, spacings, self.DIR(outname))
+        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
+        im = ima.load_sitk_image(self.DIR(input_name))
+        seg_array = ima.push_inside(im, pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT)
+
+        if outname != "":
+            self.logger.debug(f"Saving pushed segmentation array to {outname}", exc_info=self.debug)
+            self.save_if_seg_steps(seg_array, outname)
+
+    def cropping_veins(self, input_name, slicer_tuple_list, output_name) :
+        """
+        Cropping veins
+        slicer_tuple_list is a list of tuples that contain the following information:
+            (slicer_name, MoM, newmask, forbid_changes_list)
+
+        for example: 
+        slicer_tuple_list = [
+            ("aorta_slicer.nrrd", MaskOperationMode.REPLACE_ONLY, 0, [C.Ao_wall_label]),
+            ("PArt_slicer.nrrd",  MaskOperationMode.REPLACE_ONLY, 0, [C.PArt_wall_label])
+        ]
+        
+        """
+        origin, spacings = self.get_origin_spacing()
+        C=self.CONSTANTS
+
+        seg_filename = self.DIR(input_name)
+        output_filename = self.DIR(output_name)
+
+        seg_array, _ = nrrd.read(seg_filename)
+
+        for slicer_name, mode, newmask, forbid_list in slicer_tuple_list:
+            slicer_array, _ = nrrd.read(self.DIR(slicer_name))
+            seg_array = img.process_mask(seg_array, slicer_array, newmask, mode, forbid_changes=forbid_list)
+
+        seg_array = np.swapaxes(seg_array, 0, 2)
+        img.save_itk(seg_array, origin, spacings, output_filename)
+    
+    
     def push_in_and_save(self, input_name, pusher_wall_lab, pushed_wall_lab, pushed_BP_lab, pushed_WT, outname='') -> np.ndarray :
         origin, spacings = self.get_origin_spacing()
         outname = input_name if outname=='' else outname
@@ -754,24 +550,6 @@ class FourChamberProcess:
         self.save_if_seg_steps(seg_array_new, outname)
         
         return seg_array_new, distmap_array, thresh_array, struct_array
-    
-    def load_image_array(self, filename:str) -> np.array:
-        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
-        return ima.load_image_array(self.DIR(filename))
-    
-    def load_from_tmp(self, filename:str) -> np.array:
-        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
-        return ima.load_image_array(self.TMP(filename))
-    
-    def save_image_array(self, array:np.array, filename:str):
-        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
-        origin, spacings = self.get_origin_spacing()
-
-        ima.save_itk(array, origin, spacings, self.DIR(filename), self.swap_axes, ref_image=self.ref_image_mri)
-
-    def save_if_seg_steps(self, array:np.array, filename:str):
-        if self.save_seg_steps:
-            self.save_image_array(array, filename)
 
     ### Create myocardium functions - might be helpful to streamline the code in process_handler 
     def myo_lv_outflow_tract(self, seg_array: np.ndarray, outname = 'seg_s3a.nrrd') -> np.ndarray:
@@ -1024,38 +802,6 @@ class FourChamberProcess:
         return self.helper_push_in_bulk(seg_array, pushing_label_collection, l)
     
     ### Create valve planes functions 
-    def connected_component_array(self, seg_array: np.ndarray, seed, layer, keep=False) -> np.ndarray:
-        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
-        origin, spacings = self.get_origin_spacing()
-        C = self.CONSTANTS
-        seg_itk = ima.array2itk(seg_array, origin, spacings)
-
-        return ima.connected_component(seg_itk, seed, layer, keep)
-    def valves_cropping_major_vessels_return(self, seg_array: np.ndarray, points_data) -> np.ndarray:
-        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
-        C = self.CONSTANTS
-        
-        seg_new_array = self.connected_component_array(seg_array, points_data['Ao_WT_tip'], C.Ao_wall_label) 
-        self.save_if_seg_steps(seg_new_array, 'seg_s3r.nrrd')
-
-        seg_new_array = self.connected_component_array(seg_new_array, points_data['PArt_WT_tip'], C.PArt_wall_label)
-        self.save_if_seg_steps(seg_new_array, 'seg_s3s.nrrd')
-
-        return seg_new_array
-
-
-    def valves_cropping_major_vessels(self, seg_array_name:str, points_data:dict, outname = 'seg_s3s.nrrd') -> np.ndarray:
-        """
-        Crop the major vessels from the segmented array
-        """
-        ima = ImageAnalysis(path2points=self.path2points, debug=self.debug)
-        C=self.CONSTANTS
-
-        self.get_connected_component_and_save('seg_s3p.nrrd', points_data['Ao_WT_tip'], C.Ao_wall_label, 'seg_s3r.nrrd')
-        self.get_connected_component_and_save('seg_s3r.nrrd', points_data['PArt_WT_tip'], C.PArt_wall_label, outname)
-
-        return self.load_image_array(outname)
-    
     def helper_extract_struct_in_bulk(self, seg_array: np.ndarray, labels_collection: list, names_collection:list, dmap_reuse_list:list) -> list:
         seg_output_dict_list = []
         ix = 0
@@ -1179,7 +925,7 @@ class FourChamberProcess:
 
         return la_myo_thresh, ra_myo_thresh
     
-    def helper_create_ring (self, seg_array: np.ndarray, seg_aux_array: np.ndarray, atrium_myo_thresh, name, label, ring_label, replace_only_list) :
+    def helper_create_ring(self, seg_array: np.ndarray, seg_aux_array: np.ndarray, atrium_myo_thresh, name, label, ring_label, replace_only_list) :
         """
 
         Explanation based on old scripts: 
@@ -1196,18 +942,19 @@ class FourChamberProcess:
         origin, spacings = self.get_origin_spacing()
         dmap_name = f'{name}_DistMap'
         th_name = f'{name}_thresh.nrrd'
-        labels = [label, C.ring_thickness]
+        
         outname = lambda x: f'seg_s4{x}_{name.lower()}.nrrd'
 
         seg_aux_itk = ima.array2itk(self.seg_vein_rings_ref, origin, spacings)
         distmap_itk = ima.distance_map(seg_aux_itk, label, dmap_name)
         ring_array = ima.threshold_filter_array(distmap_itk, 0, C.ring_thickness, th_name) # mitten on the vein
-
+    
         if not replace_only_list : 
             seg_aux_updated = ima.add_masks(seg_aux_array, ring_array, ring_label)
         else :
+            seg_aux_updated = seg_aux_array
             for label in replace_only_list:
-                seg_aux_updated = ima.add_masks_replace_only(seg_aux_array, ring_array, ring_label, label)
+                seg_aux_updated = ima.add_masks_replace_only(seg_aux_updated, ring_array, ring_label, label)
         
         ring_array = ima.and_filter(seg_aux_updated, atrium_myo_thresh, ring_label, ring_label) # no longer a mitten
         seg_new_array = ima.add_masks_replace(seg_array, ring_array, ring_label)
@@ -1247,6 +994,7 @@ class FourChamberProcess:
         seg_new_array = seg_array
         seg_aux  = seg_aux_array
         for vein, label, ring_label in collection : 
+            print(f'Creating ring for {vein} ({label} -> {ring_label})')
             rol = replace_only_label_dict[vein]
             myo_thresh = ra_myo_thresh if vein in ['SVC', 'IVC'] else la_myo_thresh
             seg_new_array, seg_aux = self.helper_create_ring(seg_new_array, seg_aux, myo_thresh, vein, label, ring_label, rol)
@@ -1277,10 +1025,11 @@ class FourChamberProcess:
 
         collection = [
             ('SVC', C.SVC_label, C.plane_SVC_label, C.plane_SVC_label),
-            ('SVC_EXTRA', C.RPV1_ring_label, C.plane_SVC_label, C.plane_SVC_label),
+            # ('SVC_EXTRA', C.RPV1_ring_label, C.plane_SVC_label, C.plane_SVC_label), # previous implementation, might not be needed anymore
             ('IVC', C.IVC_label, C.plane_IVC_label, C.plane_IVC_label)
         ]
         for vein, label, plane_label, replace_label in collection : 
+            self.logger.info(f"Creating plane for {vein} ({label} -> {plane_label})")
             seg_new_array, _ = self.intersect_and_replace(seg_new_array, ra_bp_2mm, label, plane_label, replace_label, f'seg_s4j_{vein.lower()}.nrrd')
         
         return seg_new_array
