@@ -5,7 +5,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description='To run: python3 relabel_mesh.py [heart_folder]')
 parser.add_argument("heart_folder")
-parser.add_argument("--mesh", help="Path to the mesh file", default="heart_mesh")
+parser.add_argument("--mesh", help="Path to the mesh file", default="myocardium")
 args = parser.parse_args()
 heart_folder = args.heart_folder
 
