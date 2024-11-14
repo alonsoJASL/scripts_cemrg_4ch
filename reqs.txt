@@ -16,3 +16,4 @@ tqdm
 trimesh
 numpy
 nibabel
+scikit-image

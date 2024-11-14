@@ -18,7 +18,7 @@ def manage_labels_file(args) :
     labels_file = args.labels_file
     C = L.Labels(filename=labels_file)
     if labels_file is None:
-        labels_file = os.path.join(args.base_dir, "custom_labels.json")
+        labels_file = os.path.join(args.path_to_points, "custom_labels.json")
         C.save(filename=labels_file)
     
     return C, labels_file
@@ -41,7 +41,7 @@ def docker_origin_and_spacing(args, help=False) :
     if(help) : 
         print(docker_origin_and_spacing.__doc__)
         return
-    path2points = args.base_dir
+    path2points = args.path_to_points
     seg_name = args.seg_name if args.seg_name != "" else "seg_corrected.nrrd"
     dicom_dir = args.dicom_dir
     output_file = args.output_file
@@ -102,9 +102,8 @@ def docker_create_cylinders(args, help=False) :
 
     which_cylinders = []
     for entry in args.create_cylinder:
-        lower_entry = entry.lower()
-        if lower_entry in ['svc', 'ivc', 'ao', 'part']:
-            which_cylinders.append(lower_entry)
+        if entry in ['SVC', 'IVC', 'Ao', 'PArt']:
+            which_cylinders.append(entry)
         else:
             logger.error(f"Invalid cylinder name: {entry}. Skipping...")
     
@@ -112,7 +111,7 @@ def docker_create_cylinders(args, help=False) :
         logger.error("No valid cylinders selected. Exiting...") 
         return
     
-    path2points = args.base_dir
+    path2points = args.path_to_points
     path2pointsjson = args.points_json
     path2originjson = args.origin_spacing_json
 
@@ -178,7 +177,7 @@ def docker_cut_vessels(args, help=False) :
     path2points, _, _, const = initialize_parameters(args)
     seg_name = args.seg_name if args.seg_name != "" else "seg_s2a.nrrd"
 
-    process.cut_vessels(path2points, seg_name, const["labels"], const["thickness"], const["vein_cutoff"])
+    process.cut_vessels(path2points, seg_name, const["labels"], const["thickness"], const["vein_cutoff_file"])
 
 
 def docker_create_myo(args, help=False) :
@@ -203,7 +202,7 @@ def docker_create_myo(args, help=False) :
         return
     
     path2points, path2ptsjson, path2originjson, const = initialize_parameters(args)
-    process.create_myocardium_refact(path2points, path2ptsjson, path2originjson, const["labels"], const["thickness"], const["vein_cutoff"], is_mri=args.is_mri)
+    process.create_myocardium_refact(path2points, path2ptsjson, path2originjson, const["labels"], const["thickness"], const["vein_cutoff_file"], is_mri=args.is_mri)
 
 
 def docker_create_valve_planes(args, help=False) :
@@ -275,7 +274,7 @@ def main(args):
         - myo
         - valve_planes
         - clean_seg
-        - labels
+        - params
 
     Use the option 'help' to get the help page specific to each mode.
     """
@@ -292,7 +291,7 @@ def main(args):
         docker_create_svc_ivc(args, help=myhelp)
     elif args.mode == 'cut' or args.mode == 'cut_vessels':
         docker_cut_vessels(args, help=myhelp)
-    elif args.mode == 'myo':
+    elif args.mode == 'myo' or args.mode == 'create_myo':
         docker_create_myo(args, help=myhelp)
     elif args.mode == 'valve_planes':
         docker_create_valve_planes(args, help=myhelp)
@@ -303,7 +302,15 @@ def main(args):
         CONSTANTS.print_all()
 
 if __name__ == '__main__' :
-    my_choices = ['origin', 'pad', 'spacing', 'cylinders', 'svc_ivc', 'cut', 'cut_vessels', 'myo', 'valve_planes', 'clean_seg', 'params']
+    my_choices = ['origin',  'spacing', 
+                  'pad', 
+                  'cylinders', 
+                  'svc_ivc', 
+                  'cut', 'cut_vessels', 
+                  'myo', 'create_myo',
+                  'valve_planes', 
+                  'clean_seg', 
+                  'params']
 
     parser = argparse.ArgumentParser(description='Docker entrypoint', usage=main.__doc__)
     parser.add_argument("mode", choices=my_choices, help="Mode of operation")
@@ -330,7 +337,7 @@ if __name__ == '__main__' :
     os_group.add_argument("--output-file", "-output-file", type=str, required=False, default="", help="Name of the output file")
 
     dev_group = parser.add_argument_group('Development arguments')
-    dev_group.add_argument("-dir", "--base-dir", type=str, required=False, default="/data", help="Base directory") # this is path2points
+    dev_group.add_argument("-dir", "--path_to_points", type=str, required=False, default="/data", help="Base directory") # this is path2points
     dev_group.add_argument("-debug", "--debug", action="store_true", help="Debug outputs")
     
     args = parser.parse_args()
