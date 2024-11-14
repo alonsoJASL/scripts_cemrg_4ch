@@ -320,6 +320,7 @@ if __name__ == '__main__' :
     common_group.add_argument("--seg-name", "-seg-name", type=str, required=False, default="", help="Name of the segmentation file")
     common_group.add_argument("--points-json", "-pts", type=str, required=False, default="", help="Name of the json file containing the points")
     common_group.add_argument("--origin-spacing-json", "-origin-spacing", type=str, required=False, default="", help="Name of the json file containing the origin and spacing")
+    common_group.add_argument("--is-mri", "-mri", action="store_true", help="If the input is MRI")
 
     params_group = parser.add_argument_group('Parameters arguments')
     params_group.add_argument("--modify-label", "-modify-label", nargs='*', help="Modify label in the format key=value, e.g., --modify-label RPV1_label=5 SVC_label=6")
