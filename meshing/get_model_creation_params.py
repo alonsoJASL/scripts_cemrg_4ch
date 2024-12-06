@@ -3,7 +3,7 @@ import argparse
 import json 
 
 from generic_relabel import TARGET_LABELS as tags
-from MeshProcessingParameters import ETagsParameters, AtriaMapSettings, BachmannBundleSettings, DEFAULT_MESH_TAGS
+from MeshProcessingParameters import ETagsParameters, AtriaMapSettings, BachmannBundleSettings, DEFAULT_MESH_TAGS, DEFAULT_FASCICLES_SETTINGS
 import seg_scripts.common as iou
 
 # CONSTANTS
@@ -129,6 +129,9 @@ def main(args) :
     vfib_tags.pop("FEC_LV")
     with open(os.path.join(parfiles_folder, TAGS_VFIBRES), 'w') as f : 
         json.dump(vfib_tags, f, indent=4)
+
+    with open(os.path.join(parfiles_folder, 'fascicles_settings.json'), 'w') as f : 
+        json.dump(DEFAULT_FASCICLES_SETTINGS, f, indent=4)
 
 
 if __name__ == '__main__':

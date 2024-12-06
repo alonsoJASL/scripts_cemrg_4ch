@@ -215,8 +215,58 @@ DEFAULT_MESH_TAGS = {
 	"RSPV_ring": 23,
 	"RIPV_ring": 24,
 	"FEC_LV": 25,
+    "FEC": 25,
 	"BB": 26,
 	"AV_plane": 27,
 	"FEC_RV": 28,
 	"FEC_SV": 29
+}
+
+
+DEFAULT_FASCICLES_SETTINGS = {
+	"LVsept" :{
+		"z" : 0.61,
+		"phi" : 0.73,
+		"rho" : 0.0,
+		"v" : -1.0,
+		"radius": 2000.0,
+		"radius_phi": 0.05,
+		"radius_rho": 0.05
+	},
+	"LVpost" :{
+		"z" : 0.47,
+		"phi" : -1.36,
+		"rho" : 0.0,
+		"v" : -1.0,
+		"radius": 2000.0,
+		"radius_phi": 0.05,
+		"radius_rho": 0.05
+	},
+	"LVant" :{
+		"z" : 0.82,
+		"phi" : 1.94,
+		"rho" : 0.0,
+		"v" : -1.0,
+		"radius": 2000.0,
+		"radius_phi": 0.05,
+		"radius_rho": 0.05
+	},
+	"RVsept" :{
+		"z" : 0.73,
+		"phi" : -0.04,
+		"rho" : 1.0,
+		"v" : -1.0,
+		"radius": 2000.0,
+		"radius_phi": 0.05,
+		"radius_rho": 0.05
+	},
+	"RVmod" :{
+		"z" : 0.63,
+		"phi" : 0.21,
+		"rho" : 0,
+		"v" : 1.0,
+		"radius": 2000.0,
+		"radius_phi": 0.05,
+		"radius_rho": 0.05
+	}
 }
